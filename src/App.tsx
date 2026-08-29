@@ -5,6 +5,7 @@ import SignUpPage from './pages/SignUpPage'
 import Home from './pages/Home'
 
 import { Toaster } from 'sonner'
+import ProtectRoute from './components/auth/ProtectRoute'
 
 function App() {
   return (
@@ -14,11 +15,13 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* public routes */}
-          <Route path="/sign-in" element={<SignInPage />} />
-          <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
 
           {/* protected routes */}
-          <Route path="/" element={<Home />} />
+          <Route element={<ProtectRoute />}>
+            <Route path="/" element={<Home />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </>
