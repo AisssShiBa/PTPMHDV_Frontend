@@ -1,38 +1,41 @@
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
-import { Label } from '../ui/label'
-import { Input } from '../ui/input'
-import { Button } from '../ui/button'
+import { Label } from '../../../components/ui/label'
+import { Input } from '../../../components/ui/input'
+import { Button } from '../../../components/ui/button'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import React from 'react'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { useNavigate } from 'react-router-dom'
-const signinSchema = z.object({
+const signupSchema = z.object({
+  email: z.email('Vui lòng nhập email hợp lệ'),
+  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+  firstName: z.string().min(1, 'Tên là bắt buộc'),
+  lastName: z.string().min(1, 'Họ là bắt buộc')
 })
-type SigninFormValues = z.infer<typeof signinSchema>
-export function SigninForm({
+type SignupFormValues = z.infer<typeof signupSchema>
+export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  const { signIn } = useAuthStore()
+  const { signUp } = useAuthStore()
   const navigate = useNavigate()
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
-  } = useForm<SigninFormValues>({
-    resolver: zodResolver(signinSchema)
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema)
   })
 
-  const onSubmit = async (data: SigninFormValues) => {
+  const onSubmit = async (data: SignupFormValues) => {
     //goi api backend de dang ky nguoi dung
-    const { username, password } = data
-    await signIn(username, password)
-    navigate('/')
+    const { email, password, username, firstName, lastName } = data
+    await signUp(username, password, email, firstName, lastName)
+    navigate('/signin')
   }
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
@@ -45,12 +48,42 @@ export function SigninForm({
                 <a href="/" className="mx-auto block w-fit text-center">
                   <img src="mama_logo_icon.png" alt="logo" className="w-44" />
                 </a>
-                <h1 className=" text-2xl font-bold">Chào mừng trở lại</h1>
+                <h1 className=" text-2xl font-bold">Tạo tài khoản Mama</h1>
                 <p className="text-muted-foreground text-balance">
-                  Đăng nhập vào tài khoản của bạn
+                  chào mừng bạn! Hãy đăng kí để bắt đầu!
                 </p>
               </div>
+              {/* ho ten */}
+              <div className="grid grid-cols-2  gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="block text-sm">
+                    Họ
+                  </Label>
 
+                  <Input type="text" id="lastName" {...register('lastName')} />
+                  {errors.lastName && (
+                    <p className="text-red-500 text-sm">
+                      {errors.lastName.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="block text-sm">
+                    Tên
+                  </Label>
+
+                  <Input
+                    type="text"
+                    id="firstName"
+                    {...register('firstName')}
+                  />
+                  {errors.firstName && (
+                    <p className="text-red-500 text-sm">
+                      {errors.firstName.message}
+                    </p>
+                  )}
+                </div>
+              </div>
               {/* username */}
               <div className="flex flex-col gap-3">
                 <div className="space-y-2">
@@ -71,7 +104,27 @@ export function SigninForm({
                   )}
                 </div>
               </div>
+              {/* email */}
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="block text-sm">
+                    Email
+                  </Label>
 
+                  <Input
+                    type="email"
+                    id="email"
+                    placeholder="mama@example.com"
+                    {...register('email')}
+                  />
+
+                  {errors.email && (
+                    <p className="text-red-500 text-sm">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+              </div>
               {/* password */}
               <div className="flex flex-col gap-3">
                 <div className="space-y-2">
@@ -92,14 +145,14 @@ export function SigninForm({
                   )}
                 </div>
               </div>
-              {/* nut dang nhap */}
+              {/* nut dang ky */}
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                Đăng nhập
+                Đăng ký
               </Button>
               <div className="text-center text-sm">
-                Bạn chưa có tài khoản?{' '}
-                <a href="/signup" className="text-primary underline">
-                  đăng ký
+                Bạn đã có tài khoản?{' '}
+                <a href="/signin" className="text-primary underline">
+                  Đăng nhập
                 </a>
               </div>
             </div>

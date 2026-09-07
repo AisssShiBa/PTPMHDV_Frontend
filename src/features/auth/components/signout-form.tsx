@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { useNavigate } from 'react-router-dom'
 const SignOutForm = () => {
   const { signOut } = useAuthStore()

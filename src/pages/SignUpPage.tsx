@@ -1,4 +1,4 @@
-import { SignupForm } from '@/components/auth/signup-form'
+import { SignupForm } from '@/features/auth/components/signup-form'
 const SignUpPage = () => {
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10">

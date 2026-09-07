@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 

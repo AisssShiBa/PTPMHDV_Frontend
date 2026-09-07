@@ -1,27 +1,22 @@
-import SignOutForm from '@/components/auth/signout-form'
-import api from '@/lib/axios'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
+import { HeroSection } from '@/features/home/components/HeroSection'
+import { SponsorBanner } from '@/features/home/components/SponsorBanner'
+import { TrustedBy } from '@/features/home/components/TrustedBy'
+import { EcosystemFeatures } from '@/features/home/components/EcosystemFeatures'
 
-const Home = () => {
-  const user = useAuthStore((state) => state.user)
-  const handleOnClick = async () => {
-    try {
-      await api.get('/user/test', { withCredentials: true })
-      toast.success('ok')
-    } catch (error) {
-      console.error(error)
-      toast.error('fail')
-    }
-  }
+export default function Home() {
   return (
-    <div>
-      {user?.username}
-      <SignOutForm />
-      <Button onClick={handleOnClick}> test</Button>
+    <div className="space-y-16 sm:space-y-24 pb-12">
+      {/* 1. Hero Section & Interactive Mockup */}
+      <HeroSection />
+
+      {/* 2. Horizontal Sponsor & Partner Advertisement Banner */}
+      <SponsorBanner />
+
+      {/* 3. Trusted Brand Leaders */}
+      <TrustedBy />
+
+      {/* 4. Comprehensive Management Ecosystem Features */}
+      <EcosystemFeatures />
     </div>
   )
 }
-
-export default Home

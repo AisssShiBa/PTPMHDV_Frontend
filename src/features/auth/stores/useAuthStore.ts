@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { toast } from 'sonner'
-import { authService } from '@/services/authService'
+import { authService } from '@/features/auth/services/authService'
 import type { authState } from '@/types/store'
 export const useAuthStore = create<authState>((set, get) => ({
   accessToken: null,

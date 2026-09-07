@@ -1,0 +1,4897 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+docs/
+  Auth service.docx
+  NhiemVu.docx
+  NhiemVuFinal.docx
+public/
+  mama_logo_icon.png
+  test.jpg
+src/
+  components/
+    common/
+      Footer.tsx
+      Header.tsx
+    ui/
+      avatar.tsx
+      breadcrumb.tsx
+      button.tsx
+      card.tsx
+      collapsible.tsx
+      dropdown-menu.tsx
+      field.tsx
+      input.tsx
+      label.tsx
+      separator.tsx
+      sheet.tsx
+      sidebar.tsx
+      skeleton.tsx
+      tooltip.tsx
+  features/
+    auth/
+      components/
+        ProtectRoute.tsx
+        signin-form.tsx
+        signout-form.tsx
+        signup-form.tsx
+      services/
+        authService.ts
+      stores/
+        useAuthStore.ts
+    home/
+      components/
+        DashboardMockup.tsx
+        EcosystemFeatures.tsx
+        HeroSection.tsx
+        SponsorBanner.tsx
+        TrustedBy.tsx
+      data/
+        mockHomeData.ts
+        mockSponsors.ts
+  hooks/
+    use-mobile.ts
+  layouts/
+    MainLayout.tsx
+  lib/
+    axios.ts
+    utils.ts
+  pages/
+    Dashboard.tsx
+    Home.tsx
+    SignInPage.tsx
+    SignUpPage.tsx
+  types/
+    store.ts
+    User.ts
+  App.tsx
+  index.css
+  main.tsx
+.gitignore
+.oxlintrc.json
+components.json
+eslint.config.ts
+index.html
+package.json
+README.md
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/components/common/Footer.tsx">
+import { Link } from 'react-router-dom'
+
+interface FooterLink {
+  label: string
+  href: string
+}
+
+const footerLinks: FooterLink[] = [
+  { label: 'Chính sách bảo mật', href: '/privacy' },
+  { label: 'Điều khoản dịch vụ', href: '/terms' },
+  { label: 'Bảo mật', href: '/security' },
+  { label: 'Trung tâm trợ giúp', href: '/help' },
+]
+
+export function Footer() {
+  const currentYear = new Date().getFullYear()
+
+  return (
+    <footer className="mt-auto w-full border-t border-border/50 bg-card/60 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">
+        
+        {/* Left: Brand Name */}
+        <div className="flex items-center">
+          <span className="text-sm font-bold tracking-tight text-foreground">
+            FinVault Digital.
+          </span>
+        </div>
+
+        {/* Center: Footer Links */}
+        <nav
+          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground"
+          aria-label="Footer Navigation"
+        >
+          {footerLinks.map((link) => (
+            <Link
+              key={link.label}
+              to={link.href}
+              className="hover:text-foreground transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right: Copyright */}
+        <div className="text-xs text-muted-foreground text-center sm:text-right">
+          © {currentYear} FinVault Digital. All rights reserved.
+        </div>
+
+      </div>
+    </footer>
+  )
+}
+</file>
+
+<file path="src/components/common/Header.tsx">
+import { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import {
+  Bell,
+  Settings,
+  Menu,
+  X,
+  LogOut,
+  User as UserIcon,
+  LogIn,
+  UserPlus
+} from 'lucide-react'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+
+interface NavItem {
+  label: string
+  href: string
+}
+
+const navItems: NavItem[] = [
+  { label: 'Trang chủ', href: '/' },
+  { label: 'Bảng điều khiển', href: '/dashboard' },
+  { label: 'Giao dịch', href: '/transactions' },
+  { label: 'Ví của tôi', href: '/wallet' }
+]
+
+export function Header() {
+  const location = useLocation()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
+  const user = useAuthStore((state) => state.user)
+  const signOut = useAuthStore((state) => state.signOut)
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/90 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Left: Brand / Logo */}
+        <div className="flex items-center gap-6">
+          <Link
+            to="/"
+            className="text-xl font-bold tracking-tight text-primary transition-opacity hover:opacity-90"
+          >
+            FinVault
+          </Link>
+        </div>
+
+        {/* Center: Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`relative py-4 transition-colors ${
+                  isActive
+                    ? 'text-primary font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {item.label}
+                {isActive && (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary rounded-full" />
+                )}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* Right: Actions (State depends on logged in vs guest) */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {user ? (
+            /* ── Case 1: USER IS LOGGED IN ── */
+            <>
+              {/* Notifications button */}
+              <button
+                type="button"
+                className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                aria-label="Thông báo"
+              >
+                <Bell className="size-4" />
+                <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary" />
+              </button>
+
+              {/* Settings button */}
+              <button
+                type="button"
+                className="rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                aria-label="Cài đặt"
+              >
+                <Settings className="size-4" />
+              </button>
+
+              {/* User Avatar with Dropdown */}
+              <div className="relative ml-1">
+                <button
+                  type="button"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 rounded-full ring-1 ring-border/80 hover:ring-primary transition-all focus:outline-none"
+                  aria-label="Tài khoản người dùng"
+                >
+                  <div className="relative flex size-8 shrink-0 overflow-hidden rounded-full bg-primary/20 text-primary items-center justify-center font-bold text-xs">
+                    {user.firstName
+                      ? `${user.firstName[0]}${user.lastName ? user.lastName[0] : ''}`.toUpperCase()
+                      : user.username[0].toUpperCase()}
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {dropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setDropdownOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl border border-border bg-card p-1.5 shadow-xl z-50 text-foreground animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-3 py-2 border-b border-border/50">
+                        <p className="text-xs font-semibold text-foreground truncate">
+                          {`${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+                            user.username}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </div>
+
+                      <div className="py-1 space-y-0.5">
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        >
+                          <UserIcon className="size-3.5" />
+                          Bảng điều khiển cá nhân
+                        </Link>
+                      </div>
+
+                      <div className="pt-1 border-t border-border/50">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDropdownOpen(false)
+                            signOut()
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <LogOut className="size-3.5" />
+                          Đăng xuất
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            /* ── Case 2: GUEST (NOT LOGGED IN) ── */
+            <div className="flex items-center gap-2">
+              <Link
+                to="/signin"
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              >
+                <LogIn className="size-3.5" />
+                <span>Đăng nhập</span>
+              </Link>
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
+              >
+                <UserPlus className="size-3.5" />
+                <span>Đăng ký</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile hamburger menu toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors ml-1"
+            aria-label="Menu"
+          >
+            {mobileMenuOpen ? (
+              <X className="size-5" />
+            ) : (
+              <Menu className="size-5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile navigation collapse */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-border/50 bg-card px-4 pt-2 pb-4 space-y-1">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                }`}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
+
+          {!user && (
+            <div className="pt-2 mt-2 border-t border-border/40 grid grid-cols-2 gap-2">
+              <Link
+                to="/signin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-border/70 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+              >
+                <LogIn className="size-3.5" />
+                Đăng nhập
+              </Link>
+              <Link
+                to="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+              >
+                <UserPlus className="size-3.5" />
+                Đăng ký
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+    </header>
+  )
+}
+</file>
+
+<file path="src/components/ui/avatar.tsx">
+import * as React from "react"
+import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
+import { cn } from "cn"
+
+function Avatar({
+  className,
+  size = "default",
+  ...props
+}: AvatarPrimitive.Root.Props & {
+  size?: "default" | "sm" | "lg"
+}) {
+  return (
+    <AvatarPrimitive.Root
+      data-slot="avatar"
+      data-size={size}
+      className={cn(
+        "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
+  return (
+    <AvatarPrimitive.Image
+      data-slot="avatar-image"
+      className={cn(
+        "aspect-square size-full rounded-full object-cover",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AvatarFallback({
+  className,
+  ...props
+}: AvatarPrimitive.Fallback.Props) {
+  return (
+    <AvatarPrimitive.Fallback
+      data-slot="avatar-fallback"
+      className={cn(
+        "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
+  return (
+    <span
+      data-slot="avatar-badge"
+      className={cn(
+        "absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground bg-blend-color ring-2 ring-background select-none",
+        "group-data-[size=sm]/avatar:size-2 group-data-[size=sm]/avatar:[&>svg]:hidden",
+        "group-data-[size=default]/avatar:size-2.5 group-data-[size=default]/avatar:[&>svg]:size-2",
+        "group-data-[size=lg]/avatar:size-3 group-data-[size=lg]/avatar:[&>svg]:size-2",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="avatar-group"
+      className={cn(
+        "group/avatar-group flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AvatarGroupCount({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="avatar-group-count"
+      className={cn(
+        "relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarGroupCount,
+  AvatarBadge,
+}
+</file>
+
+<file path="src/components/ui/breadcrumb.tsx">
+import * as React from "react"
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
+import { cn } from "cn"
+import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
+
+function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
+  return (
+    <nav
+      aria-label="breadcrumb"
+      data-slot="breadcrumb"
+      className={cn(className)}
+      {...props}
+    />
+  )
+}
+
+function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
+  return (
+    <ol
+      data-slot="breadcrumb-list"
+      className={cn(
+        "flex flex-wrap items-center gap-1.5 text-sm wrap-break-word text-muted-foreground",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
+  return (
+    <li
+      data-slot="breadcrumb-item"
+      className={cn("inline-flex items-center gap-1", className)}
+      {...props}
+    />
+  )
+}
+
+function BreadcrumbLink({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"a">) {
+  return useRender({
+    defaultTagName: "a",
+    props: mergeProps<"a">(
+      {
+        className: cn("transition-colors hover:text-foreground", className),
+      },
+      props
+    ),
+    render,
+    state: {
+      slot: "breadcrumb-link",
+    },
+  })
+}
+
+function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
+  return (
+    <span
+      data-slot="breadcrumb-page"
+      role="link"
+      aria-disabled="true"
+      aria-current="page"
+      className={cn("font-normal text-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+function BreadcrumbSeparator({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"li">) {
+  return (
+    <li
+      data-slot="breadcrumb-separator"
+      role="presentation"
+      aria-hidden="true"
+      className={cn("[&>svg]:size-3.5", className)}
+      {...props}
+    >
+      {children ?? (
+        <ChevronRightIcon />
+      )}
+    </li>
+  )
+}
+
+function BreadcrumbEllipsis({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
+  return (
+    <span
+      data-slot="breadcrumb-ellipsis"
+      role="presentation"
+      aria-hidden="true"
+      className={cn(
+        "flex size-5 items-center justify-center [&>svg]:size-4",
+        className
+      )}
+      {...props}
+    >
+      <MoreHorizontalIcon
+      />
+      <span className="sr-only">More</span>
+    </span>
+  )
+}
+
+export {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+}
+</file>
+
+<file path="src/components/ui/collapsible.tsx">
+import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible"
+
+function Collapsible({ ...props }: CollapsiblePrimitive.Root.Props) {
+  return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />
+}
+
+function CollapsibleTrigger({ ...props }: CollapsiblePrimitive.Trigger.Props) {
+  return (
+    <CollapsiblePrimitive.Trigger data-slot="collapsible-trigger" {...props} />
+  )
+}
+
+function CollapsibleContent({ ...props }: CollapsiblePrimitive.Panel.Props) {
+  return (
+    <CollapsiblePrimitive.Panel data-slot="collapsible-content" {...props} />
+  )
+}
+
+export { Collapsible, CollapsibleTrigger, CollapsibleContent }
+</file>
+
+<file path="src/components/ui/dropdown-menu.tsx">
+"use client"
+
+import * as React from "react"
+import { Menu as MenuPrimitive } from "@base-ui/react/menu"
+import { cn } from "cn"
+import { ChevronRightIcon, CheckIcon } from "lucide-react"
+
+function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
+  return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+}
+
+function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
+  return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
+}
+
+function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
+  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
+}
+
+function DropdownMenuContent({
+  align = "start",
+  alignOffset = 0,
+  side = "bottom",
+  sideOffset = 4,
+  className,
+  ...props
+}: MenuPrimitive.Popup.Props &
+  Pick<
+    MenuPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "side" | "sideOffset"
+  >) {
+  return (
+    <MenuPrimitive.Portal>
+      <MenuPrimitive.Positioner
+        className="isolate z-50 outline-none"
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+      >
+        <MenuPrimitive.Popup
+          data-slot="dropdown-menu-content"
+          className={cn("z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95", className )}
+          {...props}
+        />
+      </MenuPrimitive.Positioner>
+    </MenuPrimitive.Portal>
+  )
+}
+
+function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
+  return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+}
+
+function DropdownMenuLabel({
+  className,
+  inset,
+  ...props
+}: MenuPrimitive.GroupLabel.Props & {
+  inset?: boolean
+}) {
+  return (
+    <MenuPrimitive.GroupLabel
+      data-slot="dropdown-menu-label"
+      data-inset={inset}
+      className={cn(
+        "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}: MenuPrimitive.Item.Props & {
+  inset?: boolean
+  variant?: "default" | "destructive"
+}) {
+  return (
+    <MenuPrimitive.Item
+      data-slot="dropdown-menu-item"
+      data-inset={inset}
+      data-variant={variant}
+      className={cn(
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuSub({ ...props }: MenuPrimitive.SubmenuRoot.Props) {
+  return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" {...props} />
+}
+
+function DropdownMenuSubTrigger({
+  className,
+  inset,
+  children,
+  ...props
+}: MenuPrimitive.SubmenuTrigger.Props & {
+  inset?: boolean
+}) {
+  return (
+    <MenuPrimitive.SubmenuTrigger
+      data-slot="dropdown-menu-sub-trigger"
+      data-inset={inset}
+      className={cn(
+        "flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <ChevronRightIcon className="ml-auto" />
+    </MenuPrimitive.SubmenuTrigger>
+  )
+}
+
+function DropdownMenuSubContent({
+  align = "start",
+  alignOffset = -3,
+  side = "right",
+  sideOffset = 0,
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuContent>) {
+  return (
+    <DropdownMenuContent
+      data-slot="dropdown-menu-sub-content"
+      className={cn("w-auto min-w-[96px] rounded-lg bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-foreground/10 duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuCheckboxItem({
+  className,
+  children,
+  checked,
+  inset,
+  ...props
+}: MenuPrimitive.CheckboxItem.Props & {
+  inset?: boolean
+}) {
+  return (
+    <MenuPrimitive.CheckboxItem
+      data-slot="dropdown-menu-checkbox-item"
+      data-inset={inset}
+      className={cn(
+        "relative flex cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:pl-7 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      checked={checked}
+      {...props}
+    >
+      <span
+        className="pointer-events-none absolute right-2 flex items-center justify-center"
+        data-slot="dropdown-menu-checkbox-item-indicator"
+      >
+        <MenuPrimitive.CheckboxItemIndicator>
+          <CheckIcon
+          />
+        </MenuPrimitive.CheckboxItemIndicator>
+      </span>
+      {children}
+    </MenuPrimitive.CheckboxItem>
+  )
+}
+
+function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
+  return (
+    <MenuPrimitive.RadioGroup
+      data-slot="dropdown-menu-radio-group"
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuRadioItem({
+  className,
+  children,
+  inset,
+  ...props
+}: MenuPrimitive.RadioItem.Props & {
+  inset?: boolean
+}) {
+  return (
+    <MenuPrimitive.RadioItem
+      data-slot="dropdown-menu-radio-item"
+      data-inset={inset}
+      className={cn(
+        "relative flex cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:pl-7 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    >
+      <span
+        className="pointer-events-none absolute right-2 flex items-center justify-center"
+        data-slot="dropdown-menu-radio-item-indicator"
+      >
+        <MenuPrimitive.RadioItemIndicator>
+          <CheckIcon
+          />
+        </MenuPrimitive.RadioItemIndicator>
+      </span>
+      {children}
+    </MenuPrimitive.RadioItem>
+  )
+}
+
+function DropdownMenuSeparator({
+  className,
+  ...props
+}: MenuPrimitive.Separator.Props) {
+  return (
+    <MenuPrimitive.Separator
+      data-slot="dropdown-menu-separator"
+      className={cn("-mx-1 my-1 h-px bg-border", className)}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuShortcut({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
+  return (
+    <span
+      data-slot="dropdown-menu-shortcut"
+      className={cn(
+        "ml-auto text-xs tracking-widest text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  DropdownMenu,
+  DropdownMenuPortal,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+}
+</file>
+
+<file path="src/components/ui/sheet.tsx">
+"use client"
+
+import * as React from "react"
+import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
+import { cn } from "cn"
+
+import { Button } from "@/components/ui/button"
+import { XIcon } from "lucide-react"
+
+function Sheet({ ...props }: SheetPrimitive.Root.Props) {
+  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+}
+
+function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
+  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
+}
+
+function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
+  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
+}
+
+function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
+  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+}
+
+function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
+  return (
+    <SheetPrimitive.Backdrop
+      data-slot="sheet-overlay"
+      className={cn(
+        "fixed inset-0 z-50 bg-black/10 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SheetContent({
+  className,
+  children,
+  side = "right",
+  showCloseButton = true,
+  ...props
+}: SheetPrimitive.Popup.Props & {
+  side?: "top" | "right" | "bottom" | "left"
+  showCloseButton?: boolean
+}) {
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <SheetPrimitive.Popup
+        data-slot="sheet-content"
+        data-side={side}
+        className={cn(
+          "fixed z-50 flex flex-col gap-4 bg-popover bg-clip-padding text-sm text-popover-foreground shadow-lg transition duration-200 ease-in-out data-ending-style:opacity-0 data-starting-style:opacity-0 data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:translate-y-[2.5rem] data-[side=bottom]:data-starting-style:translate-y-[2.5rem] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=left]:data-ending-style:translate-x-[-2.5rem] data-[side=left]:data-starting-style:translate-x-[-2.5rem] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=right]:data-ending-style:translate-x-[2.5rem] data-[side=right]:data-starting-style:translate-x-[2.5rem] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=top]:data-ending-style:translate-y-[-2.5rem] data-[side=top]:data-starting-style:translate-y-[-2.5rem] data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm",
+          className
+        )}
+        {...props}
+      >
+        {children}
+        {showCloseButton && (
+          <SheetPrimitive.Close
+            data-slot="sheet-close"
+            render={
+              <Button
+                variant="ghost"
+                className="absolute top-3 right-3"
+                size="icon-sm"
+              />
+            }
+          >
+            <XIcon
+            />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+        )}
+      </SheetPrimitive.Popup>
+    </SheetPortal>
+  )
+}
+
+function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sheet-header"
+      className={cn("flex flex-col gap-0.5 p-4", className)}
+      {...props}
+    />
+  )
+}
+
+function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sheet-footer"
+      className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+      {...props}
+    />
+  )
+}
+
+function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
+  return (
+    <SheetPrimitive.Title
+      data-slot="sheet-title"
+      className={cn(
+        "font-heading text-base font-medium text-foreground",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SheetDescription({
+  className,
+  ...props
+}: SheetPrimitive.Description.Props) {
+  return (
+    <SheetPrimitive.Description
+      data-slot="sheet-description"
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+export {
+  Sheet,
+  SheetTrigger,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetFooter,
+  SheetTitle,
+  SheetDescription,
+}
+</file>
+
+<file path="src/components/ui/sidebar.tsx">
+import * as React from 'react'
+import { mergeProps } from '@base-ui/react/merge-props'
+import { useRender } from '@base-ui/react/use-render'
+import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from 'cn'
+
+import { useIsMobile } from '@/hooks/use-mobile'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle
+} from '@/components/ui/sheet'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from '@/components/ui/tooltip'
+import { PanelLeftIcon } from 'lucide-react'
+
+const SIDEBAR_COOKIE_NAME = 'sidebar_state'
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+const SIDEBAR_WIDTH = '16rem'
+const SIDEBAR_WIDTH_MOBILE = '18rem'
+const SIDEBAR_WIDTH_ICON = '3rem'
+const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
+
+type SidebarContextProps = {
+  state: 'expanded' | 'collapsed'
+  open: boolean
+  setOpen: (open: boolean) => void
+  openMobile: boolean
+  setOpenMobile: (open: boolean) => void
+  isMobile: boolean
+  toggleSidebar: () => void
+}
+
+const SidebarContext = React.createContext<SidebarContextProps | null>(null)
+
+function useSidebar() {
+  const context = React.useContext(SidebarContext)
+  if (!context) {
+    throw new Error('useSidebar must be used within a SidebarProvider.')
+  }
+
+  return context
+}
+
+function SidebarProvider({
+  defaultOpen = true,
+  open: openProp,
+  onOpenChange: setOpenProp,
+  className,
+  style,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & {
+  defaultOpen?: boolean
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
+  const isMobile = useIsMobile()
+  const [openMobile, setOpenMobile] = React.useState(false)
+
+  // This is the internal state of the sidebar.
+  // We use openProp and setOpenProp for control from outside the component.
+  const [_open, _setOpen] = React.useState(defaultOpen)
+  const open = openProp ?? _open
+  const setOpen = React.useCallback(
+    (value: boolean | ((value: boolean) => boolean)) => {
+      const openState = typeof value === 'function' ? value(open) : value
+      if (setOpenProp) {
+        setOpenProp(openState)
+      } else {
+        _setOpen(openState)
+      }
+
+      // This sets the cookie to keep the sidebar state.
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+    },
+    [setOpenProp, open]
+  )
+
+  // Helper to toggle the sidebar.
+  const toggleSidebar = React.useCallback(() => {
+    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
+  }, [isMobile, setOpen, setOpenMobile])
+
+  // Adds a keyboard shortcut to toggle the sidebar.
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
+        (event.metaKey || event.ctrlKey)
+      ) {
+        event.preventDefault()
+        toggleSidebar()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [toggleSidebar])
+
+  // We add a state so that we can do data-state="expanded" or "collapsed".
+  // This makes it easier to style the sidebar with Tailwind classes.
+  const state = open ? 'expanded' : 'collapsed'
+
+  const contextValue = React.useMemo<SidebarContextProps>(
+    () => ({
+      state,
+      open,
+      setOpen,
+      isMobile,
+      openMobile,
+      setOpenMobile,
+      toggleSidebar
+    }),
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+  )
+
+  return (
+    <SidebarContext.Provider value={contextValue}>
+      <div
+        data-slot="sidebar-wrapper"
+        style={
+          {
+            '--sidebar-width': SIDEBAR_WIDTH,
+            '--sidebar-width-icon': SIDEBAR_WIDTH_ICON,
+            ...style
+          } as React.CSSProperties
+        }
+        className={cn(
+          'group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    </SidebarContext.Provider>
+  )
+}
+
+function Sidebar({
+  side = 'left',
+  variant = 'sidebar',
+  collapsible = 'offcanvas',
+  className,
+  children,
+  dir,
+  ...props
+}: React.ComponentProps<'div'> & {
+  side?: 'left' | 'right'
+  variant?: 'sidebar' | 'floating' | 'inset'
+  collapsible?: 'offcanvas' | 'icon' | 'none'
+}) {
+  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+
+  if (collapsible === 'none') {
+    return (
+      <div
+        data-slot="sidebar"
+        className={cn(
+          'flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    )
+  }
+
+  if (isMobile) {
+    return (
+      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <SheetContent
+          dir={dir}
+          data-sidebar="sidebar"
+          data-slot="sidebar"
+          data-mobile="true"
+          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          style={
+            {
+              '--sidebar-width': SIDEBAR_WIDTH_MOBILE
+            } as React.CSSProperties
+          }
+          side={side}
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Sidebar</SheetTitle>
+            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+          </SheetHeader>
+          <div className="flex h-full w-full flex-col">{children}</div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <div
+      className="group peer hidden text-sidebar-foreground md:block"
+      data-state={state}
+      data-collapsible={state === 'collapsed' ? collapsible : ''}
+      data-variant={variant}
+      data-side={side}
+      data-slot="sidebar"
+    >
+      {/* This is what handles the sidebar gap on desktop */}
+      <div
+        data-slot="sidebar-gap"
+        className={cn(
+          'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
+          'group-data-[collapsible=offcanvas]:w-0',
+          'group-data-[side=right]:rotate-180',
+          variant === 'floating' || variant === 'inset'
+            ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
+            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)'
+        )}
+      />
+      <div
+        data-slot="sidebar-container"
+        data-side={side}
+        className={cn(
+          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:-left-(--sidebar-width) data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:-right-(--sidebar-width) md:flex',
+          // Adjust the padding for floating and inset variants.
+          variant === 'floating' || variant === 'inset'
+            ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
+            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
+          className
+        )}
+        {...props}
+      >
+        <div
+          data-sidebar="sidebar"
+          data-slot="sidebar-inner"
+          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SidebarTrigger({
+  className,
+  onClick,
+  ...props
+}: React.ComponentProps<typeof Button>) {
+  const { toggleSidebar } = useSidebar()
+
+  return (
+    <Button
+      data-sidebar="trigger"
+      data-slot="sidebar-trigger"
+      variant="ghost"
+      size="icon-sm"
+      className={cn(className)}
+      onClick={(event) => {
+        onClick?.(event)
+        toggleSidebar()
+      }}
+      {...props}
+    >
+      <PanelLeftIcon />
+      <span className="sr-only">Toggle Sidebar</span>
+    </Button>
+  )
+}
+
+function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
+  const { toggleSidebar } = useSidebar()
+
+  return (
+    <button
+      data-sidebar="rail"
+      data-slot="sidebar-rail"
+      aria-label="Toggle Sidebar"
+      tabIndex={-1}
+      onClick={toggleSidebar}
+      title="Toggle Sidebar"
+      className={cn(
+        'absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:inset-s-1/2 after:w-0.5 hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2',
+        'in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize',
+        '[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize',
+        'group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar',
+        '[[data-side=left][data-collapsible=offcanvas]_&]:-right-2',
+        '[[data-side=right][data-collapsible=offcanvas]_&]:-left-2',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
+  return (
+    <main
+      data-slot="sidebar-inset"
+      className={cn(
+        'relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarInput({
+  className,
+  ...props
+}: React.ComponentProps<typeof Input>) {
+  return (
+    <Input
+      data-slot="sidebar-input"
+      data-sidebar="input"
+      className={cn('h-8 w-full bg-background shadow-none', className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarHeader({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sidebar-header"
+      data-sidebar="header"
+      className={cn('flex flex-col gap-2 p-2', className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarFooter({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sidebar-footer"
+      data-sidebar="footer"
+      className={cn('flex flex-col gap-2 p-2', className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarSeparator({
+  className,
+  ...props
+}: React.ComponentProps<typeof Separator>) {
+  return (
+    <Separator
+      data-slot="sidebar-separator"
+      data-sidebar="separator"
+      className={cn('mx-2 w-auto bg-sidebar-border', className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarContent({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sidebar-content"
+      data-sidebar="content"
+      className={cn(
+        'no-scrollbar flex min-h-0 flex-1 flex-col gap-0 overflow-auto group-data-[collapsible=icon]:overflow-hidden',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarGroup({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sidebar-group"
+      data-sidebar="group"
+      className={cn('relative flex w-full min-w-0 flex-col p-2', className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarGroupLabel({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<'div'> & React.ComponentProps<'div'>) {
+  return useRender({
+    defaultTagName: 'div',
+    props: mergeProps<'div'>(
+      {
+        className: cn(
+          'flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+          className
+        )
+      },
+      props
+    ),
+    render,
+    state: {
+      slot: 'sidebar-group-label',
+      sidebar: 'group-label'
+    }
+  })
+}
+
+function SidebarGroupAction({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<'button'> & React.ComponentProps<'button'>) {
+  return useRender({
+    defaultTagName: 'button',
+    props: mergeProps<'button'>(
+      {
+        className: cn(
+          'absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0',
+          className
+        )
+      },
+      props
+    ),
+    render,
+    state: {
+      slot: 'sidebar-group-action',
+      sidebar: 'group-action'
+    }
+  })
+}
+
+function SidebarGroupContent({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sidebar-group-content"
+      data-sidebar="group-content"
+      className={cn('w-full text-sm', className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenu({ className, ...props }: React.ComponentProps<'ul'>) {
+  return (
+    <ul
+      data-slot="sidebar-menu"
+      data-sidebar="menu"
+      className={cn('flex w-full min-w-0 flex-col gap-0', className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
+  return (
+    <li
+      data-slot="sidebar-menu-item"
+      data-sidebar="menu-item"
+      className={cn('group/menu-item relative', className)}
+      {...props}
+    />
+  )
+}
+
+const sidebarMenuButtonVariants = cva(
+  'peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate',
+  {
+    variants: {
+      variant: {
+        default: 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+        outline:
+          'bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_var(--sidebar-accent)]'
+      },
+      size: {
+        default: 'h-8 text-sm',
+        sm: 'h-7 text-xs',
+        lg: 'h-12 text-sm group-data-[collapsible=icon]:p-0!'
+      }
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default'
+    }
+  }
+)
+
+function SidebarMenuButton({
+  render,
+  isActive = false,
+  variant = 'default',
+  size = 'default',
+  tooltip,
+  className,
+  ...props
+}: useRender.ComponentProps<'button'> &
+  React.ComponentProps<'button'> & {
+    isActive?: boolean
+    tooltip?: string | React.ComponentProps<typeof TooltipContent>
+  } & VariantProps<typeof sidebarMenuButtonVariants>) {
+  const { isMobile, state } = useSidebar()
+  const comp = useRender({
+    defaultTagName: 'button',
+    props: mergeProps<'button'>(
+      {
+        className: cn(sidebarMenuButtonVariants({ variant, size }), className)
+      },
+      props
+    ),
+    render: !tooltip ? render : <TooltipTrigger render={render} />,
+    state: {
+      slot: 'sidebar-menu-button',
+      sidebar: 'menu-button',
+      size,
+      active: isActive
+    }
+  })
+
+  if (!tooltip) {
+    return comp
+  }
+
+  if (typeof tooltip === 'string') {
+    tooltip = {
+      children: tooltip
+    }
+  }
+
+  return (
+    <Tooltip>
+      {comp}
+      <TooltipContent
+        side="right"
+        align="center"
+        hidden={state !== 'collapsed' || isMobile}
+        {...tooltip}
+      />
+    </Tooltip>
+  )
+}
+
+function SidebarMenuAction({
+  className,
+  render,
+  showOnHover = false,
+  ...props
+}: useRender.ComponentProps<'button'> &
+  React.ComponentProps<'button'> & {
+    showOnHover?: boolean
+  }) {
+  return useRender({
+    defaultTagName: 'button',
+    props: mergeProps<'button'>(
+      {
+        className: cn(
+          'absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0',
+          showOnHover &&
+            'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100 md:opacity-0',
+          className
+        )
+      },
+      props
+    ),
+    render,
+    state: {
+      slot: 'sidebar-menu-action',
+      sidebar: 'menu-action'
+    }
+  })
+}
+
+function SidebarMenuBadge({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sidebar-menu-badge"
+      data-sidebar="menu-badge"
+      className={cn(
+        'pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium text-sidebar-foreground tabular-nums select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 peer-data-active/menu-button:text-sidebar-accent-foreground',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuSkeleton({
+  className,
+  showIcon = false,
+  ...props
+}: React.ComponentProps<'div'> & {
+  showIcon?: boolean
+}) {
+  // Random width between 50 to 90%.
+  const [width] = React.useState(() => {
+    return `${Math.floor(Math.random() * 40) + 50}%`
+  })
+
+  return (
+    <div
+      data-slot="sidebar-menu-skeleton"
+      data-sidebar="menu-skeleton"
+      className={cn('flex h-8 items-center gap-2 rounded-md px-2', className)}
+      {...props}
+    >
+      {showIcon && (
+        <Skeleton
+          className="size-4 rounded-md"
+          data-sidebar="menu-skeleton-icon"
+        />
+      )}
+      <Skeleton
+        className="h-4 max-w-(--skeleton-width) flex-1"
+        data-sidebar="menu-skeleton-text"
+        style={
+          {
+            '--skeleton-width': width
+          } as React.CSSProperties
+        }
+      />
+    </div>
+  )
+}
+
+function SidebarMenuSub({ className, ...props }: React.ComponentProps<'ul'>) {
+  return (
+    <ul
+      data-slot="sidebar-menu-sub"
+      data-sidebar="menu-sub"
+      className={cn(
+        'mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5 group-data-[collapsible=icon]:hidden',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuSubItem({
+  className,
+  ...props
+}: React.ComponentProps<'li'>) {
+  return (
+    <li
+      data-slot="sidebar-menu-sub-item"
+      data-sidebar="menu-sub-item"
+      className={cn('group/menu-sub-item relative', className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuSubButton({
+  render,
+  size = 'md',
+  isActive = false,
+  className,
+  ...props
+}: useRender.ComponentProps<'a'> &
+  React.ComponentProps<'a'> & {
+    size?: 'sm' | 'md'
+    isActive?: boolean
+  }) {
+  return useRender({
+    defaultTagName: 'a',
+    props: mergeProps<'a'>(
+      {
+        className: cn(
+          'flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground ring-sidebar-ring outline-hidden group-data-[collapsible=icon]:hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[size=md]:text-sm data-[size=sm]:text-xs data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground',
+          className
+        )
+      },
+      props
+    ),
+    render,
+    state: {
+      slot: 'sidebar-menu-sub-button',
+      sidebar: 'menu-sub-button',
+      size,
+      active: isActive
+    }
+  })
+}
+
+export {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupAction,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInput,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
+  useSidebar
+}
+</file>
+
+<file path="src/components/ui/skeleton.tsx">
+import { cn } from "cn"
+
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="skeleton"
+      className={cn("animate-pulse rounded-md bg-muted", className)}
+      {...props}
+    />
+  )
+}
+
+export { Skeleton }
+</file>
+
+<file path="src/components/ui/tooltip.tsx">
+'use client'
+
+import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip'
+import { cn } from 'cn'
+
+function TooltipProvider({
+  delay = 0,
+  ...props
+}: TooltipPrimitive.Provider.Props) {
+  return (
+    <TooltipPrimitive.Provider
+      data-slot="tooltip-provider"
+      delay={delay}
+      {...props}
+    />
+  )
+}
+
+function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
+  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+}
+
+function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
+  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+}
+
+function TooltipContent({
+  className,
+  side = 'top',
+  sideOffset = 4,
+  align = 'center',
+  alignOffset = 0,
+  children,
+  ...props
+}: TooltipPrimitive.Popup.Props &
+  Pick<
+    TooltipPrimitive.Positioner.Props,
+    'align' | 'alignOffset' | 'side' | 'sideOffset'
+  >) {
+  return (
+    <TooltipPrimitive.Portal>
+      <TooltipPrimitive.Positioner
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+        className="isolate z-50"
+      >
+        <TooltipPrimitive.Popup
+          data-slot="tooltip-content"
+          className={cn(
+            'z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-xs text-background has-data-[slot=kbd]:pr-1.5 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+            className
+          )}
+          {...props}
+        >
+          {children}
+          <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-xs bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=inline-end]:top-1/2! data-[side=inline-end]:-left-1 data-[side=inline-end]:-translate-y-1/2 data-[side=inline-start]:top-1/2! data-[side=inline-start]:-right-1 data-[side=inline-start]:-translate-y-1/2 data-[side=left]:top-1/2! data-[side=left]:-right-1 data-[side=left]:-translate-y-1/2 data-[side=right]:top-1/2! data-[side=right]:-left-1 data-[side=right]:-translate-y-1/2 data-[side=top]:-bottom-2.5" />
+        </TooltipPrimitive.Popup>
+      </TooltipPrimitive.Positioner>
+    </TooltipPrimitive.Portal>
+  )
+}
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+</file>
+
+<file path="src/features/auth/components/ProtectRoute.tsx">
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { useEffect, useState } from 'react'
+import { Navigate, Outlet } from 'react-router-dom'
+
+const ProtectRoute = () => {
+  const { accessToken, user, loading, refresh, fetchMe } = useAuthStore()
+  const [starting, setStarting] = useState(true)
+  const init = async () => {
+    if (!accessToken) await refresh()
+    if (accessToken && !user) await fetchMe()
+    setStarting(false)
+  }
+  useEffect(() => {
+    init()
+  }, [])
+  if (starting || loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Đang tải trang....
+      </div>
+    )
+  }
+  if (!accessToken) {
+    return <Navigate to="/signin" replace />
+  }
+  return <Outlet />
+}
+
+export default ProtectRoute
+</file>
+
+<file path="src/features/auth/components/signin-form.tsx">
+import { cn } from '@/lib/utils'
+import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '../../../components/ui/label'
+import { Input } from '../../../components/ui/input'
+import { Button } from '../../../components/ui/button'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import React from 'react'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { useNavigate } from 'react-router-dom'
+const signinSchema = z.object({
+  username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
+  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+})
+type SigninFormValues = z.infer<typeof signinSchema>
+export function SigninForm({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
+  const { signIn } = useAuthStore()
+  const navigate = useNavigate()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm<SigninFormValues>({
+    resolver: zodResolver(signinSchema)
+  })
+
+  const onSubmit = async (data: SigninFormValues) => {
+    //goi api backend de dang ky nguoi dung
+    const { username, password } = data
+    await signIn(username, password)
+    navigate('/dashboard')
+  }
+  return (
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
+      <Card className="overflow-hidden p-0 border border-border">
+        <CardContent className="grid p-0 md:grid-cols-2">
+          <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
+            <div className="flex flex-col gap-6">
+              {/* header */}
+              <div className="flex flex-col items-center text-center gap-2">
+                <a href="/" className="mx-auto block w-fit text-center">
+                  <img src="mama_logo_icon.png" alt="logo" className="w-44" />
+                </a>
+                <h1 className=" text-2xl font-bold">Chào mừng trở lại</h1>
+                <p className="text-muted-foreground text-balance">
+                  Đăng nhập vào tài khoản của bạn
+                </p>
+              </div>
+
+              {/* username */}
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="block text-sm">
+                    Tên đăng nhập
+                  </Label>
+
+                  <Input
+                    type="text"
+                    id="username"
+                    placeholder="mama"
+                    {...register('username')}
+                  />
+                  {errors.username && (
+                    <p className="text-red-500 text-sm">
+                      {errors.username.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* password */}
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="block text-sm">
+                    Mật khẩu
+                  </Label>
+
+                  <Input
+                    type="password"
+                    id="password"
+                    {...register('password')}
+                  />
+
+                  {errors.password && (
+                    <p className="text-red-500 text-sm">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* nut dang nhap */}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                Đăng nhập
+              </Button>
+              <div className="text-center text-sm">
+                Bạn chưa có tài khoản?{' '}
+                <a href="/signup" className="text-primary underline">
+                  đăng ký
+                </a>
+              </div>
+            </div>
+          </form>
+          <div className="relative hidden bg-muted md:block">
+            <img
+              src="/test.jpg"
+              alt="Image"
+              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+            />
+          </div>
+        </CardContent>
+      </Card>
+      <div className="px-6 text-center">
+        Bằng cách tiếp tục, bạn đồng ý với {''}
+        <a href="#" className="text-purple-600 hover:text-purple-500">
+          Điều khoản dịch vụ {''}
+        </a>
+        và {''}
+        <a href="#" className="text-purple-600 hover:text-purple-500">
+          Chính sách bảo mật của chúng tôi
+        </a>
+        .
+      </div>
+    </div>
+  )
+}
+</file>
+
+<file path="src/features/auth/components/signout-form.tsx">
+import { Button } from '@/components/ui/button'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { useNavigate } from 'react-router-dom'
+const SignOutForm = () => {
+  const { signOut } = useAuthStore()
+  const navigate = useNavigate()
+  const handleLogOut = async () => {
+    try {
+      await signOut()
+      navigate('/signin')
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  return (
+    <div>
+      <Button onClick={handleLogOut}>LogOut</Button>
+    </div>
+  )
+}
+export default SignOutForm
+</file>
+
+<file path="src/features/auth/components/signup-form.tsx">
+import { cn } from '@/lib/utils'
+import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '../../../components/ui/label'
+import { Input } from '../../../components/ui/input'
+import { Button } from '../../../components/ui/button'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import React from 'react'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { useNavigate } from 'react-router-dom'
+const signupSchema = z.object({
+  email: z.email('Vui lòng nhập email hợp lệ'),
+  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
+  firstName: z.string().min(1, 'Tên là bắt buộc'),
+  lastName: z.string().min(1, 'Họ là bắt buộc')
+})
+type SignupFormValues = z.infer<typeof signupSchema>
+export function SignupForm({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
+  const { signUp } = useAuthStore()
+  const navigate = useNavigate()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema)
+  })
+
+  const onSubmit = async (data: SignupFormValues) => {
+    //goi api backend de dang ky nguoi dung
+    const { email, password, username, firstName, lastName } = data
+    await signUp(username, password, email, firstName, lastName)
+    navigate('/signin')
+  }
+  return (
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
+      <Card className="overflow-hidden p-0 border border-border">
+        <CardContent className="grid p-0 md:grid-cols-2">
+          <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
+            <div className="flex flex-col gap-6">
+              {/* header */}
+              <div className="flex flex-col items-center text-center gap-2">
+                <a href="/" className="mx-auto block w-fit text-center">
+                  <img src="mama_logo_icon.png" alt="logo" className="w-44" />
+                </a>
+                <h1 className=" text-2xl font-bold">Tạo tài khoản Mama</h1>
+                <p className="text-muted-foreground text-balance">
+                  chào mừng bạn! Hãy đăng kí để bắt đầu!
+                </p>
+              </div>
+              {/* ho ten */}
+              <div className="grid grid-cols-2  gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="block text-sm">
+                    Họ
+                  </Label>
+
+                  <Input type="text" id="lastName" {...register('lastName')} />
+                  {errors.lastName && (
+                    <p className="text-red-500 text-sm">
+                      {errors.lastName.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="block text-sm">
+                    Tên
+                  </Label>
+
+                  <Input
+                    type="text"
+                    id="firstName"
+                    {...register('firstName')}
+                  />
+                  {errors.firstName && (
+                    <p className="text-red-500 text-sm">
+                      {errors.firstName.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* username */}
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="block text-sm">
+                    Tên đăng nhập
+                  </Label>
+
+                  <Input
+                    type="text"
+                    id="username"
+                    placeholder="mama"
+                    {...register('username')}
+                  />
+                  {errors.username && (
+                    <p className="text-red-500 text-sm">
+                      {errors.username.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* email */}
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="block text-sm">
+                    Email
+                  </Label>
+
+                  <Input
+                    type="email"
+                    id="email"
+                    placeholder="mama@example.com"
+                    {...register('email')}
+                  />
+
+                  {errors.email && (
+                    <p className="text-red-500 text-sm">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* password */}
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="block text-sm">
+                    Mật khẩu
+                  </Label>
+
+                  <Input
+                    type="password"
+                    id="password"
+                    {...register('password')}
+                  />
+
+                  {errors.password && (
+                    <p className="text-red-500 text-sm">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* nut dang ky */}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                Đăng ký
+              </Button>
+              <div className="text-center text-sm">
+                Bạn đã có tài khoản?{' '}
+                <a href="/signin" className="text-primary underline">
+                  Đăng nhập
+                </a>
+              </div>
+            </div>
+          </form>
+          <div className="relative hidden bg-muted md:block">
+            <img
+              src="/test.jpg"
+              alt="Image"
+              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+            />
+          </div>
+        </CardContent>
+      </Card>
+      <div className="px-6 text-center">
+        Bằng cách tiếp tục, bạn đồng ý với {''}
+        <a href="#" className="text-purple-600 hover:text-purple-500">
+          Điều khoản dịch vụ {''}
+        </a>
+        và {''}
+        <a href="#" className="text-purple-600 hover:text-purple-500">
+          Chính sách bảo mật của chúng tôi
+        </a>
+        .
+      </div>
+    </div>
+  )
+}
+</file>
+
+<file path="src/features/auth/services/authService.ts">
+import api from '@/lib/axios'
+
+export const authService = {
+  signUp: async (
+    username: string,
+    password: string,
+    email: string,
+    firstName: string,
+    lastName: string
+  ) => {
+    const res = await api.post(
+      '/auth/signup',
+      { username, password, email, firstName, lastName },
+      { withCredentials: true }
+    )
+    return res.data
+  },
+  signIn: async (username: string, password: string) => {
+    const res = await api.post(
+      '/auth/signin',
+      { username, password },
+      { withCredentials: true }
+    )
+    return res.data
+  },
+  signOut: async () => {
+    const res = await api.post('/auth/signout', {}, { withCredentials: true })
+    return res.data
+  },
+  FetchMe: async () => {
+    const res = await api.get('/user/me', { withCredentials: true })
+    return res.data
+  },
+  refresh: async () => {
+    const res = await api.post('/auth/refresh', {}, { withCredentials: true })
+    return res.data.acessToken
+  }
+}
+</file>
+
+<file path="src/features/auth/stores/useAuthStore.ts">
+import { create } from 'zustand'
+import { toast } from 'sonner'
+import { authService } from '@/features/auth/services/authService'
+import type { authState } from '@/types/store'
+export const useAuthStore = create<authState>((set, get) => ({
+  accessToken: null,
+  user: null,
+  loading: false,
+
+  clearState: () => {
+    set({
+      accessToken: null,
+      user: null,
+      loading: false
+    })
+  },
+  signUp: async (username, password, email, firstName, lastName) => {
+    set({ loading: true })
+    try {
+      await authService.signUp(username, password, email, firstName, lastName)
+      toast.success('đăng ký thành công')
+    } catch (error) {
+      ;(console.error(error), toast.error('đăng ký không thành công'))
+    } finally {
+      set({ loading: false })
+    }
+  },
+  signIn: async (username, password) => {
+    set({ loading: true })
+    try {
+      const data = await authService.signIn(username, password)
+
+      get().setAccessToken(data.accessToken)
+      await get().fetchMe()
+      toast.success('đăng nhập thành công')
+    } catch (error) {
+      ;(console.error(error), toast.error('đăng nhập không thành công'))
+    } finally {
+      set({ loading: false })
+    }
+  },
+  signOut: async () => {
+    try {
+      get().clearState()
+      await authService.signOut()
+      toast.success('đăng xuất thành công')
+    } catch (error) {
+      console.error(error)
+      toast.error('đăng xuất không thành công')
+    }
+  },
+  fetchMe: async () => {
+    try {
+      set({ loading: true })
+      const user = await authService.FetchMe()
+      set({ user })
+    } catch (error) {
+      console.error(error)
+      set({ user: null, accessToken: null })
+      toast.error('Lỗi lấy dữ liệu người dùng')
+    } finally {
+      set({ loading: false })
+    }
+  },
+  refresh: async () => {
+    try {
+      set({ loading: true })
+      const { user } = get()
+      const accessToken = await authService.refresh()
+      set({ accessToken })
+      if (accessToken && !user) await get().fetchMe()
+    } catch (error) {
+      console.error(error)
+      get().clearState()
+    } finally {
+      set({ loading: false })
+    }
+  },
+  setAccessToken: (accessToken) => {
+    set({ accessToken })
+  }
+}))
+</file>
+
+<file path="src/features/home/components/DashboardMockup.tsx">
+import { TrendingUp, Check, CreditCard } from 'lucide-react'
+
+export function DashboardMockup() {
+  return (
+    <div className="relative w-full max-w-xl mx-auto lg:max-w-none">
+      {/* Glow effect behind dashboard */}
+      <div className="absolute -top-10 -right-10 size-72 rounded-full bg-primary/25 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-10 -left-10 size-60 rounded-full bg-violet-600/15 blur-3xl pointer-events-none" />
+
+      {/* Main Mockup Frame */}
+      <div className="relative rounded-2xl border border-border/70 bg-card/95 p-4 sm:p-5 shadow-2xl backdrop-blur-xl transition-all hover:border-border">
+        {/* Top App Bar inside mockup */}
+        <div className="flex items-center justify-between border-b border-border/50 pb-3 mb-4 text-xs">
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-primary tracking-tight text-sm">
+              FinVault
+            </span>
+            <div className="hidden sm:flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="text-foreground font-medium">Tổng quan</span>
+              <span>•</span>
+              <span>Danh mục</span>
+              <span>•</span>
+              <span>Giao dịch</span>
+              <span>•</span>
+              <span>Báo cáo</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="size-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+              AV
+            </div>
+            <span className="text-[11px] text-muted-foreground hidden sm:inline">
+              Alexander V.
+            </span>
+          </div>
+        </div>
+
+        {/* Greeting */}
+        <div className="mb-3">
+          <p className="text-xs text-muted-foreground">Chào buổi sáng,</p>
+          <h4 className="text-sm sm:text-base font-bold text-foreground">
+            Alexander!
+          </h4>
+        </div>
+
+        {/* Balance & Donut Chart Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-4 items-center rounded-xl bg-muted/30 border border-border/40 p-3 sm:p-4">
+          <div className="sm:col-span-7">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              Tổng tài sản
+            </p>
+            <p className="text-xl sm:text-2xl font-black text-foreground tracking-tight mt-0.5">
+              1,258,450,000.00{' '}
+              <span className="text-xs font-semibold text-muted-foreground">
+                VND
+              </span>
+            </p>
+            <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-emerald-400">
+              <TrendingUp className="size-3.5" />
+              <span>+385,950,000.00 VND</span>
+              <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                (+14.2%)
+              </span>
+            </div>
+          </div>
+
+          {/* Mini Donut Chart visualization */}
+          <div className="sm:col-span-5 flex items-center justify-start sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40">
+            <div className="relative size-14 shrink-0">
+              <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-muted/60"
+                  strokeWidth="4"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className="text-primary"
+                  strokeDasharray="52, 100"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className="text-emerald-400"
+                  strokeDasharray="31, 100"
+                  strokeDashoffset="-52"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-foreground">
+                83%
+              </div>
+            </div>
+            <div className="text-[10px] text-muted-foreground space-y-0.5">
+              <div className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-primary" />
+                <span>Cổ phiếu: 52%</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-emerald-400" />
+                <span>Tài sản số: 31%</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-muted-foreground/40" />
+                <span>Tiền mặt: 17%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Small Metric Cards Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+          <div className="rounded-lg bg-muted/40 p-2 border border-border/30">
+            <p className="text-[10px] text-muted-foreground truncate">
+              Quản lý Tài chính
+            </p>
+            <p className="text-xs font-bold text-foreground mt-0.5">
+              1,230,000 VND
+            </p>
+            <span className="text-[9px] text-emerald-400 font-semibold">
+              +2% tuần này
+            </span>
+          </div>
+          <div className="rounded-lg bg-muted/40 p-2 border border-border/30">
+            <p className="text-[10px] text-muted-foreground truncate">
+              Thẻ ghi nợ
+            </p>
+            <p className="text-xs font-bold text-foreground mt-0.5">
+              385,150,000 VND
+            </p>
+            <span className="text-[9px] text-emerald-400 font-semibold">
+              +12%
+            </span>
+          </div>
+          <div className="rounded-lg bg-muted/40 p-2 border border-border/30">
+            <p className="text-[10px] text-muted-foreground truncate">
+              Bảo mật tài khoản
+            </p>
+            <p className="text-xs font-bold text-foreground mt-0.5">
+              Xác thực 2FA
+            </p>
+            <span className="text-[9px] text-emerald-400 font-semibold">
+              Đã kích hoạt
+            </span>
+          </div>
+          <div className="rounded-lg bg-muted/40 p-2 border border-border/30">
+            <p className="text-[10px] text-muted-foreground truncate">
+              Hạn mức chuyển khoản
+            </p>
+            <p className="text-xs font-bold text-foreground mt-0.5">
+              Không giới hạn
+            </p>
+            <span className="text-[9px] text-primary font-semibold">
+              Cấp VIP 3
+            </span>
+          </div>
+        </div>
+
+        {/* Recent Transactions inside mockup */}
+        <div className="rounded-xl bg-muted/20 border border-border/30 p-2.5 space-y-2">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground px-1">
+            <span>Giao dịch gần đây</span>
+            <span className="text-primary cursor-pointer hover:underline">
+              Xem tất cả
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between rounded-lg bg-card/60 px-2.5 py-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="size-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
+                  +
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-[11px]">
+                    Lê Văn Thành (CK)
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    Thanh toán dịch vụ công nghệ
+                  </p>
+                </div>
+              </div>
+              <span className="font-bold text-emerald-400 text-xs">
+                +15,200,000 VND
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg bg-card/60 px-2.5 py-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="size-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px]">
+                  <CreditCard className="size-3" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-[11px]">
+                    Thanh toán thẻ VISA
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    Chi tiêu trực tuyến quốc tế
+                  </p>
+                </div>
+              </div>
+              <span className="font-bold text-muted-foreground text-xs">
+                -850,000 VND
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg bg-card/60 px-2.5 py-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="size-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
+                  +
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-[11px]">
+                    Lãi tiết kiệm tự động
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    Kỳ hạn 3 tháng linh hoạt
+                  </p>
+                </div>
+              </div>
+              <span className="font-bold text-emerald-400 text-xs">
+                +22,500,000 VND
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Success Pill Banner at bottom of mockup */}
+        <div className="mt-3 flex items-center justify-between rounded-xl bg-emerald-950/40 border border-emerald-500/30 p-2.5 shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <div className="size-7 rounded-full bg-emerald-500 flex items-center justify-center text-black font-bold shadow-md shadow-emerald-500/30">
+              <Check className="size-4 stroke-3" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-foreground">
+                Giao dịch thành công
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Chuyển khoản quốc tế tức thì
+              </p>
+            </div>
+          </div>
+          <span className="text-sm sm:text-base font-black text-emerald-400 tracking-tight">
+            +$2.4M
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+</file>
+
+<file path="src/features/home/components/EcosystemFeatures.tsx">
+import { ecosystemFeatures } from '@/features/home/data/mockHomeData'
+
+function WorldMapDots() {
+  return (
+    <div className="absolute right-0 bottom-0 top-0 w-full sm:w-1/2 opacity-25 pointer-events-none overflow-hidden flex items-center justify-end pr-4">
+      <svg
+        className="w-full max-w-sm h-auto text-primary"
+        viewBox="0 0 1000 500"
+        fill="currentColor"
+      >
+        <path
+          d="M150,120 Q180,100 240,110 T300,160 T250,230 T180,210 Z"
+          opacity="0.4"
+        />
+        <path
+          d="M220,260 Q260,250 280,310 T250,420 T200,380 T210,290 Z"
+          opacity="0.4"
+        />
+        <path
+          d="M480,100 Q550,80 600,120 T620,180 T540,220 T460,160 Z"
+          opacity="0.4"
+        />
+        <path
+          d="M490,230 Q540,210 580,260 T560,380 T500,360 T460,280 Z"
+          opacity="0.4"
+        />
+        <path
+          d="M630,90 Q780,60 880,110 T850,230 T720,240 T640,150 Z"
+          opacity="0.4"
+        />
+        <path d="M720,290 Q800,280 840,340 T780,410 T710,360 Z" opacity="0.4" />
+
+        <circle
+          cx="230"
+          cy="150"
+          r="8"
+          className="animate-ping text-primary fill-primary"
+        />
+        <circle cx="230" cy="150" r="5" className="fill-primary" />
+        <circle cx="530" cy="130" r="5" className="fill-primary" />
+        <circle
+          cx="750"
+          cy="160"
+          r="7"
+          className="animate-ping text-emerald-400 fill-emerald-400"
+        />
+        <circle cx="750" cy="160" r="4" className="fill-emerald-400" />
+        <circle cx="540" cy="310" r="4" className="fill-primary" />
+        <circle cx="770" cy="340" r="4" className="fill-primary" />
+
+        <line
+          x1="230"
+          y1="150"
+          x2="530"
+          y2="130"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+          opacity="0.6"
+        />
+        <line
+          x1="530"
+          y1="130"
+          x2="750"
+          y2="160"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+          opacity="0.6"
+        />
+        <line
+          x1="530"
+          y1="130"
+          x2="540"
+          y2="310"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+          opacity="0.5"
+        />
+        <line
+          x1="750"
+          y1="160"
+          x2="770"
+          y2="340"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+          opacity="0.5"
+        />
+      </svg>
+    </div>
+  )
+}
+
+export function EcosystemFeatures() {
+  return (
+    <section className="space-y-10">
+      {/* Section Heading */}
+      <div className="text-center space-y-3 max-w-2xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
+          Hệ sinh thái Quản lý Toàn diện
+        </h2>
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          Trải nghiệm nền tảng tài chính được thiết kế với độ chính xác cao
+          nhất, đáp ứng các tiêu chuẩn khắt khe nhất của thị trường toàn cầu.
+        </p>
+      </div>
+
+      {/* Feature Cards Grid (2x2) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+        {ecosystemFeatures.map((f) => {
+          const Icon = f.icon
+          return (
+            <div
+              key={f.id}
+              className={`relative ${f.colSpanClass} rounded-2xl border border-border/60 bg-card/80 p-6 sm:p-7 shadow-sm overflow-hidden transition-all hover:shadow-lg ${f.hoverBorderClass}`}
+            >
+              {f.hasWorldMap && <WorldMapDots />}
+
+              <div className="relative z-10 max-w-md">
+                <div
+                  className={`size-11 rounded-xl flex items-center justify-center mb-5 ring-1 ${f.iconContainerClass}`}
+                >
+                  <Icon className={`size-5 ${f.iconClass}`} />
+                </div>
+
+                <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">
+                  {f.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  {f.description}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+</file>
+
+<file path="src/features/home/components/HeroSection.tsx">
+import { Link } from 'react-router-dom'
+import { ArrowRight, Sparkles } from 'lucide-react'
+import { DashboardMockup } from './DashboardMockup'
+
+export function HeroSection() {
+  return (
+    <section className="relative pt-4 sm:pt-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        {/* Left Column: Heading, Pitch, and Call-to-action */}
+        <div className="lg:col-span-6 space-y-6">
+          {/* Pill Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
+            <Sparkles className="size-3 text-primary animate-pulse" />
+            <span className="tracking-wide uppercase text-[11px]">
+              Tài chính doanh nghiệp đỉnh cao
+            </span>
+          </div>
+
+          {/* Main Headline */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-black tracking-tight text-foreground leading-[1.15]">
+            Quản lý tài sản số với độ{' '}
+            <span className="text-primary bg-linear-to-r from-violet-400 via-primary to-purple-300 bg-clip-text">
+              chính xác tuyệt đối
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl">
+            Ví tiền kỹ thuật số cấp độ tổ chức dành riêng cho giới tinh hoa. Bảo
+            mật đa lớp, giao dịch siêu tốc và khả năng kiểm soát tài sản toàn
+            diện trên phạm vi toàn cầu.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-4 pt-2">
+            <Link
+              to="/signup"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90 hover:shadow-primary/40 active:scale-95 transition-all"
+            >
+              Mở tài khoản ngay
+              <ArrowRight className="size-4" />
+            </Link>
+
+            <a
+              href="#sponsors"
+              className="inline-flex items-center justify-center rounded-xl border border-border/80 bg-card/60 px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted/70 hover:border-border active:scale-95 transition-all"
+            >
+              Liên hệ tư vấn viên
+            </a>
+          </div>
+        </div>
+
+        {/* Right Column: Interactive Mockup Dashboard */}
+        <div className="lg:col-span-6">
+          <DashboardMockup />
+        </div>
+      </div>
+    </section>
+  )
+}
+</file>
+
+<file path="src/features/home/components/SponsorBanner.tsx">
+import { useState } from 'react'
+import {
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Tag,
+  Megaphone
+} from 'lucide-react'
+import {
+  mockSponsorAds,
+  type SponsorAd
+} from '@/features/home/data/mockSponsors'
+
+export function SponsorBanner() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const currentAd: SponsorAd = mockSponsorAds[currentIndex]
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % mockSponsorAds.length)
+  }
+
+  const prevSlide = () => {
+    setCurrentIndex(
+      (prev) => (prev - 1 + mockSponsorAds.length) % mockSponsorAds.length
+    )
+  }
+
+  return (
+    <section id="sponsors" className="relative">
+      {/* Header / Section label */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Megaphone className="size-3.5 text-primary" />
+          <span>Tin tức & Ưu đãi Đối tác Tài trợ</span>
+        </div>
+
+        {/* Navigation controls */}
+        <div className="flex items-center gap-1">
+          <span className="text-[11px] text-muted-foreground mr-2 hidden sm:inline">
+            {currentIndex + 1} / {mockSponsorAds.length}
+          </span>
+          <button
+            type="button"
+            onClick={prevSlide}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label="Quảng cáo trước"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={nextSlide}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label="Quảng cáo kế tiếp"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Horizontal Banner Card */}
+      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-linear-to-r from-card via-card/90 to-primary/5 p-5 sm:p-7 shadow-xl backdrop-blur-md">
+        {/* Background ambient gradient glow */}
+        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          {/* Left Column: Text info and CTA */}
+          <div className="md:col-span-7 space-y-3.5">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Badge */}
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                  currentAd.badgeColor ||
+                  'bg-primary/20 text-primary border-primary/30'
+                }`}
+              >
+                {currentAd.badgeText}
+              </span>
+
+              {/* Sponsor Name */}
+              <span className="text-xs font-medium text-muted-foreground">
+                Được tài trợ bởi{' '}
+                <strong className="text-foreground">
+                  {currentAd.sponsorName}
+                </strong>
+              </span>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-lg sm:text-xl md:text-2xl font-black text-foreground tracking-tight leading-snug">
+              {currentAd.title}
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              {currentAd.subtitle}
+            </p>
+
+            {/* Discount Code & CTA */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {currentAd.discountCode && (
+                <div className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-1.5 text-xs text-primary font-mono font-semibold">
+                  <Tag className="size-3.5" />
+                  Mã: {currentAd.discountCode}
+                </div>
+              )}
+
+              <a
+                href={currentAd.ctaLink}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
+              >
+                {currentAd.ctaText}
+                <ExternalLink className="size-3.5" />
+              </a>
+
+              <a
+                href="#contact"
+                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 ml-1"
+              >
+                Liên hệ tài trợ?
+              </a>
+            </div>
+          </div>
+
+          {/* Right Column: Visual Advertisement Thumbnail */}
+          <div className="md:col-span-5">
+            <div className="group relative aspect-video w-full overflow-hidden rounded-xl border border-border/60 bg-muted/40 shadow-inner">
+              <img
+                src={currentAd.imageUrl}
+                alt={currentAd.title}
+                className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-80" />
+              <div className="absolute bottom-3 left-3 right-3 text-white">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-primary-foreground/90 bg-black/50 px-2 py-0.5 rounded backdrop-blur">
+                  Sponsored Spotlight
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Carousel indicator dots */}
+        <div className="flex items-center justify-center gap-1.5 mt-5">
+          {mockSponsorAds.map((ad, idx) => (
+            <button
+              key={ad.id}
+              type="button"
+              onClick={() => setCurrentIndex(idx)}
+              className={`h-1.5 rounded-full transition-all ${
+                currentIndex === idx
+                  ? 'w-6 bg-primary'
+                  : 'w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60'
+              }`}
+              aria-label={`Đi tới quảng cáo ${idx + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+</file>
+
+<file path="src/features/home/components/TrustedBy.tsx">
+import { trustedBrands } from '@/features/home/data/mockHomeData'
+
+export function TrustedBy() {
+  return (
+    <section className="text-center space-y-6 pt-4 border-t border-border/30">
+      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        Được tin tưởng bởi các lãnh đạo ngành
+      </p>
+
+      <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-14 md:gap-18 opacity-60 hover:opacity-85 transition-opacity">
+        {trustedBrands.map((brand) => {
+          const Icon = brand.icon
+          return (
+            <div
+              key={brand.name}
+              className="flex items-center gap-2.5 text-foreground font-semibold text-base sm:text-lg"
+            >
+              <Icon className="size-5 sm:size-6 text-muted-foreground" />
+              <span>{brand.name}</span>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+</file>
+
+<file path="src/features/home/data/mockHomeData.ts">
+import {
+  Building2,
+  TrendingUp,
+  ShieldCheck,
+  Globe,
+  Zap,
+  BarChart3,
+  ShieldAlert,
+} from 'lucide-react'
+
+export interface TrustedBrand {
+  name: string
+  icon: typeof Building2
+}
+
+export const trustedBrands: TrustedBrand[] = [
+  { name: 'GlobalBank', icon: Building2 },
+  { name: 'InvestCorp', icon: TrendingUp },
+  { name: 'SecureTrust', icon: ShieldCheck },
+  { name: 'NexusFin', icon: Globe },
+]
+
+export interface EcosystemFeature {
+  id: string
+  icon: typeof Zap
+  iconContainerClass: string
+  iconClass: string
+  hoverBorderClass: string
+  title: string
+  description: string
+  colSpanClass: string
+  hasWorldMap?: boolean
+}
+
+export const ecosystemFeatures: EcosystemFeature[] = [
+  {
+    id: 'speed-payment',
+    icon: Zap,
+    iconContainerClass: 'bg-violet-500/15 text-primary ring-primary/20',
+    iconClass: 'fill-primary/30 text-primary',
+    hoverBorderClass: 'hover:border-primary/50 hover:shadow-primary/5',
+    title: 'Thanh toán Siêu tốc',
+    description:
+      'Xử lý hàng triệu giao dịch mỗi giây với độ trễ gần như bằng không. Chuyển đổi và định tuyến tối ưu xuyên biên giới.',
+    colSpanClass: 'md:col-span-6',
+  },
+  {
+    id: 'military-security',
+    icon: ShieldAlert,
+    iconContainerClass: 'bg-emerald-500/15 text-emerald-400 ring-emerald-500/20',
+    iconClass: 'fill-emerald-500/20 text-emerald-400',
+    hoverBorderClass: 'hover:border-emerald-500/50 hover:shadow-emerald-500/5',
+    title: 'Bảo mật Cấp Quốc phòng',
+    description:
+      'Mã hóa đầu cuối 256-bit và kho lưu trữ lạnh định kỳ bảo vệ toàn bộ tài sản tuyệt đối.',
+    colSpanClass: 'md:col-span-6',
+  },
+  {
+    id: 'deep-analytics',
+    icon: BarChart3,
+    iconContainerClass: 'bg-blue-500/15 text-blue-400 ring-blue-500/20',
+    iconClass: 'text-blue-400',
+    hoverBorderClass: 'hover:border-blue-500/50 hover:shadow-blue-500/5',
+    title: 'Phân tích Chuyên sâu',
+    description:
+      'AI dự phòng dòng tiền và theo dõi danh mục đầu tư theo thời gian thực.',
+    colSpanClass: 'md:col-span-5',
+  },
+  {
+    id: 'global-reach',
+    icon: Globe,
+    iconContainerClass: 'bg-muted text-foreground ring-border',
+    iconClass: 'text-foreground',
+    hoverBorderClass: 'hover:border-primary/50',
+    title: 'Khả năng Tiếp cận Toàn cầu',
+    description:
+      'Hỗ trợ 150+ loại tiền tệ fiat và tài sản số hóa. Mạng lưới thanh khoản sâu rộng kết nối trực tiếp với các trung tâm tài chính lớn nhất thế giới.',
+    colSpanClass: 'md:col-span-7',
+    hasWorldMap: true,
+  },
+]
+</file>
+
+<file path="src/features/home/data/mockSponsors.ts">
+export interface SponsorAd {
+  id: string
+  title: string
+  subtitle: string
+  sponsorName: string
+  sponsorLogo?: string
+  badgeText: string
+  badgeColor?: string
+  ctaText: string
+  ctaLink: string
+  imageUrl: string
+  discountCode?: string
+}
+
+export const mockSponsorAds: SponsorAd[] = [
+  {
+    id: 'sponsor-1',
+    title: 'Giải pháp Lưu ký Kỹ thuật số Cấp Tổ chức',
+    subtitle: 'Nhận ngay gói bảo hiểm tài sản lên đến $100M khi liên kết doanh nghiệp trong tháng này.',
+    sponsorName: 'Nexus Global Custody',
+    badgeText: 'ĐỐI TÁC CHIẾN LƯỢC',
+    badgeColor: 'bg-primary/20 text-primary border-primary/30',
+    ctaText: 'Khám phá ngay',
+    ctaLink: '#',
+    imageUrl: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=800&q=80',
+    discountCode: 'FINVAULT2026',
+  },
+  {
+    id: 'sponsor-2',
+    title: 'Thanh toán Quốc tế Miễn phí Phí Giao dịch',
+    subtitle: 'Ưu đãi đặc quyền dành cho thành viên FinVault: 0% phí giao dịch cho 50 lệnh đầu tiên.',
+    sponsorName: 'SwiftPay Capital',
+    badgeText: 'ƯU ĐÃI ĐẶC QUYỀN',
+    badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    ctaText: 'Đăng ký nhận ưu đãi',
+    ctaLink: '#',
+    imageUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80',
+    discountCode: 'ZEROFEE50',
+  },
+  {
+    id: 'sponsor-3',
+    title: 'Phần cứng Bảo mật Độc quyền Thế hệ Mới',
+    subtitle: 'Ví lạnh lưu trữ vật lý tích hợp chip mã hóa chuẩn quân đội EAL6+ giảm giá 25%.',
+    sponsorName: 'Fortress Secure Tech',
+    badgeText: 'TÀI TRỢ CHÍNH',
+    badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    ctaText: 'Xem chi tiết',
+    ctaLink: '#',
+    imageUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+    discountCode: 'HARDWARE25',
+  },
+]
+</file>
+
+<file path="src/hooks/use-mobile.ts">
+import * as React from "react"
+
+const MOBILE_BREAKPOINT = 768
+
+export function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const onChange = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    }
+    mql.addEventListener("change", onChange)
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    return () => mql.removeEventListener("change", onChange)
+  }, [])
+
+  return !!isMobile
+}
+</file>
+
+<file path="src/layouts/MainLayout.tsx">
+import { Outlet } from 'react-router-dom'
+import { Header } from '@/components/common/Header'
+import { Footer } from '@/components/common/Footer'
+
+export default function MainLayout() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <Header />
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  )
+}
+</file>
+
+<file path="src/pages/Dashboard.tsx">
+import { useState } from 'react'
+import {
+  PlusCircle,
+  ArrowLeftRight,
+  Download,
+  CreditCard,
+  ShoppingCart,
+  ArrowDownLeft,
+  FileText,
+  Utensils,
+  Plane,
+  TrendingUp
+} from 'lucide-react'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+
+/* ─── Mock Activities Data ─────────────────────────────────────── */
+const recentActivities = [
+  {
+    id: 'act-1',
+    title: 'Thanh toán siêu thị',
+    time: 'Hôm nay, 14:20',
+    amount: '- ₫ 1,500,000',
+    isPositive: false,
+    status: 'Hoàn thành',
+    statusType: 'success',
+    icon: ShoppingCart
+  },
+  {
+    id: 'act-2',
+    title: 'Nhận lương tháng 10',
+    time: 'Hôm qua, 09:00',
+    amount: '+ ₫ 45,000,000',
+    isPositive: true,
+    status: 'Hoàn thành',
+    statusType: 'success',
+    icon: ArrowDownLeft
+  },
+  {
+    id: 'act-3',
+    title: 'Thanh toán hóa đơn điện',
+    time: '20 Tháng 10, 10:15',
+    amount: '- ₫ 850,000',
+    isPositive: false,
+    status: 'Đang xử lý',
+    statusType: 'pending',
+    icon: FileText
+  },
+  {
+    id: 'act-4',
+    title: 'Ăn tối nhà hàng',
+    time: '19 Tháng 10, 19:45',
+    amount: '- ₫ 2,200,000',
+    isPositive: false,
+    status: 'Hoàn thành',
+    statusType: 'success',
+    icon: Utensils
+  },
+  {
+    id: 'act-5',
+    title: 'Vé máy bay',
+    time: '15 Tháng 10, 08:20',
+    amount: '- ₫ 4,500,000',
+    isPositive: false,
+    status: 'Hoàn thành',
+    statusType: 'success',
+    icon: Plane
+  }
+]
+
+/* ─── Cashflow Chart Bars Data ─────────────────────────────────── */
+const cashflowData = [
+  { income: 65, expense: 38 },
+  { income: 85, expense: 50 },
+  { income: 70, expense: 28 }
+]
+
+export default function Dashboard() {
+  const user = useAuthStore((state) => state.user)
+  const [] = useState<'all' | 'income' | 'expense'>('all')
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-8">
+      {/* ────────────────────────────────────────────────────────
+          LEFT COLUMN: QUICK ACTIONS SIDEBAR
+          ──────────────────────────────────────────────────────── */}
+      <aside className="w-full lg:w-56 shrink-0 space-y-4">
+        <div>
+          <h2 className="text-sm font-bold text-primary tracking-tight">
+            Quick Actions
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Manage Funds</p>
+        </div>
+
+        {/* Sidebar Vertical Action Buttons */}
+        <div className="flex flex-row flex-wrap lg:flex-col gap-2">
+          {/* Nạp tiền (Active highlight button) */}
+          <button
+            type="button"
+            className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
+          >
+            <PlusCircle className="size-4" />
+            <span>Nạp tiền</span>
+          </button>
+
+          {/* Chuyển khoản */}
+          <button
+            type="button"
+            className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl border border-border/60 bg-card/60 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
+          >
+            <ArrowLeftRight className="size-4 text-muted-foreground" />
+            <span>Chuyển khoản</span>
+          </button>
+
+          {/* Rút tiền */}
+          <button
+            type="button"
+            className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl border border-border/60 bg-card/60 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
+          >
+            <Download className="size-4 text-muted-foreground" />
+            <span>Rút tiền</span>
+          </button>
+
+          {/* Thanh toán */}
+          <button
+            type="button"
+            className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl border border-border/60 bg-card/60 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
+          >
+            <CreditCard className="size-4 text-muted-foreground" />
+            <span>Thanh toán</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ────────────────────────────────────────────────────────
+          RIGHT COLUMN: MAIN DASHBOARD AREA
+          ──────────────────────────────────────────────────────── */}
+      <main className="flex-1 space-y-6 min-w-0">
+        {/* Page Title & Greeting */}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            Tổng quan tài chính
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Chào mừng trở lại{user?.firstName ? `, ${user.firstName}` : ''}, đây
+            là tóm tắt tài khoản của bạn.
+          </p>
+        </div>
+
+        {/* ── 1. Top Row: Violet Balance Card + 4 Shortcut Boxes ── */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {/* Big Violet Balance Card */}
+          <div className="md:col-span-7 rounded-2xl bg-linear-to-br from-violet-600 via-primary to-purple-800 p-6 text-white shadow-xl shadow-primary/20 flex flex-col justify-between">
+            <div>
+              <p className="text-xs font-semibold upbg-linear-to-brwider text-purple-200">
+                Tổng số dư
+              </p>
+              <h2 className="text-2xl sm:text-4xl font-black tracking-tight mt-1">
+                ₫ 1,245,000,000
+              </h2>
+            </div>
+
+            <div className="mt-6 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-400/30">
+                <TrendingUp className="size-3" />
+                +12.5%
+              </span>
+              <span className="text-xs text-purple-200">
+                so với tháng trước
+              </span>
+            </div>
+          </div>
+
+          {/* 4 Quick Action Shortcuts 2x2 Grid */}
+          <div className="md:col-span-5 grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-card/60 p-4 hover:bg-card hover:border-primary/40 transition-all group active:scale-95"
+            >
+              <div className="size-9 rounded-full bg-primary/15 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                <PlusCircle className="size-4" />
+              </div>
+              <span className="text-xs font-semibold text-foreground">
+                Nạp tiền
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-card/60 p-4 hover:bg-card hover:border-primary/40 transition-all group active:scale-95"
+            >
+              <div className="size-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ArrowLeftRight className="size-4" />
+              </div>
+              <span className="text-xs font-semibold text-foreground">
+                Chuyển khoản
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-card/60 p-4 hover:bg-card hover:border-primary/40 transition-all group active:scale-95"
+            >
+              <div className="size-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Download className="size-4" />
+              </div>
+              <span className="text-xs font-semibold text-foreground">
+                Rút tiền
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-card/60 p-4 hover:bg-card hover:border-primary/40 transition-all group active:scale-95"
+            >
+              <div className="size-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
+                <CreditCard className="size-4" />
+              </div>
+              <span className="text-xs font-semibold text-foreground">
+                Thanh toán
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* ── 2. Middle Row: Cashflow Bar Chart & Expense Donut Chart ── */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {/* Card: Dòng tiền (Dual Bar Chart) */}
+          <div className="md:col-span-7 rounded-2xl border border-border/60 bg-card/80 p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm sm:text-base font-bold text-foreground">
+                Dòng tiền
+              </h3>
+              <button
+                type="button"
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Chi tiết
+              </button>
+            </div>
+
+            {/* Bars Illustration */}
+            <div className="relative h-44 rounded-xl bg-muted/20 border border-border/40 p-4 flex flex-col justify-between">
+              <div className="text-[10px] text-muted-foreground flex justify-between">
+                <span>Max</span>
+                <span>Tháng này</span>
+              </div>
+
+              {/* Bars Row */}
+              <div className="flex items-end justify-around h-28 gap-4 px-2">
+                {cashflowData.map((item, index) => (
+                  <div key={index} className="flex items-end gap-1.5 h-full">
+                    {/* Income bar (Cyan/Green) */}
+                    <div
+                      className="w-4 sm:w-6 rounded-t-sm bg-emerald-400/90 hover:bg-emerald-400 transition-all"
+                      style={{ height: `${item.income}%` }}
+                      title={`Thu nhập: ${item.income}%`}
+                    />
+                    {/* Expense bar (Violet) */}
+                    <div
+                      className="w-4 sm:w-6 rounded-t-sm bg-primary/90 hover:bg-primary transition-all"
+                      style={{ height: `${item.expense}%` }}
+                      title={`Chi phí: ${item.expense}%`}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-[10px] text-muted-foreground flex justify-between">
+                <span>Min</span>
+                <span>Kỳ báo cáo</span>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground pt-1">
+              <div className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm bg-emerald-400" />
+                <span>Thu nhập</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm bg-primary" />
+                <span>Chi phí</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card: Phân tích chi tiêu (Expense Breakdown Donut) */}
+          <div className="md:col-span-5 rounded-2xl border border-border/60 bg-card/80 p-5 shadow-sm space-y-4">
+            <h3 className="text-sm sm:text-base font-bold text-foreground">
+              Phân tích chi tiêu
+            </h3>
+
+            {/* Donut Chart with Center Total */}
+            <div className="relative size-36 mx-auto flex items-center justify-center">
+              <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                {/* Background base circle */}
+                <path
+                  className="text-muted/40"
+                  strokeWidth="3.5"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                {/* Shopping (45% - Cyan/Blue) */}
+                <path
+                  className="text-blue-500"
+                  strokeDasharray="45, 100"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                {/* Food (30% - Green) */}
+                <path
+                  className="text-emerald-400"
+                  strokeDasharray="30, 100"
+                  strokeDashoffset="-45"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                {/* Services (25% - Violet) */}
+                <path
+                  className="text-primary"
+                  strokeDasharray="25, 100"
+                  strokeDashoffset="-75"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+
+              {/* Center text */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] text-muted-foreground uppercase font-medium">
+                  Tổng chi
+                </span>
+                <span className="text-base font-black text-foreground">
+                  ₫ 45M
+                </span>
+              </div>
+            </div>
+
+            {/* Donut Legend */}
+            <div className="space-y-2 pt-2 border-t border-border/40 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-blue-500" />
+                  <span className="text-muted-foreground">Mua sắm</span>
+                </div>
+                <span className="font-bold text-foreground">45%</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-emerald-400" />
+                  <span className="text-muted-foreground">Ăn uống</span>
+                </div>
+                <span className="font-bold text-foreground">30%</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-primary" />
+                  <span className="text-muted-foreground">Dịch vụ</span>
+                </div>
+                <span className="font-bold text-foreground">25%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 3. Bottom Row: Hoạt động gần đây (Recent Activities) ── */}
+        <div className="rounded-2xl border border-border/60 bg-card/80 p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm sm:text-base font-bold text-foreground">
+              Hoạt động gần đây
+            </h3>
+            <button
+              type="button"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Xem tất cả
+            </button>
+          </div>
+
+          <div className="divide-y divide-border/40">
+            {recentActivities.map((act) => {
+              const Icon = act.icon
+              return (
+                <div
+                  key={act.id}
+                  className="flex items-center justify-between py-3 hover:bg-muted/30 px-2 rounded-xl transition-colors"
+                >
+                  {/* Left: Icon + Title + Time */}
+                  <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-xl bg-muted flex items-center justify-center text-foreground shrink-0">
+                      <Icon className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold text-foreground">
+                        {act.title}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {act.time}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right: Amount + Status Badge */}
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`text-xs sm:text-sm font-bold tracking-tight ${
+                        act.isPositive ? 'text-emerald-400' : 'text-red-400'
+                      }`}
+                    >
+                      {act.amount}
+                    </span>
+
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        act.statusType === 'success'
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                      }`}
+                    >
+                      {act.status}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+</file>
+
+<file path="src/components/ui/button.tsx">
+import { Button as ButtonPrimitive } from '@base-ui/react/button'
+import { cva, type VariantProps } from 'class-variance-authority'
+
+import { cn } from '@/lib/utils'
+
+const buttonVariants = cva(
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
+        outline:
+          'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+        ghost:
+          'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+        destructive:
+          'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
+        link: 'text-primary underline-offset-4 hover:underline'
+      },
+      size: {
+        default:
+          'h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+        icon: 'size-8',
+        'icon-xs':
+          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+        'icon-sm':
+          'size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg',
+        'icon-lg': 'size-9'
+      }
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default'
+    }
+  }
+)
+
+function Button({
+  className,
+  variant = 'default',
+  size = 'default',
+  ...props
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  return (
+    <ButtonPrimitive
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  )
+}
+
+export { Button, buttonVariants }
+</file>
+
+<file path="src/components/ui/card.tsx">
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Card({
+  className,
+  size = "default",
+  ...props
+}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+  return (
+    <div
+      data-slot="card"
+      data-size={size}
+      className={cn(
+        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn(
+        "font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-(--card-spacing)", className)}
+      {...props}
+    />
+  )
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn(
+        "flex items-center rounded-b-xl border-t bg-muted/50 p-(--card-spacing)",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
+}
+</file>
+
+<file path="src/components/ui/field.tsx">
+import { useMemo } from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
+
+import { cn } from '@/lib/utils'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+
+function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
+  return (
+    <fieldset
+      data-slot="field-set"
+      className={cn(
+        'flex flex-col gap-4 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldLegend({
+  className,
+  variant = 'legend',
+  ...props
+}: React.ComponentProps<'legend'> & { variant?: 'legend' | 'label' }) {
+  return (
+    <legend
+      data-slot="field-legend"
+      data-variant={variant}
+      className={cn(
+        'mb-1.5 font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldGroup({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="field-group"
+      className={cn(
+        'group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+const fieldVariants = cva(
+  'group/field flex w-full gap-2 data-[invalid=true]:text-destructive',
+  {
+    variants: {
+      orientation: {
+        vertical: 'flex-col *:w-full [&>.sr-only]:w-auto',
+        horizontal:
+          'flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
+        responsive:
+          'flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px'
+      }
+    },
+    defaultVariants: {
+      orientation: 'vertical'
+    }
+  }
+)
+
+function Field({
+  className,
+  orientation = 'vertical',
+  ...props
+}: React.ComponentProps<'div'> & VariantProps<typeof fieldVariants>) {
+  return (
+    <div
+      role="group"
+      data-slot="field"
+      data-orientation={orientation}
+      className={cn(fieldVariants({ orientation }), className)}
+      {...props}
+    />
+  )
+}
+
+function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="field-content"
+      className={cn(
+        'group/field-content flex flex-1 flex-col gap-0.5 leading-snug',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldLabel({
+  className,
+  ...props
+}: React.ComponentProps<typeof Label>) {
+  return (
+    <Label
+      data-slot="field-label"
+      className={cn(
+        'group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-muted/50 has-[>[data-slot=field]]:has-focus-visible:border-ring has-[>[data-slot=field]]:has-focus-visible:ring-3 has-[>[data-slot=field]]:has-focus-visible:ring-ring/50 *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10',
+        'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="field-label"
+      className={cn(
+        'flex w-fit items-center gap-2 text-sm font-medium group-data-[disabled=true]/field:opacity-50',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
+  return (
+    <p
+      data-slot="field-description"
+      className={cn(
+        'text-left text-sm leading-normal font-normal text-muted-foreground group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5',
+        'last:mt-0 nth-last-2:-mt-1',
+        '[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldSeparator({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<'div'> & {
+  children?: React.ReactNode
+}) {
+  return (
+    <div
+      data-slot="field-separator"
+      data-content={!!children}
+      className={cn(
+        'relative -my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2',
+        className
+      )}
+      {...props}
+    >
+      <Separator className="absolute inset-0 top-1/2" />
+      {children && (
+        <span
+          className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"
+          data-slot="field-separator-content"
+        >
+          {children}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function FieldError({
+  className,
+  children,
+  errors,
+  ...props
+}: React.ComponentProps<'div'> & {
+  errors?: Array<{ message?: string } | undefined>
+}) {
+  const content = useMemo(() => {
+    if (children) {
+      return children
+    }
+
+    if (!errors?.length) {
+      return null
+    }
+
+    const uniqueErrors = [
+      ...new Map(errors.map((error) => [error?.message, error])).values()
+    ]
+
+    if (uniqueErrors?.length == 1) {
+      return uniqueErrors[0]?.message
+    }
+
+    return (
+      <ul className="ml-4 flex list-disc flex-col gap-1">
+        {uniqueErrors.map(
+          (error, index) =>
+            error?.message && <li key={index}>{error.message}</li>
+        )}
+      </ul>
+    )
+  }, [children, errors])
+
+  if (!content) {
+    return null
+  }
+
+  return (
+    <div
+      role="alert"
+      data-slot="field-error"
+      className={cn('text-sm font-normal text-destructive', className)}
+      {...props}
+    >
+      {content}
+    </div>
+  )
+}
+
+export {
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+  FieldContent,
+  FieldTitle
+}
+</file>
+
+<file path="src/components/ui/input.tsx">
+import * as React from "react"
+import { Input as InputPrimitive } from "@base-ui/react/input"
+
+import { cn } from "@/lib/utils"
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <InputPrimitive
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Input }
+</file>
+
+<file path="src/components/ui/label.tsx">
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Label({ className, ...props }: React.ComponentProps<"label">) {
+  return (
+    <label
+      data-slot="label"
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Label }
+</file>
+
+<file path="src/components/ui/separator.tsx">
+"use client"
+
+import { Separator as SeparatorPrimitive } from "@base-ui/react/separator"
+
+import { cn } from "@/lib/utils"
+
+function Separator({
+  className,
+  orientation = "horizontal",
+  ...props
+}: SeparatorPrimitive.Props) {
+  return (
+    <SeparatorPrimitive
+      data-slot="separator"
+      orientation={orientation}
+      className={cn(
+        "shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Separator }
+</file>
+
+<file path="src/lib/axios.ts">
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import axios from 'axios'
+const api = axios.create({
+  baseURL:
+    import.meta.env.MODE === 'development'
+      ? 'http://localhost:4001/api'
+      : '/api',
+  withCredentials: true
+})
+//gắn token với request trên header
+api.interceptors.request.use((req) => {
+  const { accessToken } = useAuthStore.getState()
+  if (accessToken) {
+    req.headers.Authorization = `Bearer ${accessToken}`
+  }
+  return req
+})
+export default api
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const originalRequest = error.config
+
+    if (
+      originalRequest.url.includes('/auth/signin') ||
+      originalRequest.url.includes('/auth/signup') ||
+      originalRequest.url.includes('/auth/refresh')
+    ) {
+      return Promise.reject(error)
+    }
+    originalRequest._retryCount = originalRequest._retryCount || 0
+    if (error.response?.status === 403 && originalRequest._retryCount < 4) {
+      originalRequest._retryCount += 1
+      try {
+        const res = await api.post('/auth/refresh', { withCredentials: true })
+        const newAccesstoken = res.data.accessToken
+        useAuthStore.getState().setAccessToken(newAccesstoken)
+        originalRequest.headers.Authorization = `Bearer ${newAccesstoken}`
+        return api(originalRequest)
+      } catch (refreshError) {
+        useAuthStore.getState().clearState()
+        return Promise.reject(refreshError)
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+</file>
+
+<file path="src/lib/utils.ts">
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+</file>
+
+<file path="src/types/store.ts">
+import type { User } from './User'
+
+export interface authState {
+  accessToken: string | null
+  user: User | null
+  loading: boolean
+  clearState: () => void
+  signUp: (
+    username: string,
+    password: string,
+    email: string,
+    firstName: string,
+    lastName: string
+  ) => void
+  signIn: (username: string, password: string) => void
+  signOut: () => void
+  fetchMe: () => void
+  refresh: () => void
+  setAccessToken: (accessToken: string) => void
+}
+</file>
+
+<file path="src/types/User.ts">
+export interface User {
+  id: number
+  username: string
+  firstName: string
+  lastName: string
+  email: string
+  createdAt?: string
+}
+</file>
+
+<file path="src/index.css">
+@import 'tailwindcss';
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─────────────────────────────────────────────────────────────
+   1. TAILWIND V4 THEME MAPPING
+   Khối này ánh xạ các biến CSS thành class của Tailwind
+   (Ví dụ: --color-primary -> class bg-primary, text-primary...)
+   ───────────────────────────────────────────────────────────── */
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. BẢNG MÀU THEME CHO DỰ ÁN (ĐƯA PHẦN NÀY CHO AI / DEV KHÁC)
+   ───────────────────────────────────────────────────────────── */
+
+/* Light Mode Theme */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  /* Màu chủ đạo (Primary) */
+  --primary: oklch(0.541 0.255 293);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+
+  --accent: oklch(0.94 0.015 293);
+  --accent-foreground: oklch(0.35 0.08 293);
+
+  --destructive: oklch(0.577 0.245 27.325);
+
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.541 0.255 293);
+
+  --chart-1: oklch(0.702 0.183 293);
+  --chart-2: oklch(0.606 0.227 293);
+  --chart-3: oklch(0.541 0.255 293);
+  --chart-4: oklch(0.491 0.267 293);
+  --chart-5: oklch(0.269 0 0);
+
+  --radius: 0.625rem;
+
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.541 0.255 293);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.94 0.015 293);
+  --sidebar-accent-foreground: oklch(0.35 0.08 293);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.541 0.255 293);
+}
+
+/* Dark Mode Theme */
+.dark {
+  --background: oklch(0.118 0.015 280);
+  --foreground: oklch(0.94 0.005 280);
+
+  --card: oklch(0.162 0.018 280);
+  --card-foreground: oklch(0.94 0.005 280);
+
+  --popover: oklch(0.162 0.018 280);
+  --popover-foreground: oklch(0.94 0.005 280);
+
+  /* Màu chủ đạo (Primary Dark) */
+  --primary: oklch(0.702 0.183 293);
+  --primary-foreground: oklch(0.118 0.015 280);
+
+  --secondary: oklch(0.218 0.018 280);
+  --secondary-foreground: oklch(0.94 0.005 280);
+
+  --muted: oklch(0.218 0.018 280);
+  --muted-foreground: oklch(0.62 0.01 280);
+
+  --accent: oklch(0.24 0.03 293);
+  --accent-foreground: oklch(0.94 0.005 280);
+
+  --destructive: oklch(0.704 0.191 22.216);
+
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.702 0.183 293);
+
+  --chart-1: oklch(0.702 0.183 293);
+  --chart-2: oklch(0.606 0.227 293);
+  --chart-3: oklch(0.541 0.255 293);
+  --chart-4: oklch(0.491 0.267 293);
+  --chart-5: oklch(0.218 0.018 280);
+
+  --sidebar: oklch(0.148 0.018 280);
+  --sidebar-foreground: oklch(0.94 0.005 280);
+  --sidebar-primary: oklch(0.702 0.183 293);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.218 0.018 280);
+  --sidebar-accent-foreground: oklch(0.94 0.005 280);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.702 0.183 293);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. BASE STYLES
+   ───────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  html {
+    @apply font-sans;
+  }
+}
+</file>
+
+<file path="src/main.tsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+)
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path=".oxlintrc.json">
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+</file>
+
+<file path="components.json">
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-nova",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/index.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "rtl": false,
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
+}
+</file>
+
+<file path="eslint.config.ts">
+import js from '@eslint/js'
+import globals from 'globals'
+import tseslint from 'typescript-eslint'
+import pluginReact from 'eslint-plugin-react'
+import pluginReactHooks from 'eslint-plugin-react-hooks'
+import pluginReactRefresh from 'eslint-plugin-react-refresh'
+
+export default [
+  { ignores: ['dist', 'node_modules'] },
+
+  {
+    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: { ...globals.browser, ...globals.node }
+    },
+    plugins: {
+      js,
+      react: pluginReact,
+      'react-hooks': pluginReactHooks,
+      'react-refresh': pluginReactRefresh
+    },
+    settings: {
+      react: { version: 'detect' }
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...pluginReact.configs.recommended.rules,
+      ...pluginReact.configs['jsx-runtime'].rules,
+      ...pluginReactHooks.configs.recommended.rules,
+
+      'react-refresh/only-export-components': 'warn',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react/prop-types': 0,
+      'react/display-name': 0,
+
+      'no-console': 1,
+      'no-lonely-if': 1,
+      'no-unused-vars': 1,
+      'no-trailing-spaces': 1,
+      'no-multi-spaces': 1,
+      'no-multiple-empty-lines': 1,
+      'space-before-blocks': ['error', 'always'],
+      'object-curly-spacing': [1, 'always'],
+      indent: ['warn', 2],
+      semi: [1, 'never'],
+      quotes: ['error', 'single'],
+      'array-bracket-spacing': 1,
+      'linebreak-style': 0,
+      'no-unexpected-multiline': 'warn',
+      'keyword-spacing': 1,
+      'comma-dangle': 1,
+      'comma-spacing': 1,
+      'arrow-spacing': 1
+    }
+  },
+
+  ...tseslint.configs.recommended
+]
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="vi" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MaMa</title>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.7.0",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@hookform/resolvers": "^5.9.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "axios": "^1.19.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cn": "^0.2.6",
+    "lucide-react": "^1.34.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-hook-form": "^7.86.0",
+    "react-router": "^8.3.0",
+    "react-router-dom": "^7.18.2",
+    "shadcn": "^4.19.0",
+    "sonner": "^2.0.8",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.3",
+    "tailwindcss-animate": "^1.0.7",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@eslint/js": "^9.39.5",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "globals": "^17.11.0",
+    "oxlint": "^1.75.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.68.0",
+    "vite": "^8.2.0"
+  }
+}
+</file>
+
+<file path="README.md">
+# React + TypeScript + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+
+Note: This will impact Vite dev & build performances.
+
+## Expanding the Oxlint configuration
+
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+```
+
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+</file>
+
+<file path="tsconfig.app.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "allowArbitraryExtensions": true,
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+</file>
+
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "module": "nodenext",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+</file>
+
+<file path="vite.config.ts">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  }
+})
+</file>
+
+<file path="src/pages/Home.tsx">
+import { HeroSection } from '@/features/home/components/HeroSection'
+import { SponsorBanner } from '@/features/home/components/SponsorBanner'
+import { TrustedBy } from '@/features/home/components/TrustedBy'
+import { EcosystemFeatures } from '@/features/home/components/EcosystemFeatures'
+
+export default function Home() {
+  return (
+    <div className="space-y-16 sm:space-y-24 pb-12">
+      {/* 1. Hero Section & Interactive Mockup */}
+      <HeroSection />
+
+      {/* 2. Horizontal Sponsor & Partner Advertisement Banner */}
+      <SponsorBanner />
+
+      {/* 3. Trusted Brand Leaders */}
+      <TrustedBy />
+
+      {/* 4. Comprehensive Management Ecosystem Features */}
+      <EcosystemFeatures />
+    </div>
+  )
+}
+</file>
+
+<file path="src/pages/SignInPage.tsx">
+import { SigninForm } from '@/features/auth/components/signin-form'
+
+const SignInPage = () => {
+  return (
+    <div className="relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(125% 125% at 50% 10%, #fff 20%, #6366f1 100%)'
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-sm md:max-w-4xl">
+        <SigninForm />
+      </div>
+    </div>
+  )
+}
+export default SignInPage
+</file>
+
+<file path="src/pages/SignUpPage.tsx">
+import { SignupForm } from '@/features/auth/components/signup-form'
+const SignUpPage = () => {
+  return (
+    <div className="relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(125% 125% at 50% 10%, #fff 20%, #6366f1 100%)'
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-sm md:max-w-4xl">
+        <SignupForm />
+      </div>
+    </div>
+  )
+}
+
+export default SignUpPage
+</file>
+
+<file path="src/App.tsx">
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+
+import SignInPage from './pages/SignInPage'
+import SignUpPage from './pages/SignUpPage'
+
+import { Toaster } from 'sonner'
+import ProtectRoute from './features/auth/components/ProtectRoute'
+import Home from './pages/Home'
+import Dashboard from './pages/Dashboard'
+
+import MainLayout from './layouts/MainLayout'
+
+function App() {
+  return (
+    <>
+      <Toaster />
+
+      <BrowserRouter>
+        <Routes>
+          {/* public routes */}
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+
+          {/* Main pages with Header & Footer */}
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
+
+          {/* protected routes */}
+          <Route element={<ProtectRoute />}>
+            {/* Thêm các route cần đăng nhập tại đây */}
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </>
+  )
+}
+
+export default App
+</file>
+
+</files>
