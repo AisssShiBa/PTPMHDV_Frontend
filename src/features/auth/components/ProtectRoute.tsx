@@ -3,11 +3,10 @@ import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 
 const ProtectRoute = () => {
-  const { accessToken, user, loading, refresh, fetchMe } = useAuthStore()
+  const { accessToken, loading, refresh } = useAuthStore()
   const [starting, setStarting] = useState(true)
   const init = async () => {
     if (!accessToken) await refresh()
-    if (accessToken && !user) await fetchMe()
     setStarting(false)
   }
   useEffect(() => {

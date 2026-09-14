@@ -29,10 +29,11 @@ export function SigninForm({
   })
 
   const onSubmit = async (data: SigninFormValues) => {
-    //goi api backend de dang ky nguoi dung
     const { username, password } = data
-    await signIn(username, password)
-    navigate('/dashboard')
+    const isSuccess = await signIn(username, password)
+    if (isSuccess) {
+      navigate('/')
+    }
   }
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>

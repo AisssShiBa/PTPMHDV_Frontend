@@ -13,7 +13,7 @@ export const authService = {
       { username, password, email, firstName, lastName },
       { withCredentials: true }
     )
-    return res.data
+    return res.data?.data ?? res.data
   },
   signIn: async (username: string, password: string) => {
     const res = await api.post(
@@ -21,18 +21,14 @@ export const authService = {
       { username, password },
       { withCredentials: true }
     )
-    return res.data
+    return res.data?.data ?? res.data
   },
   signOut: async () => {
     const res = await api.post('/auth/signout', {}, { withCredentials: true })
-    return res.data
-  },
-  FetchMe: async () => {
-    const res = await api.get('/user/me', { withCredentials: true })
-    return res.data
+    return res.data?.data ?? res.data
   },
   refresh: async () => {
     const res = await api.post('/auth/refresh', {}, { withCredentials: true })
-    return res.data.acessToken
+    return res.data?.data ?? res.data
   }
 }

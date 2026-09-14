@@ -32,10 +32,11 @@ export function SignupForm({
   })
 
   const onSubmit = async (data: SignupFormValues) => {
-    //goi api backend de dang ky nguoi dung
     const { email, password, username, firstName, lastName } = data
-    await signUp(username, password, email, firstName, lastName)
-    navigate('/signin')
+    const isSuccess = await signUp(username, password, email, firstName, lastName)
+    if (isSuccess) {
+      navigate('/')
+    }
   }
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
