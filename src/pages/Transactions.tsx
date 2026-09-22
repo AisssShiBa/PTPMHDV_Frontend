@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Search,
   Download,
@@ -11,8 +11,13 @@ import {
   ArrowDownLeft,
   Utensils,
   CreditCard,
-  Zap
+  Zap,
+  Plus,
+  RefreshCw
 } from 'lucide-react'
+import { paymentService } from '@/features/payment/services/paymentService'
+import type { PaymentRecord } from '@/features/payment/types/payment.types'
+import { CheckoutModal } from '@/features/payment/components/CheckoutModal'
 
 /* ─── Mock Transactions Data ───────────────────────────────────── */
 interface Transaction {
@@ -100,9 +105,45 @@ export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [realPayments, setRealPayments] = useState<PaymentRecord[]>([])
+  const [loading, setLoading] = useState(false)
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+
+  const loadPayments = async () => {
+    try {
+      setLoading(true)
+      const data = await paymentService.getPayments()
+      if (Array.isArray(data)) {
+        setRealPayments(data)
+      }
+    } catch (err) {
+      console.log('Chưa có kết nối hoặc danh sách payments trống:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadPayments()
+  }, [])
+
+  // Chuyển đổi dữ liệu PaymentRecord thật sang dạng hiển thị trên bảng
+  const convertedRealTransactions: Transaction[] = realPayments.map((p) => ({
+    id: p.id,
+    partner: p.type.replace('_', ' '),
+    description: `Đơn hàng #${p.referenceId || p.id.slice(0, 8)}`,
+    time: p.createdAt ? new Date(p.createdAt).toLocaleString('vi-VN') : 'Vừa xong',
+    category: p.type === 'WALLET_TRANSFER' ? 'Chuyển tiền' : 'Thanh toán',
+    status: (p.status === 'SUCCESS' ? 'Hoàn tất' : p.status === 'PENDING' ? 'Đang xử lý' : 'Đã hủy') as any,
+    amount: -Math.abs(Number(p.amount) || 0),
+    isIncome: false,
+    icon: CreditCard
+  }))
+
+  const combinedTransactions = [...convertedRealTransactions, ...mockTransactions]
 
   // Filter logic
-  const filteredData = mockTransactions.filter((tx) => {
+  const filteredData = combinedTransactions.filter((tx) => {
     const matchesSearch =
       tx.partner.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -126,17 +167,38 @@ export default function Transactions() {
             Lịch sử giao dịch
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Theo dõi chi tiết các hoạt động tài khoản của bạn
+            Theo dõi chi tiết các hoạt động tài khoản của bạn {realPayments.length > 0 && `(${realPayments.length} giao dịch thực tế)`}
           </p>
         </div>
 
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-border/70 bg-card/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-foreground hover:bg-muted transition-all active:scale-95 shadow-sm"
-        >
-          <Download className="size-4 text-muted-foreground" />
-          <span>Xuất dữ liệu</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={loadPayments}
+            disabled={loading}
+            className="p-2.5 rounded-xl border border-border/70 bg-card/80 text-muted-foreground hover:bg-muted transition-all active:scale-95 shadow-sm"
+            title="Làm mới"
+          >
+            <RefreshCw className={`size-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsCheckoutOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
+          >
+            <Plus className="size-4" />
+            <span>Tạo thanh toán</span>
+          </button>
+
+          <button
+            type="button"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-border/70 bg-card/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-foreground hover:bg-muted transition-all active:scale-95 shadow-sm"
+          >
+            <Download className="size-4 text-muted-foreground" />
+            <span>Xuất dữ liệu</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Filter & Search Control Panel ── */}
@@ -362,6 +424,12 @@ export default function Transactions() {
           </div>
         </div>
       </div>
+
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        onSuccess={loadPayments}
+      />
     </div>
   )
 }

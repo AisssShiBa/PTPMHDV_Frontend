@@ -5,7 +5,6 @@ import {
   ArrowLeftRight,
   Download,
   CreditCard,
-  Wifi,
   Key,
   Building2,
   ChevronRight,
@@ -15,15 +14,29 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { RealBalanceCard } from '@/features/wallet/components/RealBalanceCard'
+import { TopupModal } from '@/features/wallet/components/TopupModal'
+import { TransferModal } from '@/features/wallet/components/TransferModal'
+import { CheckoutModal } from '@/features/payment/components/CheckoutModal'
 
 export default function Wallet() {
   const user = useAuthStore((state) => state.user)
   const fullName =
-    `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'NGUYEN VAN A'
+    `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || 'NGUYEN VAN A'
 
   // State cho các công tắc Cài đặt thẻ
   const [onlinePay, setOnlinePay] = useState(true)
   const [lockCard, setLockCard] = useState(false)
+
+  // State điều khiển các Modals
+  const [isTopupOpen, setIsTopupOpen] = useState(false)
+  const [isTransferOpen, setIsTransferOpen] = useState(false)
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [refreshWalletKey, setRefreshWalletKey] = useState(0)
+
+  const handleWalletSuccess = () => {
+    setRefreshWalletKey((prev) => prev + 1)
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -41,17 +54,19 @@ export default function Wallet() {
         <div className="flex flex-row flex-wrap lg:flex-col gap-2">
           <button
             type="button"
+            onClick={() => setIsTopupOpen(true)}
             className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl border border-border/60 bg-card/60 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
           >
-            <PlusCircle className="size-4 text-muted-foreground" />
+            <PlusCircle className="size-4 text-primary" />
             <span>Nạp tiền</span>
           </button>
 
           <button
             type="button"
+            onClick={() => setIsTransferOpen(true)}
             className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl border border-border/60 bg-card/60 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
           >
-            <ArrowLeftRight className="size-4 text-muted-foreground" />
+            <ArrowLeftRight className="size-4 text-primary" />
             <span>Chuyển khoản</span>
           </button>
 
@@ -65,9 +80,10 @@ export default function Wallet() {
 
           <button
             type="button"
+            onClick={() => setIsCheckoutOpen(true)}
             className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl border border-border/60 bg-card/60 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
           >
-            <CreditCard className="size-4 text-muted-foreground" />
+            <CreditCard className="size-4 text-primary" />
             <span>Thanh toán</span>
           </button>
         </div>
@@ -112,30 +128,9 @@ export default function Wallet() {
 
             {/* Credit Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Card 1: Dark FinVault Business */}
-              <div className="relative rounded-2xl bg-linear-to-br from-neutral-900 via-neutral-950 to-neutral-900 p-5 text-white border border-neutral-800 shadow-xl flex flex-col justify-between h-44 overflow-hidden">
-                <div className="flex justify-between items-start">
-                  <span className="text-xs font-bold tracking-tight text-neutral-300">
-                    FinVault Business
-                  </span>
-                  <Wifi className="size-4 text-neutral-400 rotate-90" />
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs text-neutral-500 tracking-widest">
-                    •••• •••• ••••
-                  </p>
-                  <p className="text-lg font-mono font-bold tracking-widest">
-                    4289
-                  </p>
-                </div>
-
-                <div className="flex justify-between items-end text-[11px] font-mono">
-                  <span className="uppercase truncate max-w-30">
-                    {fullName}
-                  </span>
-                  <span className="text-neutral-400">12/25</span>
-                </div>
+              {/* Card 1: Live Real Balance Card từ Backend */}
+              <div className="h-full">
+                <RealBalanceCard refreshTrigger={refreshWalletKey} />
               </div>
 
               {/* Card 2: Purple Virtual Debit */}
@@ -359,6 +354,23 @@ export default function Wallet() {
           </div>
         </div>
       </main>
+
+      {/* Modals nghiệp vụ Ví & Thanh toán */}
+      <TopupModal
+        isOpen={isTopupOpen}
+        onClose={() => setIsTopupOpen(false)}
+        onSuccess={handleWalletSuccess}
+      />
+      <TransferModal
+        isOpen={isTransferOpen}
+        onClose={() => setIsTransferOpen(false)}
+        onSuccess={handleWalletSuccess}
+      />
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        onSuccess={handleWalletSuccess}
+      />
     </div>
   )
 }

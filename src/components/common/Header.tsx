@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
-  Bell,
   Settings,
   Menu,
   X,
@@ -11,6 +10,7 @@ import {
   UserPlus
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { NotificationBell } from '@/features/notification/components/NotificationBell'
 
 interface NavItem {
   label: string
@@ -21,7 +21,8 @@ const navItems: NavItem[] = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Bảng điều khiển', href: '/dashboard' },
   { label: 'Giao dịch', href: '/transactions' },
-  { label: 'Ví của tôi', href: '/wallet' }
+  { label: 'Ví của tôi', href: '/wallet' },
+  { label: 'Hồ sơ & KYC', href: '/profile' }
 ]
 
 export function Header() {
@@ -93,15 +94,8 @@ export function Header() {
           {user ? (
             /* ── Case 1: USER IS LOGGED IN ── */
             <>
-              {/* Notifications button */}
-              <button
-                type="button"
-                className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-                aria-label="Thông báo"
-              >
-                <Bell className="size-4" />
-                <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary" />
-              </button>
+              {/* Notifications component */}
+              <NotificationBell />
 
               {/* Settings button */}
               <button
