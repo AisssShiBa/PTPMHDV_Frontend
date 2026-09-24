@@ -1,26 +1,57 @@
 // d:\PTPMHDV\Frontend\src\features\notification\components\NotificationBell.tsx
 import { useEffect, useRef, useState } from 'react'
-import { Bell, CheckCheck, Loader2 } from 'lucide-react'
+import { BadgeCheck, Bell, CheckCheck, CreditCard, Loader2, RotateCcw, Store, WalletCards, XCircle } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { notificationService } from '../services/notificationService'
-import type { NotificationItem } from '../types/notification.types'
+import type { NotificationItem, NotificationType } from '../types/notification.types'
+import { useNotificationSocket } from '../hooks/useNotificationSocket'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { toast } from 'sonner'
 
+const notificationIconByType: Record<NotificationType, LucideIcon> = {
+  PAYMENT_SUCCESS: CreditCard,
+  PAYMENT_FAILED: CreditCard,
+  PAYMENT_REFUNDED: RotateCcw,
+  PAYMENT_CANCELLED: XCircle,
+  WALLET_CREDITED: WalletCards,
+  WALLET_DEBITED: WalletCards,
+  KYC_APPROVED: BadgeCheck,
+  KYC_REJECTED: BadgeCheck,
+  MERCHANT_APPROVED: Store,
+  MERCHANT_REJECTED: Store
+}
+
 export const NotificationBell: React.FC = () => {
   const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const fetchNotifications = async () => {
+  const handleRealtimeNotification = (notification: NotificationItem) => {
+    setNotifications((prev) => {
+      if (prev.some((item) => item.id === notification.id)) return prev
+      return [notification, ...prev]
+    })
+    setUnreadCount((count) => count + (notification.read ? 0 : 1))
+    toast.info(notification.message)
+  }
+
+  useNotificationSocket(user?.id ? String(user.id) : undefined, accessToken, handleRealtimeNotification)
+
+  const fetchNotifications = async (requestedPage = 1, append = false) => {
     if (!user?.id) return
     try {
       setLoading(true)
-      const data = await notificationService.getNotifications(String(user.id), 1, 10)
-      setNotifications(data.notifications || [])
+      const data = await notificationService.getNotifications(String(user.id), requestedPage, 10)
+      setNotifications((prev) => (append ? [...prev, ...(data.notifications || [])] : data.notifications || []))
       setUnreadCount(data.unreadCount || 0)
+      setPage(requestedPage)
+      setTotalPages(data.pagination?.totalPages || 1)
     } catch {
       // Silent fail on polling/fetching notifications
     } finally {
@@ -33,6 +64,11 @@ export const NotificationBell: React.FC = () => {
     const timer = setInterval(fetchNotifications, 15000) // Poll mỗi 15s
     return () => clearInterval(timer)
   }, [user?.id])
+
+  const handleLoadMore = () => {
+    if (loading || page >= totalPages) return
+    void fetchNotifications(page + 1, true)
+  }
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -118,7 +154,12 @@ export const NotificationBell: React.FC = () => {
                     item.read ? 'hover:bg-muted/50 text-muted-foreground' : 'bg-primary/5 hover:bg-primary/10 text-foreground font-medium'
                   }`}
                 >
-                  <span className={`size-2 rounded-full mt-1.5 shrink-0 ${item.read ? 'bg-transparent' : 'bg-primary'}`} />
+                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    {(() => {
+                      const NotificationIcon = notificationIconByType[item.type] ?? Bell
+                      return <NotificationIcon className="size-3.5" aria-hidden="true" />
+                    })()}
+                  </span>
                   <div className="flex-1 min-w-0">
                     <p className="line-clamp-2 text-xs leading-relaxed">{item.message}</p>
                     <span className="text-[10px] text-muted-foreground mt-1 block">
@@ -129,6 +170,16 @@ export const NotificationBell: React.FC = () => {
               ))
             )}
           </div>
+          {notifications.length > 0 && page < totalPages && (
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={loading}
+              className="w-full rounded-lg py-2 text-xs font-semibold text-primary hover:bg-primary/5 disabled:cursor-wait disabled:opacity-60"
+            >
+              {loading ? 'Đang tải...' : 'Xem thêm'}
+            </button>
+          )}
         </div>
       )}
     </div>

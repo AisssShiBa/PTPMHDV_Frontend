@@ -3,6 +3,8 @@
 export type NotificationType =
   | 'PAYMENT_SUCCESS'
   | 'PAYMENT_FAILED'
+  | 'PAYMENT_REFUNDED'
+  | 'PAYMENT_CANCELLED'
   | 'WALLET_CREDITED'
   | 'WALLET_DEBITED'
   | 'KYC_APPROVED'
