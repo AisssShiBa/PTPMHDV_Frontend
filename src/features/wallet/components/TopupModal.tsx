@@ -1,8 +1,7 @@
-// d:\PTPMHDV\Frontend\src\features\wallet\components\TopupModal.tsx
 import { useState } from 'react'
 import { walletService } from '../services/walletService'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { X, PlusCircle, Loader2 } from 'lucide-react'
+import { X, PlusCircle, Loader2, ChevronUp, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Props {
@@ -11,14 +10,36 @@ interface Props {
   onSuccess?: () => void
 }
 
-const PRESET_AMOUNTS = [50000, 100000, 200000, 500000, 1000000, 2000000]
+const PRESET_AMOUNTS = [50000, 100000, 200000, 500000, 1000000]
+const STEP = 50000
 
 export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
   const user = useAuthStore((state) => state.user)
-  const [amount, setAmount] = useState('100000')
+  const [amountDisplay, setAmountDisplay] = useState('100,000')
+  const [amountValue, setAmountValue] = useState('100000')
   const [loading, setLoading] = useState(false)
 
   if (!isOpen) return null
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, '')
+    setAmountValue(rawValue)
+    setAmountDisplay(rawValue ? Number(rawValue).toLocaleString('vi-VN') : '')
+  }
+
+  const handlePresetSelect = (value: number) => {
+    setAmountValue(value.toString())
+    setAmountDisplay(value.toLocaleString('vi-VN'))
+  }
+
+  const handleStep = (direction: 'up' | 'down') => {
+    let currentVal = Number(amountValue) || 0;
+    if (direction === 'up') currentVal += STEP;
+    else currentVal = Math.max(0, currentVal - STEP);
+    
+    setAmountValue(currentVal.toString());
+    setAmountDisplay(currentVal ? currentVal.toLocaleString('vi-VN') : '0');
+  }
 
   const handleTopup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,10 +47,15 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
       toast.error('Vui lòng đăng nhập để nạp tiền')
       return
     }
+    if (!amountValue || Number(amountValue) <= 0) {
+      toast.error('Vui lòng nhập số tiền hợp lệ')
+      return
+    }
+    
     try {
       setLoading(true)
-      await walletService.topup(String(user.id), amount)
-      toast.success(`Nạp thành công ${Number(amount).toLocaleString('vi-VN')} VND vào ví!`)
+      await walletService.topup(String(user.id), amountValue)
+      toast.success(`Nạp thành công ${amountDisplay} VND vào ví!`)
       onSuccess?.()
       onClose()
     } catch (err: any) {
@@ -53,56 +79,61 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
         </div>
 
         <form onSubmit={handleTopup} className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground">Số tiền muốn nạp (VND)</label>
-            <input
-              type="number"
-              min="10000"
-              step="10000"
-              required
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-border bg-background text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground mb-2 block">Chọn nhanh mệnh giá</label>
-            <div className="grid grid-cols-3 gap-2">
-              {PRESET_AMOUNTS.map((val) => (
-                <button
-                  type="button"
-                  key={val}
-                  onClick={() => setAmount(String(val))}
-                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
-                    amount === String(val)
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-card hover:bg-muted text-foreground'
-                  }`}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Số tiền nạp (VND)</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={amountDisplay}
+                onChange={handleAmountChange}
+                className="w-full rounded-xl border border-input bg-background pl-4 pr-10 py-3 text-lg font-bold shadow-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                placeholder="0"
+                required
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
+                <button 
+                  type="button" 
+                  onClick={() => handleStep('up')}
+                  className="p-1 bg-muted/80 hover:bg-muted text-muted-foreground rounded-t-sm transition-colors"
                 >
-                  {val.toLocaleString('vi-VN')} đ
+                  <ChevronUp className="size-3" />
                 </button>
-              ))}
+                <button 
+                  type="button" 
+                  onClick={() => handleStep('down')}
+                  className="p-1 bg-muted/80 hover:bg-muted text-muted-foreground rounded-b-sm transition-colors"
+                >
+                  <ChevronDown className="size-3" />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="pt-3 flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-border text-xs sm:text-sm font-semibold hover:bg-muted transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2.5 rounded-xl bg-primary text-white text-xs sm:text-sm font-bold shadow-md shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading && <Loader2 className="size-4 animate-spin" />}
-              <span>{loading ? 'Đang nạp...' : 'Nạp tiền ngay'}</span>
-            </button>
+          <div className="grid grid-cols-3 gap-2">
+            {PRESET_AMOUNTS.map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => handlePresetSelect(val)}
+                className={`py-2 text-xs font-semibold rounded-lg border transition-all ${
+                  amountValue === val.toString() 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {val.toLocaleString('vi-VN')}
+              </button>
+            ))}
           </div>
+
+          <button
+            type="submit"
+            disabled={loading || !amountValue || Number(amountValue) <= 0}
+            className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-all mt-4"
+          >
+            {loading && <Loader2 className="size-4 animate-spin" />}
+            Xác nhận nạp {amountDisplay} ₫
+          </button>
         </form>
       </div>
     </div>

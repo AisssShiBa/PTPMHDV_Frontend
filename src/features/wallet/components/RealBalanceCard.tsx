@@ -1,9 +1,8 @@
-// d:\PTPMHDV\Frontend\src\features\wallet\components\RealBalanceCard.tsx
 import { useEffect, useState } from 'react'
 import { walletService } from '../services/walletService'
 import type { WalletBalance } from '../types/wallet.types'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { TrendingUp, RefreshCw, AlertCircle } from 'lucide-react'
+import { TrendingUp, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 interface Props {
   className?: string
@@ -14,8 +13,9 @@ interface Props {
 export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigger = 0, onBalanceLoaded }) => {
   const user = useAuthStore((state) => state.user)
   const [balance, setBalance] = useState<WalletBalance | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showBalance, setShowBalance] = useState(true)
 
   const fetchBalance = async () => {
     if (!user?.id) return
@@ -45,16 +45,25 @@ export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigge
       <div>
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-wider text-purple-200">
-            Số dư khả dụng (Thật từ DB)
+            Số dư khả dụng (Tiền thật)
           </p>
-          <button
-            onClick={fetchBalance}
-            disabled={loading}
-            className="p-1 rounded-lg hover:bg-white/10 transition-colors text-purple-200"
-            title="Làm mới số dư"
-          >
-            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowBalance(!showBalance)} 
+              className="p-1 rounded-lg hover:bg-white/10 transition-colors text-purple-200"
+              title={showBalance ? "Ẩn số dư" : "Hiện số dư"}
+            >
+              {showBalance ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+            </button>
+            <button
+              onClick={fetchBalance}
+              disabled={loading}
+              className="p-1 rounded-lg hover:bg-white/10 transition-colors text-purple-200"
+              title="Làm mới số dư"
+            >
+              <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {error ? (
@@ -62,9 +71,11 @@ export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigge
             <AlertCircle className="size-3.5" />
             <span>{error}</span>
           </div>
+        ) : loading && !balance ? (
+          <div className="mt-2 h-10 w-48 bg-white/20 rounded-md animate-pulse"></div>
         ) : (
           <h2 className="text-2xl sm:text-4xl font-black tracking-tight mt-1">
-            ₫ {formattedBalance}
+            {showBalance ? `₫ ${formattedBalance}` : '•••••• VND'}
           </h2>
         )}
       </div>
