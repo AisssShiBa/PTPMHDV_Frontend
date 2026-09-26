@@ -8,8 +8,14 @@ import Dashboard from './pages/Dashboard'
 import Wallet from './pages/Wallet' // <--- 1. Import trang Wallet
 import MainLayout from './layouts/MainLayout'
 import Transactions from './pages/Transactions'
+import { useEffect } from 'react'
+import { useAuthStore } from './features/auth/stores/useAuthStore'
+import Profile from './pages/Profile'
+import MerchantRegister from './pages/MerchantRegister'
 
 function App() {
+  const initialize = useAuthStore((state) => state.initialize)
+  useEffect(() => { void initialize() }, [initialize])
   return (
     <>
       <Toaster />
@@ -26,13 +32,13 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/wallet" element={<Wallet />} />{' '}
+            <Route element={<ProtectRoute />}>
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/merchant-register" element={<MerchantRegister />} />
+            </Route>
             {/* <--- 2. Khai báo Route /wallet */}
           </Route>
 
-          {/* Protected routes */}
-          <Route element={<ProtectRoute />}>
-            {/* Các route yêu cầu đăng nhập */}
-          </Route>
         </Routes>
       </BrowserRouter>
     </>

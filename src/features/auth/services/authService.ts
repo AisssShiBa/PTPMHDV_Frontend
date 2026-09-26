@@ -1,38 +1,29 @@
 import api from '@/lib/axios'
+import { unwrap, type ApiResponse } from '@/lib/apiResponse'
+import type { AuthSession, User } from '@/types/User'
+
+function session(body: ApiResponse<AuthSession>) {
+  const value = unwrap(body)
+  if (!value?.accessToken || !value.user?.id) throw new Error('Invalid session response')
+  return value
+}
 
 export const authService = {
-  signUp: async (
-    username: string,
-    password: string,
-    email: string,
-    firstName: string,
-    lastName: string
-  ) => {
-    const res = await api.post(
-      '/auth/signup',
-      { username, password, email, firstName, lastName },
-      { withCredentials: true }
-    )
-    return res.data
+  async signUp(username: string, password: string, email: string, firstName: string, lastName: string) {
+    const res = await api.post<ApiResponse<{ user: User }>>('/auth/signup', {
+      username, password, email, firstName, lastName
+    })
+    return unwrap(res.data)
   },
-  signIn: async (username: string, password: string) => {
-    const res = await api.post(
-      '/auth/signin',
-      { username, password },
-      { withCredentials: true }
-    )
-    return res.data
+  async signIn(username: string, password: string) {
+    const res = await api.post<ApiResponse<AuthSession>>('/auth/signin', { username, password })
+    return session(res.data)
   },
-  signOut: async () => {
-    const res = await api.post('/auth/signout', {}, { withCredentials: true })
-    return res.data
+  async signOut() {
+    await api.post('/auth/signout', {})
   },
-  FetchMe: async () => {
-    const res = await api.get('/user/me', { withCredentials: true })
-    return res.data
-  },
-  refresh: async () => {
-    const res = await api.post('/auth/refresh', {}, { withCredentials: true })
-    return res.data.acessToken
+  async refresh() {
+    const res = await api.post<ApiResponse<AuthSession>>('/auth/refresh', {})
+    return session(res.data)
   }
 }

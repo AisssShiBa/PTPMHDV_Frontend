@@ -1,82 +1,88 @@
 import { create } from 'zustand'
 import { toast } from 'sonner'
 import { authService } from '@/features/auth/services/authService'
+import { errorMessage } from '@/lib/apiResponse'
 import type { authState } from '@/types/store'
+
+let refreshInFlight: Promise<boolean> | null = null
+let generation = 0
+
 export const useAuthStore = create<authState>((set, get) => ({
   accessToken: null,
   user: null,
   loading: false,
-
+  initialized: false,
   clearState: () => {
-    set({
-      accessToken: null,
-      user: null,
-      loading: false
-    })
+    generation += 1
+    set({ accessToken: null, user: null, initialized: true })
   },
   signUp: async (username, password, email, firstName, lastName) => {
+    if (get().loading) return false
     set({ loading: true })
     try {
       await authService.signUp(username, password, email, firstName, lastName)
-      toast.success('đăng ký thành công')
+      toast.success('Đăng ký thành công. Bạn có thể đăng nhập.')
+      return true
     } catch (error) {
-      ;(console.error(error), toast.error('đăng ký không thành công'))
+      toast.error(errorMessage(error))
+      return false
     } finally {
       set({ loading: false })
     }
   },
   signIn: async (username, password) => {
+    if (get().loading) return false
     set({ loading: true })
+    const current = ++generation
     try {
-      const data = await authService.signIn(username, password)
-
-      get().setAccessToken(data.accessToken)
-      await get().fetchMe()
-      toast.success('đăng nhập thành công')
+      // Finish cookie rotation before establishing a new session.
+      if (refreshInFlight) await refreshInFlight
+      const session = await authService.signIn(username, password)
+      if (current !== generation) return false
+      set({ ...session, initialized: true })
+      toast.success('Đăng nhập thành công')
+      return true
     } catch (error) {
-      ;(console.error(error), toast.error('đăng nhập không thành công'))
+      if (current === generation) toast.error(errorMessage(error))
+      return false
     } finally {
       set({ loading: false })
     }
   },
   signOut: async () => {
+    if (get().loading) return
+    get().clearState()
+    set({ loading: true })
     try {
-      get().clearState()
+      // A pending refresh must not recreate a cookie after signout.
+      if (refreshInFlight) await refreshInFlight
       await authService.signOut()
-      toast.success('đăng xuất thành công')
+      toast.success('Đã đăng xuất')
     } catch (error) {
-      console.error(error)
-      toast.error('đăng xuất không thành công')
-    }
-  },
-  fetchMe: async () => {
-    try {
-      set({ loading: true })
-      const user = await authService.FetchMe()
-      set({ user })
-    } catch (error) {
-      console.error(error)
-      set({ user: null, accessToken: null })
-      toast.error('Lỗi lấy dữ liệu người dùng')
+      toast.error(errorMessage(error))
     } finally {
       set({ loading: false })
     }
   },
-  refresh: async () => {
-    try {
-      set({ loading: true })
-      const { user } = get()
-      const accessToken = await authService.refresh()
-      set({ accessToken })
-      if (accessToken && !user) await get().fetchMe()
-    } catch (error) {
-      console.error(error)
-      get().clearState()
-    } finally {
-      set({ loading: false })
-    }
+  initialize: async () => {
+    if (!get().initialized) await get().refresh()
   },
-  setAccessToken: (accessToken) => {
-    set({ accessToken })
+  refresh: () => {
+    if (refreshInFlight) return refreshInFlight
+    const current = generation
+    refreshInFlight = (async () => {
+      try {
+        const session = await authService.refresh()
+        if (current !== generation) return false
+        set({ ...session, initialized: true })
+        return true
+      } catch {
+        if (current === generation) get().clearState()
+        return false
+      } finally {
+        refreshInFlight = null
+      }
+    })()
+    return refreshInFlight
   }
 }))

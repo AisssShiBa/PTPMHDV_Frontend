@@ -1,29 +1,14 @@
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { useEffect, useState } from 'react'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
-const ProtectRoute = () => {
-  const { accessToken, user, loading, refresh, fetchMe } = useAuthStore()
-  const [starting, setStarting] = useState(true)
-  const init = async () => {
-    if (!accessToken) await refresh()
-    if (accessToken && !user) await fetchMe()
-    setStarting(false)
+export default function ProtectRoute() {
+  const { accessToken, user, initialized } = useAuthStore()
+  const location = useLocation()
+  if (!initialized) {
+    return <div className="p-10 text-center text-muted-foreground" role="status">Đang khôi phục phiên đăng nhập…</div>
   }
-  useEffect(() => {
-    init()
-  }, [])
-  if (starting || loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        Đang tải trang....
-      </div>
-    )
+  if (!accessToken || !user) {
+    return <Navigate to="/signin" replace state={{ from: location.pathname }} />
   }
-  if (!accessToken) {
-    return <Navigate to="/signin" replace />
-  }
-  return <Outlet />
+  return <Outlet key={user.id} />
 }
-
-export default ProtectRoute
