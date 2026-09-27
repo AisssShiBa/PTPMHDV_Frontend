@@ -14,3 +14,6 @@ export interface MerchantRegisterDto {
   taxId?: string
   bankAccount?: string
 }
+
+// Compatibility with the merchant API added by the incoming branch.
+export type RegisterMerchantDto = MerchantRegisterDto

@@ -32,7 +32,6 @@ export function SignupForm({
   })
 
   const onSubmit = async (data: SignupFormValues) => {
-    //goi api backend de dang ky nguoi dung
     const { email, password, username, firstName, lastName } = data
     if (await signUp(username, password, email, firstName, lastName)) navigate('/signin')
   }

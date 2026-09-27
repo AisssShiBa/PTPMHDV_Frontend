@@ -4166,7 +4166,7 @@ import axios from 'axios'
 const api = axios.create({
   baseURL:
     import.meta.env.MODE === 'development'
-      ? 'http://localhost:4001/api'
+      ? 'http://localhost:3001/api'
       : '/api',
   withCredentials: true
 })

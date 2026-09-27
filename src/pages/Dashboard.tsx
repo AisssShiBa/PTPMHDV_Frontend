@@ -8,10 +8,12 @@ import {
   ArrowDownLeft,
   FileText,
   Utensils,
-  Plane,
-  TrendingUp
+  Plane
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { RealBalanceCard } from '@/features/wallet/components/RealBalanceCard'
+import { TopupModal } from '@/features/wallet/components/TopupModal'
+import { TransferModal } from '@/features/wallet/components/TransferModal'
 
 /* ─── Mock Activities Data ─────────────────────────────────────── */
 const recentActivities = [
@@ -77,6 +79,9 @@ const cashflowData = [
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user)
   const [] = useState<'all' | 'income' | 'expense'>('all')
+  const [topupOpen, setTopupOpen] = useState(false)
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [refreshBalance, setRefreshBalance] = useState(0)
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -96,6 +101,7 @@ export default function Dashboard() {
           {/* Nạp tiền (Active highlight button) */}
           <button
             type="button"
+            onClick={() => setTopupOpen(true)}
             className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
           >
             <PlusCircle className="size-4" />
@@ -105,6 +111,7 @@ export default function Dashboard() {
           {/* Chuyển khoản */}
           <button
             type="button"
+            onClick={() => setTransferOpen(true)}
             className="flex-1 lg:flex-none flex items-center gap-2.5 rounded-xl border border-border/60 bg-card/60 px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
           >
             <ArrowLeftRight className="size-4 text-muted-foreground" />
@@ -148,32 +155,14 @@ export default function Dashboard() {
 
         {/* ── 1. Top Row: Violet Balance Card + 4 Shortcut Boxes ── */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* Big Violet Balance Card */}
-          <div className="md:col-span-7 rounded-2xl bg-linear-to-br from-violet-600 via-primary to-purple-800 p-6 text-white shadow-xl shadow-primary/20 flex flex-col justify-between">
-            <div>
-              <p className="text-xs font-semibold upbg-linear-to-brwider text-purple-200">
-                Tổng số dư
-              </p>
-              <h2 className="text-2xl sm:text-4xl font-black tracking-tight mt-1">
-                ₫ 1,245,000,000
-              </h2>
-            </div>
-
-            <div className="mt-6 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-400/30">
-                <TrendingUp className="size-3" />
-                +12.5%
-              </span>
-              <span className="text-xs text-purple-200">
-                so với tháng trước
-              </span>
-            </div>
-          </div>
+          {/* Big Real Balance Card */}
+          <RealBalanceCard refreshTrigger={refreshBalance} className="md:col-span-7" />
 
           {/* 4 Quick Action Shortcuts 2x2 Grid */}
           <div className="md:col-span-5 grid grid-cols-2 gap-3">
             <button
               type="button"
+              onClick={() => setTopupOpen(true)}
               className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-card/60 p-4 hover:bg-card hover:border-primary/40 transition-all group active:scale-95"
             >
               <div className="size-9 rounded-full bg-primary/15 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -186,6 +175,7 @@ export default function Dashboard() {
 
             <button
               type="button"
+              onClick={() => setTransferOpen(true)}
               className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-card/60 p-4 hover:bg-card hover:border-primary/40 transition-all group active:scale-95"
             >
               <div className="size-9 rounded-full bg-muted text-muted-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -438,6 +428,18 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Wallet Modals */}
+      <TopupModal
+        isOpen={topupOpen}
+        onClose={() => setTopupOpen(false)}
+        onSuccess={() => setRefreshBalance((c) => c + 1)}
+      />
+      <TransferModal
+        isOpen={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        onSuccess={() => setRefreshBalance((c) => c + 1)}
+      />
     </div>
   )
 }

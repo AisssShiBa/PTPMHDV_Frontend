@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
-  Bell,
   Settings,
   Menu,
   X,
@@ -11,6 +10,7 @@ import {
   UserPlus
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { NotificationBell } from '@/features/notification/components/NotificationBell'
 
 interface NavItem {
   label: string
@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
   { label: 'Bảng điều khiển', href: '/dashboard' },
   { label: 'Giao dịch', href: '/transactions' },
   { label: 'Ví của tôi', href: '/wallet' },
-  { label: 'Hồ sơ', href: '/profile' },
+  { label: 'Hồ sơ & KYC', href: '/profile' },
   { label: 'Đối tác', href: '/merchant-register' }
 ]
 
@@ -33,6 +33,26 @@ export function Header() {
 
   const user = useAuthStore((state) => state.user)
   const signOut = useAuthStore((state) => state.signOut)
+
+  const userInitials = (() => {
+    if (!user) return 'U'
+    if (user.firstName) {
+      return `${user.firstName[0]}${user.lastName ? user.lastName[0] : ''}`.toUpperCase()
+    }
+    if (user.username) {
+      return user.username[0]?.toUpperCase() || 'U'
+    }
+    if (user.email) {
+      return user.email[0]?.toUpperCase() || 'U'
+    }
+    return 'U'
+  })()
+
+  const displayName = (() => {
+    if (!user) return ''
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    return fullName || user.username || user.email || 'Người dùng'
+  })()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/90 backdrop-blur-md">
@@ -75,15 +95,8 @@ export function Header() {
           {user ? (
             /* ── Case 1: USER IS LOGGED IN ── */
             <>
-              {/* Notifications button */}
-              <button
-                type="button"
-                className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-                aria-label="Thông báo"
-              >
-                <Bell className="size-4" />
-                <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary" />
-              </button>
+              {/* Notifications component */}
+              <NotificationBell />
 
               {/* Settings button */}
               <button
@@ -103,9 +116,7 @@ export function Header() {
                   aria-label="Tài khoản người dùng"
                 >
                   <div className="relative flex size-8 shrink-0 overflow-hidden rounded-full bg-primary/20 text-primary items-center justify-center font-bold text-xs">
-                    {user.firstName
-                      ? `${user.firstName[0]}${user.lastName ? user.lastName[0] : ''}`.toUpperCase()
-                      : user.username[0].toUpperCase()}
+                    {userInitials}
                   </div>
                 </button>
 
@@ -119,11 +130,10 @@ export function Header() {
                     <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl border border-border bg-card p-1.5 shadow-xl z-50 text-foreground animate-in fade-in zoom-in-95 duration-100">
                       <div className="px-3 py-2 border-b border-border/50">
                         <p className="text-xs font-semibold text-foreground truncate">
-                          {`${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                            user.username}
+                          {displayName}
                         </p>
                         <p className="text-[11px] text-muted-foreground truncate">
-                          {user.email}
+                          {user.email || ''}
                         </p>
                       </div>
 

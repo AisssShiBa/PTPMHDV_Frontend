@@ -5,6 +5,10 @@ import type { KycDocument, SubmitKycDto, UpdateUserDto, UserProfile } from '../t
 const path = (authUserId: string) => '/users/by-auth/' + encodeURIComponent(authUserId)
 
 export const userService = {
+  async getProfileById(id: string) {
+    const res = await api.get<ApiResponse<UserProfile>>('/users/' + encodeURIComponent(id))
+    return unwrap(res.data)
+  },
   async getProfileByAuthUserId(authUserId: string, signal?: AbortSignal) {
     const res = await api.get<ApiResponse<UserProfile>>(path(authUserId), { signal })
     return unwrap(res.data)

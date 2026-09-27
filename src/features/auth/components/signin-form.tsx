@@ -30,7 +30,6 @@ export function SigninForm({
   })
 
   const onSubmit = async (data: SigninFormValues) => {
-    //goi api backend de dang ky nguoi dung
     const { username, password } = data
     if (await signIn(username, password)) {
       const from = location.state?.from

@@ -51,6 +51,19 @@ const server = createServer(async (req, res) => {
       }
       if (path === '/api/auth/signout') { signedIn = false; return success(null) }
       if (!signedIn || req.headers.authorization !== 'Bearer fixture-token') return failure(401, 'UNAUTHORIZED')
+      if (path.startsWith('/api/notifications')) return success({ notifications: [], unreadCount: 0, pagination: { totalPages: 1 } })
+      if (path === '/api/payments' && req.method === 'GET') {
+        const query = new URL(req.url, 'http://localhost').searchParams
+        assert.equal(query.has('page') || query.has('limit'), false)
+        return success(Array.from({ length: 12 }, (_, index) => ({
+          id: 'payment' + String(index + 1).padStart(2, '0'), userId: user.id,
+          amount: 10000, type: 'BUS_TICKET', status: 'SUCCESS', createdAt: new Date().toISOString()
+        })))
+      }
+      if (path === '/api/admin/kyc') {
+        if (user.role !== 'ADMIN') return failure(403, 'FORBIDDEN')
+        return success({ content: [], totalElements: 0 })
+      }
       if (path === '/api/users/by-auth/' + user.id) {
         if (req.method === 'PUT') {
           const body = JSON.parse(raw.toString())
@@ -213,9 +226,37 @@ try {
   await evaluate('document.querySelector("form").requestSubmit()')
   await until(() => evaluate('!!document.querySelector("#profile-email")'), 'login returns to profile')
 
+  // Regressions for routes and shared auth after merging the Admin/Notification modules.
+  assert.ok(await has('button[aria-label="Thông báo"]'))
+  await go('/merchant/register')
+  await until(() => evaluate('location.pathname === "/merchant-register"'), 'incoming merchant route alias')
+  await until(() => text('Cửa hàng Hữu'), 'alias loads existing merchant')
+  await go('/transactions')
+  await until(() => text('payment01'), 'incoming transactions page loads array response')
+  assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 10)
+  await evaluate('document.querySelector(\'button[aria-label="Trang sau"]\').click()')
+  await until(() => text('payment11'), 'transaction next page')
+  assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 2)
+  assert.equal(await evaluate('document.querySelector(\'button[aria-label="Trang sau"]\').disabled'), true)
+  await fill('input[placeholder="Tìm kiếm giao dịch..."]', 'payment03')
+  await until(() => text('payment03'), 'transaction filter clamps the page')
+  assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 1)
+  const adminRequestsBefore = requests.filter((request) => request.includes('/api/admin/')).length
+  await go('/admin/kyc')
+  await until(() => evaluate('location.pathname === "/"'), 'ordinary user cannot mount admin pages')
+  assert.equal(requests.filter((request) => request.includes('/api/admin/')).length, adminRequestsBefore)
+  signedIn = false
+  await go('/admin/kyc')
+  await until(() => evaluate('location.pathname === "/signin"'), 'guest admin route requires login')
+  user.role = 'ADMIN'
+  signedIn = true
+  await go('/admin/kyc')
+  await until(() => text('Phê duyệt Định danh KYC'), 'admin route restores session before checking role')
+  await until(() => requests.includes('GET /api/admin/kyc'), 'admin page calls incoming API module')
+
   assert.deepEqual(runtimeErrors, [])
   assert.ok(!requests.some((request) => request.includes('/user/me')))
-  console.log('PASS: profile edit/reload; KYC validation/upload/status/document expiry; merchant errors/register/reload/status; protected redirect/login; mobile overflow; no runtime exceptions.')
+  console.log('PASS: profile edit/reload; KYC validation/upload/status/document expiry; merchant errors/register/reload/status and route alias; protected redirect/login; Admin guest/user/admin access; Notification menu; mobile overflow; no runtime exceptions.')
   console.log('API fixtures only. Screenshots: ' + artifacts)
 } finally {
   if (cdp) await Promise.race([cdp('Browser.close').catch(() => {}), delay(1000)])

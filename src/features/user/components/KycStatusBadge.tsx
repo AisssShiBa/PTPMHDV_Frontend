@@ -7,7 +7,7 @@ const statuses: Record<KycStatus, { label: string; style: string }> = {
   REJECTED: { label: 'Bị từ chối', style: 'bg-destructive/10 text-destructive' }
 }
 
-export function KycStatusBadge({ status }: { status: KycStatus }) {
+export function KycStatusBadge({ status = 'NONE', className = '' }: { status?: KycStatus; className?: string }) {
   const display = statuses[status] ?? { label: 'Chưa rõ trạng thái', style: 'bg-muted text-muted-foreground' }
-  return <span role="status" className={'inline-flex rounded-full px-3 py-1 text-xs font-medium ' + display.style}>{display.label}</span>
+  return <span role="status" className={'inline-flex rounded-full px-3 py-1 text-xs font-medium ' + display.style + ' ' + className}>{display.label}</span>
 }

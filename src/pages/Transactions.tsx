@@ -1,367 +1,178 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  Search,
-  Download,
-  Calendar,
-  Filter,
-  ShoppingBag,
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-  ArrowDownLeft,
-  Utensils,
-  CreditCard,
-  Zap
+  Search, ShoppingBag, ChevronLeft, ChevronRight, ArrowDownLeft, Utensils, CreditCard, Zap, Plus, RefreshCw, X, Eye
 } from 'lucide-react'
-
-/* ─── Mock Transactions Data ───────────────────────────────────── */
-interface Transaction {
-  id: string
-  partner: string
-  description: string
-  time: string
-  category: string
-  status: 'Hoàn tất' | 'Đang xử lý' | 'Đã hủy'
-  amount: number
-  isIncome: boolean
-  icon: typeof ShoppingBag
-}
-
-const mockTransactions: Transaction[] = [
-  {
-    id: 'tx-1',
-    partner: 'Apple Store',
-    description: 'Thanh toán hóa đơn thiết bị',
-    time: '15 Th10, 2024 - 14:20 PM',
-    category: 'Mua sắm',
-    status: 'Hoàn tất',
-    amount: -24500000,
-    isIncome: false,
-    icon: ShoppingBag
-  },
-  {
-    id: 'tx-2',
-    partner: 'Cty CP Đầu tư VNG',
-    description: 'Chuyển khoản lương T9/2024',
-    time: '10 Th10, 2024 - 08:15 AM',
-    category: 'Thu nhập',
-    status: 'Hoàn tất',
-    amount: 45000000,
-    isIncome: true,
-    icon: Building2
-  },
-  {
-    id: 'tx-3',
-    partner: 'Grab Vietnam',
-    description: 'Thanh toán chuyến đi & Di chuyển',
-    time: '08 Th10, 2024 - 18:45 PM',
-    category: 'Di chuyển',
-    status: 'Hoàn tất',
-    amount: -185000,
-    isIncome: false,
-    icon: CreditCard
-  },
-  {
-    id: 'tx-4',
-    partner: 'Starbucks Coffee',
-    description: 'Thanh toán cửa hàng',
-    time: '05 Th10, 2024 - 09:30 AM',
-    category: 'Ăn uống',
-    status: 'Hoàn tất',
-    amount: -120000,
-    isIncome: false,
-    icon: Utensils
-  },
-  {
-    id: 'tx-5',
-    partner: 'EVN HCMC',
-    description: 'Thanh toán tiền điện kỳ 10',
-    time: '02 Th10, 2024 - 11:10 AM',
-    category: 'Dịch vụ',
-    status: 'Đang xử lý',
-    amount: -1450000,
-    isIncome: false,
-    icon: Zap
-  },
-  {
-    id: 'tx-6',
-    partner: 'Nguyễn Văn A',
-    description: 'Chuyển tiền trả nợ',
-    time: '28 Th09, 2024 - 20:15 PM',
-    category: 'Thu nhập',
-    status: 'Hoàn tất',
-    amount: 2500000,
-    isIncome: true,
-    icon: ArrowDownLeft
-  }
-]
+import { paymentService } from '@/features/payment/services/paymentService'
+import type { PaymentRecord } from '@/features/payment/types/payment.types'
+import { CheckoutModal } from '@/features/payment/components/CheckoutModal'
 
 export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [realPayments, setRealPayments] = useState<PaymentRecord[]>([])
+  const [loading, setLoading] = useState(false)
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null)
 
-  // Filter logic
-  const filteredData = mockTransactions.filter((tx) => {
-    const matchesSearch =
-      tx.partner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tx.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory =
-      selectedCategory === 'all' || tx.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+  const limit = 10;
 
-  // Format currency VNĐ
+  const loadPayments = async () => {
+    try {
+      setLoading(true)
+      const data = await paymentService.getPayments({
+        type: selectedCategory === 'all' ? undefined : selectedCategory
+      })
+      setRealPayments(data)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadPayments()
+  }, [selectedCategory])
+
+  // The current backend returns an array and does not accept page/limit.
+  const filteredPayments = realPayments.filter((payment) => payment.id.toLowerCase().includes(searchTerm.trim().toLowerCase()))
+  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / limit))
+  const displayPage = Math.min(currentPage, totalPages)
+  const pagePayments = filteredPayments.slice((displayPage - 1) * limit, displayPage * limit)
+
   const formatAmount = (amount: number) => {
-    const formatted = Math.abs(amount).toLocaleString('vi-VN')
-    return amount > 0 ? `+${formatted} ₫` : `-${formatted} ₫`
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
+  }
+
+  const getIconForType = (type: string) => {
+    switch (type) {
+      case 'BUS_TICKET': return <Utensils className="size-4" />
+      case 'MOVIE_TICKET': return <ShoppingBag className="size-4" />
+      case 'CARD_TOPUP': return <Zap className="size-4" />
+      case 'WALLET_TRANSFER': return <ArrowDownLeft className="size-4" />
+      default: return <CreditCard className="size-4" />
+    }
+  }
+
+  const getTypeName = (type: string) => {
+    switch (type) {
+      case 'BUS_TICKET': return 'Vé xe bus'
+      case 'MOVIE_TICKET': return 'Vé phim'
+      case 'CARD_TOPUP': return 'Nạp thẻ'
+      case 'WALLET_TRANSFER': return 'Chuyển tiền'
+      default: return type
+    }
   }
 
   return (
-    <div className="space-y-6">
-      {/* ── Page Header & Export Button ── */}
+    <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
             Lịch sử giao dịch
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Theo dõi chi tiết các hoạt động tài khoản của bạn
+            Theo dõi và quản lý mọi khoản thu chi của bạn.
           </p>
         </div>
-
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-border/70 bg-card/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-foreground hover:bg-muted transition-all active:scale-95 shadow-sm"
-        >
-          <Download className="size-4 text-muted-foreground" />
-          <span>Xuất dữ liệu</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={loadPayments} className="px-4 h-10 rounded-xl font-semibold border border-border/60 bg-card hover:bg-muted text-foreground transition-colors text-sm flex items-center gap-2">
+             <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} /> Làm mới
+          </button>
+          <button onClick={() => setIsCheckoutOpen(true)} className="px-4 h-10 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 text-sm flex items-center gap-2">
+            <Plus className="size-4" /> Tạo thanh toán
+          </button>
+        </div>
       </div>
 
-      {/* ── Filter & Search Control Panel ── */}
-      <div className="rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          {/* Search Input */}
-          <div className="sm:col-span-5 space-y-1">
-            <label className="text-[11px] font-medium text-muted-foreground">
-              Tìm kiếm
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Tên đối tác hoặc mô tả"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 rounded-xl border border-border/60 bg-background/50 pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-            </div>
+      <div className="rounded-2xl border border-border/60 bg-card/60 p-4 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="sm:col-span-2 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <input type="text" placeholder="Tìm kiếm giao dịch..." className="w-full h-10 pl-9 pr-4 rounded-xl border border-border/60 bg-background/50 text-sm focus:outline-none focus:border-primary transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
-
-          {/* Time Range Filter */}
-          <div className="sm:col-span-3 space-y-1">
-            <label className="text-[11px] font-medium text-muted-foreground">
-              Khoảng thời gian
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <select className="w-full h-10 rounded-xl border border-border/60 bg-background/50 pl-9 pr-3 text-xs text-foreground appearance-none focus:outline-none focus:border-primary transition-colors cursor-pointer">
-                <option value="this-month">Tháng này</option>
-                <option value="last-month">Tháng trước</option>
-                <option value="this-year">Năm nay</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Category Filter */}
-          <div className="sm:col-span-3 space-y-1">
-            <label className="text-[11px] font-medium text-muted-foreground">
-              Danh mục
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full h-10 rounded-xl border border-border/60 bg-background/50 px-3 text-xs text-foreground appearance-none focus:outline-none focus:border-primary transition-colors cursor-pointer"
-            >
-              <option value="all">Tất cả danh mục</option>
-              <option value="Mua sắm">Mua sắm</option>
-              <option value="Thu nhập">Thu nhập</option>
-              <option value="Di chuyển">Di chuyển</option>
-              <option value="Ăn uống">Ăn uống</option>
-              <option value="Dịch vụ">Dịch vụ</option>
+          <div className="sm:col-span-1">
+            <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }} className="w-full h-10 rounded-xl border border-border/60 bg-background/50 px-3 text-xs text-foreground outline-none focus:border-primary transition-colors cursor-pointer">
+              <option value="all">Tất cả dịch vụ</option>
+              <option value="BUS_TICKET">Vé xe bus</option>
+              <option value="MOVIE_TICKET">Vé phim</option>
+              <option value="CARD_TOPUP">Nạp thẻ điện thoại</option>
+              <option value="WALLET_TRANSFER">Chuyển tiền ví</option>
             </select>
-          </div>
-
-          {/* Filter Action Button */}
-          <div className="sm:col-span-1 flex items-end">
-            <button
-              type="button"
-              className="w-full h-10 rounded-xl border border-border/60 bg-muted/40 hover:bg-muted flex items-center justify-center text-foreground transition-colors"
-              title="Bộ lọc nâng cao"
-            >
-              <Filter className="size-4" />
-            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Transactions Table Container ── */}
       <div className="rounded-2xl border border-border/60 bg-card/80 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            {/* Table Header */}
             <thead className="border-b border-border/50 bg-muted/30 text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="py-3.5 px-4 sm:px-6">Đối tác / Mô tả</th>
+                <th className="py-3.5 px-4 sm:px-6">Mã Giao Dịch</th>
                 <th className="py-3.5 px-4 sm:px-6">Thời gian</th>
-                <th className="py-3.5 px-4 sm:px-6 text-center">Danh mục</th>
+                <th className="py-3.5 px-4 sm:px-6 text-center">Dịch vụ</th>
                 <th className="py-3.5 px-4 sm:px-6 text-center">Trạng thái</th>
                 <th className="py-3.5 px-4 sm:px-6 text-right">Số tiền</th>
               </tr>
             </thead>
-
-            {/* Table Body */}
             <tbody className="divide-y divide-border/40">
-              {filteredData.length > 0 ? (
-                filteredData.map((tx) => {
-                  const Icon = tx.icon
-                  return (
-                    <tr
-                      key={tx.id}
-                      className="hover:bg-muted/30 transition-colors group"
-                    >
-                      {/* Partner & Description */}
-                      <td className="py-4 px-4 sm:px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="size-9 rounded-xl bg-muted/80 flex items-center justify-center text-foreground shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                            <Icon className="size-4" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-foreground text-xs sm:text-sm">
-                              {tx.partner}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">
-                              {tx.description}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Date & Time */}
-                      <td className="py-4 px-4 sm:px-6 text-muted-foreground whitespace-nowrap text-[11px]">
-                        {tx.time}
-                      </td>
-
-                      {/* Category Badge */}
-                      <td className="py-4 px-4 sm:px-6 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-[11px] font-medium text-foreground">
-                          {tx.category}
-                        </span>
-                      </td>
-
-                      {/* Status Badge */}
-                      <td className="py-4 px-4 sm:px-6 text-center whitespace-nowrap">
-                        <span
-                          className={`text-[11px] font-semibold ${
-                            tx.status === 'Hoàn tất'
-                              ? 'text-emerald-400'
-                              : 'text-amber-400'
-                          }`}
-                        >
-                          {tx.status}
-                        </span>
-                      </td>
-
-                      {/* Amount */}
-                      <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
-                        <span
-                          className={`font-mono font-bold text-xs sm:text-sm ${
-                            tx.isIncome ? 'text-emerald-400' : 'text-foreground'
-                          }`}
-                        >
-                          {formatAmount(tx.amount)}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })
+              {pagePayments.length > 0 ? (
+                pagePayments.map((tx) => (
+                  <tr key={tx.id} onClick={() => setSelectedPayment(tx)} className="hover:bg-muted/30 transition-colors group cursor-pointer">
+                    <td className="py-4 px-4 sm:px-6 font-mono text-[11px] text-primary">{tx.id.split('-')[0]}...</td>
+                    <td className="py-4 px-4 sm:px-6 text-muted-foreground whitespace-nowrap text-[11px]">{new Date(tx.createdAt).toLocaleString('vi-VN')}</td>
+                    <td className="py-4 px-4 sm:px-6 text-center whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-[10px] font-medium text-foreground">
+                        {getIconForType(tx.type)} {getTypeName(tx.type)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 sm:px-6 text-center whitespace-nowrap">
+                      <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${tx.status === 'SUCCESS' ? 'bg-emerald-500/15 text-emerald-400' : tx.status === 'PENDING' ? 'bg-amber-500/15 text-amber-400' : 'bg-rose-500/15 text-rose-400'}`}>{tx.status}</span>
+                    </td>
+                    <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
+                      <span className="font-mono font-bold text-xs sm:text-sm text-foreground">{formatAmount(tx.amount)}</span>
+                    </td>
+                  </tr>
+                ))
               ) : (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="py-12 text-center text-muted-foreground"
-                  >
-                    Không tìm thấy giao dịch phù hợp
-                  </td>
-                </tr>
+                <tr><td colSpan={5} className="py-12 text-center text-muted-foreground">Không tìm thấy giao dịch phù hợp</td></tr>
               )}
             </tbody>
           </table>
         </div>
 
-        {/* ── Table Footer / Pagination Controls ── */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-border/40 text-xs text-muted-foreground">
-          <div>
-            Hiển thị 1-10 trên tổng số <strong>142</strong> giao dịch
-          </div>
-
+          <div>Trang {displayPage} / {totalPages}</div>
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="size-8 rounded-lg border border-border/60 flex items-center justify-center hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage(1)}
-              className={`size-8 rounded-lg font-bold flex items-center justify-center transition-colors ${
-                currentPage === 1
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted text-foreground'
-              }`}
-            >
-              1
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage(2)}
-              className={`size-8 rounded-lg font-bold flex items-center justify-center transition-colors ${
-                currentPage === 2
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted text-foreground'
-              }`}
-            >
-              2
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage(3)}
-              className={`size-8 rounded-lg font-bold flex items-center justify-center transition-colors ${
-                currentPage === 3
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted text-foreground'
-              }`}
-            >
-              3
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="size-8 rounded-lg border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
-            >
-              <ChevronRight className="size-4" />
-            </button>
+            <button aria-label="Trang trước" disabled={displayPage === 1} onClick={() => setCurrentPage(displayPage - 1)} className="size-8 rounded-lg border border-border/60 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"><ChevronLeft className="size-4" /></button>
+            <span className="size-8 rounded-lg font-bold bg-primary text-primary-foreground flex items-center justify-center">{displayPage}</span>
+            <button aria-label="Trang sau" disabled={displayPage === totalPages} onClick={() => setCurrentPage(displayPage + 1)} className="size-8 rounded-lg border border-border/60 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"><ChevronRight className="size-4" /></button>
           </div>
         </div>
       </div>
+
+      <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} onSuccess={loadPayments} />
+
+      {/* Payment Detail Popup */}
+      {selectedPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg flex items-center gap-2"><Eye className="size-5 text-primary" /> Chi tiết giao dịch</h3>
+              <button onClick={() => setSelectedPayment(null)} className="p-1.5 rounded-lg hover:bg-muted transition-colors"><X className="size-4" /></button>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between border-b border-border/40 pb-2"><span className="text-muted-foreground">Mã giao dịch</span> <span className="font-mono text-xs">{selectedPayment.id}</span></div>
+              <div className="flex justify-between border-b border-border/40 pb-2"><span className="text-muted-foreground">Thời gian</span> <span>{new Date(selectedPayment.createdAt).toLocaleString('vi-VN')}</span></div>
+              <div className="flex justify-between border-b border-border/40 pb-2"><span className="text-muted-foreground">Dịch vụ</span> <span>{getTypeName(selectedPayment.type)}</span></div>
+              <div className="flex justify-between border-b border-border/40 pb-2"><span className="text-muted-foreground">Trạng thái</span> <span className={`font-bold ${selectedPayment.status === 'SUCCESS' ? 'text-emerald-400' : selectedPayment.status === 'PENDING' ? 'text-amber-400' : 'text-rose-400'}`}>{selectedPayment.status}</span></div>
+              <div className="flex justify-between pb-2"><span className="text-muted-foreground">Số tiền</span> <span className="font-bold text-lg text-primary">{formatAmount(selectedPayment.amount)}</span></div>
+            </div>
+            <button onClick={() => setSelectedPayment(null)} className="w-full py-2.5 bg-secondary hover:bg-secondary/80 rounded-xl font-semibold transition-colors mt-2">Đóng</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
