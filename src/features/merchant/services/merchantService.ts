@@ -1,37 +1,30 @@
-// d:\PTPMHDV\Frontend\src\features\merchant\services\merchantService.ts
 import api from '@/lib/axios'
-import type { MerchantRecord, RegisterMerchantDto } from '../types/merchant.types'
+import { unwrap, type ApiResponse } from '@/lib/apiResponse'
+import type { MerchantRecord, MerchantRegisterDto } from '../types/merchant.types'
 
 export const merchantService = {
-  /**
-   * Đăng ký đối tác Merchant
-   */
-  register: async (data: RegisterMerchantDto): Promise<MerchantRecord> => {
-    const res = await api.post('/merchants/register', data)
-    return res.data?.data ?? res.data
+  async register(payload: MerchantRegisterDto) {
+    return merchantService.registerMerchant(payload)
   },
-
-  /**
-   * Lấy chi tiết Merchant theo ID
-   */
-  getById: async (id: string): Promise<MerchantRecord> => {
-    const res = await api.get(`/merchants/${id}`)
-    return res.data?.data ?? res.data
+  async getById(id: string) {
+    const res = await api.get<ApiResponse<MerchantRecord>>('/merchants/' + encodeURIComponent(id))
+    return unwrap(res.data)
   },
-
-  /**
-   * Kiểm tra Merchant có đang active không
-   */
-  checkActive: async (id: string): Promise<{ active: boolean }> => {
-    const res = await api.get(`/merchants/${id}/active`)
-    return res.data?.data ?? res.data
+  async checkActive(id: string) {
+    const res = await api.get<ApiResponse<{ active: boolean }>>('/merchants/' + encodeURIComponent(id) + '/active')
+    return unwrap(res.data)
   },
-
-  /**
-   * Danh sách Merchant
-   */
-  getMerchants: async (): Promise<MerchantRecord[]> => {
-    const res = await api.get('/merchants')
-    return res.data?.data ?? res.data
+  async getMerchants() {
+    const res = await api.get<ApiResponse<MerchantRecord[]>>('/merchants')
+    return unwrap(res.data)
+  },
+  async getMyMerchant(signal?: AbortSignal) {
+    const res = await api.get<ApiResponse<MerchantRecord | null>>('/merchants/me', { signal })
+    // Only explicit data:null means no registration. A 404 is an API/deployment error.
+    return unwrap(res.data)
+  },
+  async registerMerchant(payload: MerchantRegisterDto) {
+    const res = await api.post<ApiResponse<MerchantRecord>>('/merchants/register', payload)
+    return unwrap(res.data)
   }
 }

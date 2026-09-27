@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test": "node --import ./tests/register.mjs --test tests/*.test.ts",
+    "test:browser": "node tests/browser-smoke.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

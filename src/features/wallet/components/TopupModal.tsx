@@ -36,7 +36,7 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     let currentVal = Number(amountValue) || 0;
     if (direction === 'up') currentVal += STEP;
     else currentVal = Math.max(0, currentVal - STEP);
-    
+
     setAmountValue(currentVal.toString());
     setAmountDisplay(currentVal ? currentVal.toLocaleString('vi-VN') : '0');
   }
@@ -51,7 +51,7 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
       toast.error('Vui lòng nhập số tiền hợp lệ')
       return
     }
-    
+
     try {
       setLoading(true)
       await walletService.topup(String(user.id), amountValue)
@@ -91,15 +91,15 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                 required
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleStep('up')}
                   className="p-1 bg-muted/80 hover:bg-muted text-muted-foreground rounded-t-sm transition-colors"
                 >
                   <ChevronUp className="size-3" />
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleStep('down')}
                   className="p-1 bg-muted/80 hover:bg-muted text-muted-foreground rounded-b-sm transition-colors"
                 >
@@ -116,8 +116,8 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                 type="button"
                 onClick={() => handlePresetSelect(val)}
                 className={`py-2 text-xs font-semibold rounded-lg border transition-all ${
-                  amountValue === val.toString() 
-                    ? 'border-primary bg-primary/10 text-primary' 
+                  amountValue === val.toString()
+                    ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted'
                 }`}
               >

@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import React from 'react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 const signinSchema = z.object({
   username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
@@ -20,6 +20,7 @@ export function SigninForm({
 }: React.ComponentProps<'div'>) {
   const { signIn } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const {
     register,
     handleSubmit,
@@ -30,9 +31,9 @@ export function SigninForm({
 
   const onSubmit = async (data: SigninFormValues) => {
     const { username, password } = data
-    const isSuccess = await signIn(username, password)
-    if (isSuccess) {
-      navigate('/')
+    if (await signIn(username, password)) {
+      const from = location.state?.from
+      navigate(typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard', { replace: true })
     }
   }
   return (

@@ -33,10 +33,7 @@ export function SignupForm({
 
   const onSubmit = async (data: SignupFormValues) => {
     const { email, password, username, firstName, lastName } = data
-    const isSuccess = await signUp(username, password, email, firstName, lastName)
-    if (isSuccess) {
-      navigate('/')
-    }
+    if (await signUp(username, password, email, firstName, lastName)) navigate('/signin')
   }
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>

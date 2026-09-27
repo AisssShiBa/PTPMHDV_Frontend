@@ -1,113 +1,88 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { toast } from 'sonner'
 import { authService } from '@/features/auth/services/authService'
+import { errorMessage } from '@/lib/apiResponse'
 import type { authState } from '@/types/store'
 
-export const useAuthStore = create<authState>()(
-  persist(
-    (set, get) => ({
-      accessToken: null,
-      user: null,
-      loading: false,
+let refreshInFlight: Promise<boolean> | null = null
+let generation = 0
 
-      clearState: () => {
-        set({
-          accessToken: null,
-          user: null,
-          loading: false
-        })
-      },
-
-      signUp: async (username, password, email, firstName, lastName) => {
-        set({ loading: true })
-        try {
-          await authService.signUp(username, password, email, firstName, lastName)
-          // Tự động đăng nhập sau khi đăng ký thành công
-          const loginData = await authService.signIn(username, password)
-          const accessToken = loginData.accessToken
-          const user =
-            loginData.user ?? {
-              id: loginData.userId ?? '',
-              username,
-              email,
-              firstName,
-              lastName
-            }
-          set({ accessToken, user })
-          toast.success('Đăng ký thành công')
-          return true
-        } catch (error: any) {
-          console.error(error)
-          const message =
-            error.response?.data?.error?.message ||
-            error.response?.data?.message ||
-            'Đăng ký không thành công'
-          toast.error(message)
-          return false
-        } finally {
-          set({ loading: false })
-        }
-      },
-
-      signIn: async (username, password) => {
-        set({ loading: true })
-        try {
-          const data = await authService.signIn(username, password)
-          const accessToken = data.accessToken
-          const user = data.user
-          set({ accessToken, user })
-          toast.success('Đăng nhập thành công')
-          return true
-        } catch (error: any) {
-          console.error(error)
-          const message =
-            error.response?.data?.error?.message ||
-            error.response?.data?.message ||
-            'Đăng nhập không thành công'
-          toast.error(message)
-          return false
-        } finally {
-          set({ loading: false })
-        }
-      },
-
-      signOut: async () => {
-        try {
-          get().clearState()
-          await authService.signOut()
-          toast.success('Đăng xuất thành công')
-        } catch (error) {
-          console.error(error)
-          toast.error('Đăng xuất không thành công')
-        }
-      },
-
-      refresh: async () => {
-        try {
-          set({ loading: true })
-          const res = await authService.refresh()
-          const accessToken = res.accessToken
-          const user = res.user ?? get().user
-          set({ accessToken, user })
-        } catch (error) {
-          console.error(error)
-          get().clearState()
-        } finally {
-          set({ loading: false })
-        }
-      },
-
-      setAccessToken: (accessToken) => {
-        set({ accessToken })
-      }
-    }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({
-        accessToken: state.accessToken,
-        user: state.user
-      })
+export const useAuthStore = create<authState>((set, get) => ({
+  accessToken: null,
+  user: null,
+  loading: false,
+  initialized: false,
+  clearState: () => {
+    generation += 1
+    set({ accessToken: null, user: null, initialized: true })
+  },
+  signUp: async (username, password, email, firstName, lastName) => {
+    if (get().loading) return false
+    set({ loading: true })
+    try {
+      await authService.signUp(username, password, email, firstName, lastName)
+      toast.success('Đăng ký thành công. Bạn có thể đăng nhập.')
+      return true
+    } catch (error) {
+      toast.error(errorMessage(error))
+      return false
+    } finally {
+      set({ loading: false })
     }
-  )
-)
+  },
+  signIn: async (username, password) => {
+    if (get().loading) return false
+    set({ loading: true })
+    const current = ++generation
+    try {
+      // Finish cookie rotation before establishing a new session.
+      if (refreshInFlight) await refreshInFlight
+      const session = await authService.signIn(username, password)
+      if (current !== generation) return false
+      set({ ...session, initialized: true })
+      toast.success('Đăng nhập thành công')
+      return true
+    } catch (error) {
+      if (current === generation) toast.error(errorMessage(error))
+      return false
+    } finally {
+      set({ loading: false })
+    }
+  },
+  signOut: async () => {
+    if (get().loading) return
+    get().clearState()
+    set({ loading: true })
+    try {
+      // A pending refresh must not recreate a cookie after signout.
+      if (refreshInFlight) await refreshInFlight
+      await authService.signOut()
+      toast.success('Đã đăng xuất')
+    } catch (error) {
+      toast.error(errorMessage(error))
+    } finally {
+      set({ loading: false })
+    }
+  },
+  initialize: async () => {
+    if (!get().initialized) await get().refresh()
+  },
+  refresh: () => {
+    if (refreshInFlight) return refreshInFlight
+    const current = generation
+    refreshInFlight = (async () => {
+      try {
+        const session = await authService.refresh()
+        if (current !== generation) return false
+        set({ ...session, initialized: true })
+        return true
+      } catch {
+        if (current === generation) get().clearState()
+        return false
+      } finally {
+        refreshInFlight = null
+      }
+    })()
+    return refreshInFlight
+  }
+}))

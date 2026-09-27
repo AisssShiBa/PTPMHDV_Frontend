@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  Search, Download, Calendar, Filter, ShoppingBag, Building2, ChevronLeft, ChevronRight, ArrowDownLeft, Utensils, CreditCard, Zap, Plus, RefreshCw, X, Eye
+  Search, ShoppingBag, ChevronLeft, ChevronRight, ArrowDownLeft, Utensils, CreditCard, Zap, Plus, RefreshCw, X, Eye
 } from 'lucide-react'
 import { paymentService } from '@/features/payment/services/paymentService'
 import type { PaymentRecord } from '@/features/payment/types/payment.types'
@@ -11,28 +11,19 @@ export default function Transactions() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [realPayments, setRealPayments] = useState<PaymentRecord[]>([])
-  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null)
-  
+
   const limit = 10;
 
   const loadPayments = async () => {
     try {
       setLoading(true)
-      const data: any = await paymentService.getPayments({
-        page: currentPage,
-        limit,
+      const data = await paymentService.getPayments({
         type: selectedCategory === 'all' ? undefined : selectedCategory
       })
-      if (Array.isArray(data)) {
-        setRealPayments(data)
-        setTotal(data.length)
-      } else if (data?.items) {
-        setRealPayments(data.items)
-        setTotal(data.total)
-      }
+      setRealPayments(data)
     } catch (error) {
       console.error(error)
     } finally {
@@ -42,7 +33,13 @@ export default function Transactions() {
 
   useEffect(() => {
     loadPayments()
-  }, [currentPage, selectedCategory])
+  }, [selectedCategory])
+
+  // The current backend returns an array and does not accept page/limit.
+  const filteredPayments = realPayments.filter((payment) => payment.id.toLowerCase().includes(searchTerm.trim().toLowerCase()))
+  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / limit))
+  const displayPage = Math.min(currentPage, totalPages)
+  const pagePayments = filteredPayments.slice((displayPage - 1) * limit, displayPage * limit)
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
@@ -120,8 +117,8 @@ export default function Transactions() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {realPayments.length > 0 ? (
-                realPayments.map((tx) => (
+              {pagePayments.length > 0 ? (
+                pagePayments.map((tx) => (
                   <tr key={tx.id} onClick={() => setSelectedPayment(tx)} className="hover:bg-muted/30 transition-colors group cursor-pointer">
                     <td className="py-4 px-4 sm:px-6 font-mono text-[11px] text-primary">{tx.id.split('-')[0]}...</td>
                     <td className="py-4 px-4 sm:px-6 text-muted-foreground whitespace-nowrap text-[11px]">{new Date(tx.createdAt).toLocaleString('vi-VN')}</td>
@@ -146,11 +143,11 @@ export default function Transactions() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-border/40 text-xs text-muted-foreground">
-          <div>Trang {currentPage}</div>
+          <div>Trang {displayPage} / {totalPages}</div>
           <div className="flex items-center gap-1.5">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="size-8 rounded-lg border border-border/60 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"><ChevronLeft className="size-4" /></button>
-            <span className="size-8 rounded-lg font-bold bg-primary text-primary-foreground flex items-center justify-center">{currentPage}</span>
-            <button onClick={() => setCurrentPage(p => p + 1)} className="size-8 rounded-lg border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"><ChevronRight className="size-4" /></button>
+            <button aria-label="Trang trước" disabled={displayPage === 1} onClick={() => setCurrentPage(displayPage - 1)} className="size-8 rounded-lg border border-border/60 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"><ChevronLeft className="size-4" /></button>
+            <span className="size-8 rounded-lg font-bold bg-primary text-primary-foreground flex items-center justify-center">{displayPage}</span>
+            <button aria-label="Trang sau" disabled={displayPage === totalPages} onClick={() => setCurrentPage(displayPage + 1)} className="size-8 rounded-lg border border-border/60 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"><ChevronRight className="size-4" /></button>
           </div>
         </div>
       </div>

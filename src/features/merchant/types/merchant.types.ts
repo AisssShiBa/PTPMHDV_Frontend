@@ -1,20 +1,19 @@
-// d:\PTPMHDV\Frontend\src\features\merchant\types\merchant.types.ts
-
 export type MerchantStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
-
 export interface MerchantRecord {
   id: string
-  userId?: string
+  ownerId: string
   businessName: string
-  taxId?: string | null
-  bankAccount?: string | null
+  taxId: string | null
+  bankAccount: string | null
   status: MerchantStatus
   createdAt: string
   updatedAt: string
 }
-
-export interface RegisterMerchantDto {
+export interface MerchantRegisterDto {
   businessName: string
   taxId?: string
   bankAccount?: string
 }
+
+// Compatibility with the merchant API added by the incoming branch.
+export type RegisterMerchantDto = MerchantRegisterDto

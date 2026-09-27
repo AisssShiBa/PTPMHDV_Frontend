@@ -48,8 +48,8 @@ export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigge
             Số dư khả dụng (Tiền thật)
           </p>
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setShowBalance(!showBalance)} 
+            <button
+              onClick={() => setShowBalance(!showBalance)}
               className="p-1 rounded-lg hover:bg-white/10 transition-colors text-purple-200"
               title={showBalance ? "Ẩn số dư" : "Hiện số dư"}
             >

@@ -1,67 +1,47 @@
-// D:\PTPMHDV\Frontend\src\lib\axios.ts
+import axios, { type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import axios from 'axios'
+
+interface SessionRequest extends InternalAxiosRequestConfig {
+  _retried?: boolean
+  _owner?: string
+}
 
 const api = axios.create({
-  baseURL:
-    import.meta.env.MODE === 'development'
-      ? 'http://localhost:3000/api' // 👈 Cổng 3000 của API Gateway
-      : '/api',
-  withCredentials: true // 👈 Bắt buộc để tự động gửi/nhận Cookie refreshToken
+  baseURL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api'),
+  withCredentials: true,
+  timeout: 20000
 })
 
-// 1. Gắn Bearer Token vào Header trước khi gửi request đi
-api.interceptors.request.use((req) => {
-  const { accessToken } = useAuthStore.getState()
-  if (accessToken) {
-    req.headers.Authorization = `Bearer ${accessToken}`
-  }
+api.interceptors.request.use((req: SessionRequest) => {
+  const { accessToken, user } = useAuthStore.getState()
+  if (accessToken) req.headers.set('Authorization', 'Bearer ' + accessToken)
+  else req.headers.delete('Authorization')
+  req._owner = user?.id
   return req
 })
 
-// 2. Bắt lỗi 401 để tự động làm mới Token ngầm (Silent Refresh)
 api.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    const originalRequest = error.config
-
-    // Không kích hoạt refresh nếu chính request auth đang lỗi
-    if (
-      !originalRequest ||
-      originalRequest.url?.includes('/auth/signin') ||
-      originalRequest.url?.includes('/auth/signup') ||
-      originalRequest.url?.includes('/auth/refresh')
-    ) {
+  (response) => response,
+  async (error: unknown) => {
+    if (!axios.isAxiosError(error)) return Promise.reject(error)
+    const original = error.config as SessionRequest | undefined
+    if (!original || original.signal?.aborted || original.url?.startsWith('/auth/') ||
+        error.response?.status !== 401 || original._retried) {
       return Promise.reject(error)
     }
-
-    originalRequest._retryCount = originalRequest._retryCount || 0
-
-    // Khi Token hết hạn (Mã 401) và chưa thử quá 2 lần
-    if (error.response?.status === 401 && originalRequest._retryCount < 2) {
-      originalRequest._retryCount += 1
-
-      try {
-        // Gọi API lấy Access Token mới bằng HttpOnly Cookie
-        const res = await api.post('/auth/refresh', {}, { withCredentials: true })
-        const newAccessToken = res.data?.data?.accessToken ?? res.data?.accessToken
-
-        if (newAccessToken) {
-          // Lưu token mới vào Zustand store
-          useAuthStore.getState().setAccessToken(newAccessToken)
-
-          // Gắn token mới vào request bị lỗi lúc nãy và gửi lại
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-          return api(originalRequest)
-        }
-      } catch (refreshError) {
-        // Refresh token cũng hết hạn -> Xóa session và bắt đăng nhập lại
-        useAuthStore.getState().clearState()
-        return Promise.reject(refreshError)
-      }
+    const before = useAuthStore.getState()
+    // Never replay a previous account's request with a new account's token.
+    if (!original._owner || original._owner !== before.user?.id) return Promise.reject(error)
+    original._retried = true
+    const sentToken = original.headers.get('Authorization')
+    if (sentToken === 'Bearer ' + before.accessToken) {
+      if (!await before.refresh()) return Promise.reject(error)
     }
-
-    return Promise.reject(error)
+    const after = useAuthStore.getState()
+    if (!after.accessToken || original._owner !== after.user?.id || original.signal?.aborted) {
+      return Promise.reject(error)
+    }
+    return api(original)
   }
 )
 

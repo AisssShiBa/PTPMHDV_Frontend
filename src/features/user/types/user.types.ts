@@ -1,5 +1,3 @@
-// d:\PTPMHDV\Frontend\src\features\user\types\user.types.ts
-
 export type KycStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'
 
 export interface UserProfile {
@@ -11,9 +9,10 @@ export interface UserProfile {
   address: string | null
   kycStatus: KycStatus
   idNumber: string | null
-  idImageUrl: string | null
+  hasKycDocument: boolean
   createdAt: string
   updatedAt: string
+  version: number
 }
 
 export interface UpdateUserDto {
@@ -24,5 +23,10 @@ export interface UpdateUserDto {
 
 export interface SubmitKycDto {
   idNumber: string
-  idImageUrl: string
+  document: File
+}
+
+export interface KycDocument {
+  url: string
+  expiresIn: number
 }

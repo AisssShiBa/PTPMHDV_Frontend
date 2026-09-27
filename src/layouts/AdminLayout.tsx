@@ -1,9 +1,7 @@
 // d:\PTPMHDV\Frontend\src\layouts\AdminLayout.tsx
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, Store, ArrowLeft, Shield } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { useEffect } from 'react'
-import { toast } from 'sonner'
 
 const adminNav = [
   { label: 'Thống kê tổng quan', href: '/admin', icon: LayoutDashboard },
@@ -13,16 +11,9 @@ const adminNav = [
 
 export default function AdminLayout() {
   const location = useLocation()
-  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-
-  useEffect(() => {
-    // Chặn nếu không phải ADMIN
-    if (user && user.role !== 'ADMIN') {
-      toast.error('Bạn không có quyền truy cập khu vực Quản trị viên (Yêu cầu role ADMIN)')
-      navigate('/')
-    }
-  }, [user, navigate])
+  // ProtectRoute restores the session before this layout mounts.
+  if (user?.role !== 'ADMIN') return <Navigate to="/" replace />
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">

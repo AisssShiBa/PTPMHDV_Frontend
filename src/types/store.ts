@@ -4,16 +4,11 @@ export interface authState {
   accessToken: string | null
   user: User | null
   loading: boolean
+  initialized: boolean
   clearState: () => void
-  signUp: (
-    username: string,
-    password: string,
-    email: string,
-    firstName: string,
-    lastName: string
-  ) => Promise<boolean>
+  signUp: (username: string, password: string, email: string, firstName: string, lastName: string) => Promise<boolean>
   signIn: (username: string, password: string) => Promise<boolean>
   signOut: () => Promise<void>
-  refresh: () => Promise<void>
-  setAccessToken: (accessToken: string) => void
+  initialize: () => Promise<void>
+  refresh: () => Promise<boolean>
 }

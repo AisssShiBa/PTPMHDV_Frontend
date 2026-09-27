@@ -1,37 +1,31 @@
-// d:\PTPMHDV\Frontend\src\features\user\services\userService.ts
 import api from '@/lib/axios'
-import type { UserProfile, UpdateUserDto, SubmitKycDto } from '../types/user.types'
+import { unwrap, type ApiResponse } from '@/lib/apiResponse'
+import type { KycDocument, SubmitKycDto, UpdateUserDto, UserProfile } from '../types/user.types'
+
+const path = (authUserId: string) => '/users/by-auth/' + encodeURIComponent(authUserId)
 
 export const userService = {
-  /**
-   * Lấy thông tin hồ sơ theo authUserId (từ useAuthStore)
-   */
-  getProfileByAuthUserId: async (authUserId: string): Promise<UserProfile> => {
-    const res = await api.get(`/users/by-auth/${authUserId}`)
-    return res.data?.data ?? res.data
+  async getProfileById(id: string) {
+    const res = await api.get<ApiResponse<UserProfile>>('/users/' + encodeURIComponent(id))
+    return unwrap(res.data)
   },
-
-  /**
-   * Lấy thông tin hồ sơ theo ID user_service
-   */
-  getProfileById: async (id: string): Promise<UserProfile> => {
-    const res = await api.get(`/users/${id}`)
-    return res.data?.data ?? res.data
+  async getProfileByAuthUserId(authUserId: string, signal?: AbortSignal) {
+    const res = await api.get<ApiResponse<UserProfile>>(path(authUserId), { signal })
+    return unwrap(res.data)
   },
-
-  /**
-   * Cập nhật họ tên, sđt, địa chỉ
-   */
-  updateProfile: async (id: string, data: UpdateUserDto): Promise<UserProfile> => {
-    const res = await api.put(`/users/${id}`, data)
-    return res.data?.data ?? res.data
+  async updateProfile(authUserId: string, payload: UpdateUserDto) {
+    const res = await api.put<ApiResponse<UserProfile>>(path(authUserId), payload)
+    return unwrap(res.data)
   },
-
-  /**
-   * Nộp hồ sơ định danh KYC
-   */
-  submitKyc: async (id: string, data: SubmitKycDto): Promise<UserProfile> => {
-    const res = await api.post(`/users/${id}/kyc`, data)
-    return res.data?.data ?? res.data
+  async submitKyc(authUserId: string, payload: SubmitKycDto) {
+    const body = new FormData()
+    body.append('idNumber', payload.idNumber.trim())
+    body.append('document', payload.document)
+    const res = await api.post<ApiResponse<UserProfile>>(path(authUserId) + '/kyc', body)
+    return unwrap(res.data)
+  },
+  async getKycDocument(authUserId: string, signal?: AbortSignal) {
+    const res = await api.get<ApiResponse<KycDocument>>(path(authUserId) + '/kyc/document', { signal })
+    return unwrap(res.data)
   }
 }

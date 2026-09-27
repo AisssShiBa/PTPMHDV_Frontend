@@ -33,7 +33,7 @@ export const TransferModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =
     let currentVal = Number(amountValue) || 0;
     if (direction === 'up') currentVal += STEP;
     else currentVal = Math.max(0, currentVal - STEP);
-    
+
     setAmountValue(currentVal.toString());
     setAmountDisplay(currentVal ? currentVal.toLocaleString('vi-VN') : '0');
   }
@@ -43,7 +43,7 @@ export const TransferModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =
     try {
       setCheckingWallet(true)
       setIsWalletValid(null)
-      await walletService.getBalance(toUserId.trim()) 
+      await walletService.getBalance(toUserId.trim())
       setIsWalletValid(true)
       toast.success('Tìm thấy ví người nhận hợp lệ!')
     } catch (err) {
@@ -144,15 +144,15 @@ export const TransferModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =
                 required
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleStep('up')}
                   className="p-1 bg-muted/80 hover:bg-muted text-muted-foreground rounded-t-sm transition-colors"
                 >
                   <ChevronUp className="size-3" />
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleStep('down')}
                   className="p-1 bg-muted/80 hover:bg-muted text-muted-foreground rounded-b-sm transition-colors"
                 >

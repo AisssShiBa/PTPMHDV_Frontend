@@ -22,7 +22,8 @@ const navItems: NavItem[] = [
   { label: 'Bảng điều khiển', href: '/dashboard' },
   { label: 'Giao dịch', href: '/transactions' },
   { label: 'Ví của tôi', href: '/wallet' },
-  { label: 'Hồ sơ & KYC', href: '/profile' }
+  { label: 'Hồ sơ & KYC', href: '/profile' },
+  { label: 'Đối tác', href: '/merchant-register' }
 ]
 
 export function Header() {
