@@ -16,6 +16,7 @@ import AdminLayout from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminKyc from './pages/admin/AdminKyc'
 import AdminMerchants from './pages/admin/AdminMerchants'
+import AdminTopups from './pages/admin/AdminTopups'
 
 function App() {
   const initialize = useAuthStore((state) => state.initialize)
@@ -43,6 +44,7 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="kyc" element={<AdminKyc />} />
               <Route path="merchants" element={<AdminMerchants />} />
+              <Route path="topups" element={<AdminTopups />} />
             </Route>
           </Route>
         </Routes>

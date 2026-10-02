@@ -49,5 +49,31 @@ export const paymentService = {
   getTopupStatus: async (id: string) => {
     const res = await api.get(`/payments/topups/${id}`)
     return res.data?.data ?? res.data
+  },
+
+  // ================= ADMIN APIs =================
+
+  /**
+   * Lấy danh sách giao dịch nạp tiền (Admin)
+   */
+  getAdminTopups: async (params?: { status?: string }) => {
+    const res = await api.get('/payments/admin/topups', { params })
+    return res.data?.data ?? res.data
+  },
+
+  /**
+   * Duyệt giao dịch nạp tiền (Admin)
+   */
+  approveTopup: async (id: string) => {
+    const res = await api.post(`/payments/admin/topups/${id}/approve`)
+    return res.data?.data ?? res.data
+  },
+
+  /**
+   * Từ chối giao dịch nạp tiền (Admin)
+   */
+  rejectTopup: async (id: string, reason: string) => {
+    const res = await api.post(`/payments/admin/topups/${id}/reject`, { reason })
+    return res.data?.data ?? res.data
   }
 }

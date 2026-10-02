@@ -1,12 +1,13 @@
 // d:\PTPMHDV\Frontend\src\layouts\AdminLayout.tsx
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Store, ArrowLeft, Shield } from 'lucide-react'
+import { LayoutDashboard, Users, Store, ArrowLeft, Shield, Banknote } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 
 const adminNav = [
   { label: 'Thống kê tổng quan', href: '/admin', icon: LayoutDashboard },
   { label: 'Duyệt hồ sơ KYC', href: '/admin/kyc', icon: Users },
-  { label: 'Duyệt đối tác Merchant', href: '/admin/merchants', icon: Store }
+  { label: 'Duyệt đối tác Merchant', href: '/admin/merchants', icon: Store },
+  { label: 'Duyệt nạp tiền (QR)', href: '/admin/topups', icon: Banknote }
 ]
 
 export default function AdminLayout() {
