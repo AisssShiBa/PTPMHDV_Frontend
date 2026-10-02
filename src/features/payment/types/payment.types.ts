@@ -29,3 +29,27 @@ export interface CheckoutDto {
   callbackTopic: string
   idempotencyKey: string
 }
+
+export type TopupStatus = 'PENDING' | 'PROCESSING' | 'APPROVED' | 'REJECTED' | 'EXPIRED'
+
+export interface TopupRecord {
+  id: string
+  amount: string
+  code: string
+  status: TopupStatus
+  expiresAt: string
+}
+
+export interface TopupPaymentInfo {
+  bankName: string
+  accountNumber: string
+  accountName: string
+  amount: number
+  content: string
+  qrUrl: string
+}
+
+export interface TopupResponse {
+  topup: TopupRecord
+  paymentInfo: TopupPaymentInfo
+}
