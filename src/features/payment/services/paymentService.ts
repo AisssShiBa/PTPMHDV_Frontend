@@ -33,5 +33,21 @@ export const paymentService = {
   cancel: async (id: string): Promise<any> => {
     const res = await api.post(`/payments/${id}/cancel`)
     return res.data?.data ?? res.data
+  },
+
+  /**
+   * Tạo yêu cầu nạp tiền
+   */
+  createTopup: async (amount: number | string) => {
+    const res = await api.post('/payments/topups', { amount: Number(amount) })
+    return res.data?.data ?? res.data
+  },
+
+  /**
+   * Kiểm tra trạng thái của 1 giao dịch
+   */
+  getTopupStatus: async (id: string) => {
+    const res = await api.get(`/payments/topups/${id}`)
+    return res.data?.data ?? res.data
   }
 }
