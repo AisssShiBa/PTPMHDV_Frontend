@@ -119,12 +119,15 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       setLoading(true)
-      const res = await paymentService.createTopup(amountValue) as TopupResponse
-      setTopupData(res)
-      setStatus('PENDING')
+      const res = await paymentService.createTopup(amountValue) as any
+      if (res.paymentUrl) {
+        window.location.href = res.paymentUrl
+      } else {
+        toast.error('Không nhận được đường dẫn thanh toán từ VNPAY')
+        setLoading(false)
+      }
     } catch (err: any) {
       toast.error('Tạo yêu cầu nạp tiền thất bại: ' + (err?.response?.data?.error?.message || err.message))
-    } finally {
       setLoading(false)
     }
   }

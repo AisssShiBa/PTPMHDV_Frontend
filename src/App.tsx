@@ -11,6 +11,7 @@ import Wallet from './pages/Wallet'
 import Transactions from './pages/Transactions'
 import Profile from './pages/Profile'
 import MerchantRegister from './pages/MerchantRegister'
+import TopupResult from './pages/TopupResult'
 import MainLayout from './layouts/MainLayout'
 import AdminLayout from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -37,6 +38,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/merchant-register" element={<MerchantRegister />} />
               <Route path="/merchant/register" element={<Navigate to="/merchant-register" replace />} />
+              <Route path="/topup-result" element={<TopupResult />} />
             </Route>
           </Route>
           <Route element={<ProtectRoute />}>
