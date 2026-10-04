@@ -119,11 +119,11 @@ export default function AdminTopups() {
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                             className="text-xs px-2 py-1.5 border rounded"
+                            disabled
                           />
                           <button 
-                            onClick={() => handleReject(topup.id)}
-                            disabled={actionLoading === topup.id}
-                            className="bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-rose-600"
+                            disabled
+                            className="bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold opacity-50 cursor-not-allowed"
                           >
                             Xác nhận
                           </button>
@@ -137,17 +137,17 @@ export default function AdminTopups() {
                       ) : (
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => handleApprove(topup.id)}
-                            disabled={actionLoading === topup.id}
-                            className="flex items-center gap-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                            disabled
+                            title="Luồng nạp tiền tự động qua VNPAY"
+                            className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-xs font-semibold opacity-50 cursor-not-allowed"
                           >
-                            {actionLoading === topup.id ? <Loader2 className="size-3 animate-spin" /> : <CheckCircle className="size-3" />}
+                            <CheckCircle className="size-3" />
                             Duyệt
                           </button>
                           <button
-                            onClick={() => setSelectedRejectId(topup.id)}
-                            disabled={actionLoading === topup.id}
-                            className="flex items-center gap-1 bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                            disabled
+                            title="Luồng nạp tiền tự động qua VNPAY"
+                            className="flex items-center gap-1 bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-semibold opacity-50 cursor-not-allowed"
                           >
                             <XCircle className="size-3" />
                             Từ chối
