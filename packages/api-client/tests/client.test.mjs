@@ -112,6 +112,99 @@ test('failed refresh clears the session and notifies the app', async t => {
   assert.equal(expiredCalls, 1)
 })
 
+test('refresh network failure preserves the session and does not notify expiration', async t => {
+  const server = await listen(request => request.socket.destroy())
+  t.after(server.close)
+  const tokenStore = store()
+  let expiredCalls = 0
+  const api = createApiClient({
+    baseURL: server.baseURL,
+    platform: 'mobile',
+    tokenStore,
+    onSessionExpired: () => { expiredCalls += 1 }
+  })
+
+  await assert.rejects(api.auth.refresh(), error => {
+    assert.ok(error instanceof ApiError)
+    assert.equal(error.code, 'NETWORK_ERROR')
+    return true
+  })
+  assert.equal(tokenStore.clearCount, 0)
+  assert.equal(expiredCalls, 0)
+  assert.equal(tokenStore.getRefreshToken(), 'refresh-token')
+})
+
+test('refresh server error preserves the session', async t => {
+  const server = await listen((request, response) => {
+    json(response, 500, { success: false, error: { code: 'INTERNAL_ERROR', message: 'unavailable' } })
+  })
+  t.after(server.close)
+  const tokenStore = store()
+  let expiredCalls = 0
+  const api = createApiClient({
+    baseURL: server.baseURL,
+    platform: 'mobile',
+    tokenStore,
+    onSessionExpired: () => { expiredCalls += 1 }
+  })
+
+  await assert.rejects(api.auth.refresh(), error => {
+    assert.ok(error instanceof ApiError)
+    assert.equal(error.status, 500)
+    assert.equal(error.code, 'INTERNAL_ERROR')
+    return true
+  })
+  assert.equal(tokenStore.clearCount, 0)
+  assert.equal(expiredCalls, 0)
+  assert.equal(tokenStore.getRefreshToken(), 'refresh-token')
+})
+
+test('refresh rejection with 401 clears the session and notifies expiration', async t => {
+  const server = await listen((request, response) => {
+    json(response, 401, { success: false, error: { code: 'REFRESH_REJECTED', message: 'expired' } })
+  })
+  t.after(server.close)
+  const tokenStore = store()
+  let expiredCalls = 0
+  const api = createApiClient({
+    baseURL: server.baseURL,
+    platform: 'mobile',
+    tokenStore,
+    onSessionExpired: () => { expiredCalls += 1 }
+  })
+
+  await assert.rejects(api.auth.refresh(), error => {
+    assert.ok(error instanceof ApiError)
+    assert.equal(error.code, 'SESSION_EXPIRED')
+    return true
+  })
+  assert.equal(tokenStore.clearCount, 1)
+  assert.equal(expiredCalls, 1)
+})
+
+test('successful refresh response without session credentials expires the session', async t => {
+  const server = await listen((request, response) => {
+    json(response, 200, { success: true, data: { accessToken: 'new-token', user: {} } })
+  })
+  t.after(server.close)
+  const tokenStore = store()
+  let expiredCalls = 0
+  const api = createApiClient({
+    baseURL: server.baseURL,
+    platform: 'mobile',
+    tokenStore,
+    onSessionExpired: () => { expiredCalls += 1 }
+  })
+
+  await assert.rejects(api.auth.refresh(), error => {
+    assert.ok(error instanceof ApiError)
+    assert.equal(error.code, 'SESSION_EXPIRED')
+    return true
+  })
+  assert.equal(tokenStore.clearCount, 1)
+  assert.equal(expiredCalls, 1)
+})
+
 test('does not replay an old account request using a new account session', async t => {
   let refreshStarted
   const refreshReady = new Promise(resolve => { refreshStarted = resolve })

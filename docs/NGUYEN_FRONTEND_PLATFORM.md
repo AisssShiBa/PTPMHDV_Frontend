@@ -1,12 +1,16 @@
 # Frontend workspace scaffold
 
 - The existing Vite web app remains at the repository root; no app files were moved.
-- `apps/mobile` is the workspace placeholder for N6d.
+- `apps/mobile` contains the Expo mobile application.
 - `packages/api-client` contains the shared HTTP client; `packages/api-contract/openapi.yaml` is the API contract used by the Prism mock.
 - npm workspaces are configured for `apps/*` and `packages/*`.
 
-Run the web app from the repository root with `npm run dev`; run the mock with `npm run mock` on port 4010.
-Mobile application workflows will be documented with their implementation in N6d.
+## Running the applications
+
+- Start the Prism API mock on port 4010 from the repository root: `npm run mock`.
+- Start the web app from the repository root: `npm run dev`.
+- Start the mobile app from the repository root: `npm run dev:mobile`. For device
+  networking and mock configuration, see [apps/mobile/README.md](../apps/mobile/README.md).
 
 ## Notifications (N6c)
 

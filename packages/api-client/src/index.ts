@@ -65,6 +65,10 @@ export interface CreateApiClientOptions {
   timeoutMs?: number
 }
 
+type RefreshResult =
+  | { session: SessionData; error?: never }
+  | { session?: never; error: ApiError }
+
 const localizedMessages: Record<string, string> = {
   DUPLICATE_RESOURCE: 'Thông tin đã tồn tại. Vui lòng kiểm tra lại.',
   INVALID_CREDENTIALS: 'Tên đăng nhập hoặc mật khẩu không đúng.',
@@ -148,14 +152,16 @@ export function createApiClient({
     withCredentials: platform === 'web',
     timeout: timeoutMs
   })
-  let refreshInFlight: { ownerId: string | undefined; promise: Promise<SessionData | null> } | null = null
+  let refreshInFlight: { ownerId: string | undefined; promise: Promise<RefreshResult> } | null = null
   const currentOwnerId = () => tokenStore.getUserId() || undefined
 
-  const refreshSession = (ownerId: string | undefined): Promise<SessionData | null> => {
+  const refreshSession = (ownerId: string | undefined): Promise<RefreshResult> => {
     if (refreshInFlight) {
       return refreshInFlight.ownerId === ownerId
         ? refreshInFlight.promise
-        : Promise.resolve(null)
+        : Promise.resolve({
+          error: new ApiError(401, 'SESSION_CHANGED', 'Tài khoản đã thay đổi. Vui lòng thử lại.')
+        })
     }
 
     const refreshToken = platform === 'mobile' ? tokenStore.getRefreshToken() : undefined
@@ -165,19 +171,56 @@ export function createApiClient({
     const promise = (async () => {
       try {
         const response = await refreshHttp.post<ApiResponse<SessionData>>('/auth/refresh', body, { headers })
-        const session = unwrap(response.data)
-        if (!session.accessToken || !session.user?.id || currentOwnerId() !== ownerId) {
-          return null
+        const session = response.data?.data
+        if (response.data?.success !== true) {
+          return {
+            error: errorFromBody(response.status, response.data, response.headers['x-request-id'])
+          }
+        }
+        if (
+          !session ||
+          typeof session.accessToken !== 'string' ||
+          session.accessToken.length === 0 ||
+          typeof session.user?.id !== 'string' ||
+          session.user.id.length === 0
+        ) {
+          if (currentOwnerId() === ownerId) {
+            tokenStore.clear()
+            onSessionExpired?.()
+            return {
+              error: new ApiError(401, 'SESSION_EXPIRED', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+            }
+          }
+          return {
+            error: new ApiError(401, 'SESSION_CHANGED', 'Tài khoản đã thay đổi. Vui lòng thử lại.')
+          }
+        }
+
+        if (currentOwnerId() !== ownerId) {
+          return {
+            error: new ApiError(401, 'SESSION_CHANGED', 'Tài khoản đã thay đổi. Vui lòng thử lại.')
+          }
         }
         const savedSession = platformSession(session, platform)
         tokenStore.setSession(savedSession)
-        return savedSession
-      } catch {
-        if (currentOwnerId() === ownerId) {
+        return { session: savedSession }
+      } catch (error) {
+        if (
+          axios.isAxiosError(error) &&
+          [400, 401, 403].includes(error.response?.status ?? 0) &&
+          currentOwnerId() === ownerId
+        ) {
           tokenStore.clear()
           onSessionExpired?.()
+          return {
+            error: new ApiError(401, 'SESSION_EXPIRED', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+          }
         }
-        return null
+        if (axios.isAxiosError(error)) return { error: normalizeAxiosError(error) }
+        if (error instanceof ApiError) return { error }
+        return {
+          error: new ApiError(0, 'NETWORK_ERROR', 'Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối và thử lại.')
+        }
       }
     })()
 
@@ -223,7 +266,8 @@ export function createApiClient({
 
       const sentToken = original.headers.get('Authorization')
       if (sentToken === `Bearer ${tokenStore.getAccessToken()}`) {
-        if (!await refreshSession(ownerId)) return Promise.reject(normalizeAxiosError(error))
+        const refreshResult = await refreshSession(ownerId)
+        if (!refreshResult.session) return Promise.reject(normalizeAxiosError(error))
       }
 
       if (!tokenStore.getAccessToken() || original._owner !== currentOwnerId() ||
@@ -255,11 +299,11 @@ export function createApiClient({
       }
     },
     async refresh<T extends SessionData = SessionData>(): Promise<T> {
-      const session = await refreshSession(currentOwnerId())
-      if (!session) {
-        throw new ApiError(401, 'SESSION_EXPIRED', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+      const result = await refreshSession(currentOwnerId())
+      if (!result.session) {
+        throw result.error
       }
-      return session as T
+      return result.session as T
     }
   }
 

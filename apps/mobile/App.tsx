@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -84,37 +84,53 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [retryRestore, setRetryRestore] = useState(false)
+  const mountedRef = useRef(true)
+
+  const restoreSession = useCallback(async () => {
+    setLoading(true)
+    setErrorMessage('')
+    setRetryRestore(false)
+    try {
+      const storedRefreshToken = await SecureStore.getItemAsync(refreshTokenKey)
+      if (!storedRefreshToken) return
+      refreshToken = storedRefreshToken
+      const restored = await api.auth.refresh<MobileSession>()
+      await persistRefreshToken
+      if (storageError) throw storageError
+      if (mountedRef.current) setSession(restored)
+    } catch (error) {
+      const expired = error instanceof ApiError && error.code === 'SESSION_EXPIRED'
+      if (expired) {
+        tokenStore.clear()
+        await persistRefreshToken
+      }
+      if (mountedRef.current) {
+        setSession(null)
+        setErrorMessage(expired
+          ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+          : 'Không thể kết nối máy chủ. Vui lòng thử lại.')
+        setRetryRestore(!expired)
+      }
+    } finally {
+      if (mountedRef.current) setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    let active = true
+    mountedRef.current = true
     sessionExpiredHandler = () => {
       setSession(null)
       setErrorMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
-    }
-
-    const restoreSession = async () => {
-      try {
-        const storedRefreshToken = await SecureStore.getItemAsync(refreshTokenKey)
-        if (!storedRefreshToken) return
-        refreshToken = storedRefreshToken
-        const restored = await api.auth.refresh<MobileSession>()
-        await persistRefreshToken
-        if (storageError) throw storageError
-        if (active) setSession(restored)
-      } catch {
-        tokenStore.clear()
-        await persistRefreshToken
-      } finally {
-        if (active) setLoading(false)
-      }
+      setRetryRestore(false)
     }
 
     void restoreSession()
     return () => {
-      active = false
+      mountedRef.current = false
       sessionExpiredHandler = undefined
     }
-  }, [])
+  }, [restoreSession])
 
   useEffect(() => {
     if (!session) {
@@ -139,6 +155,7 @@ export default function App() {
   const signIn = async () => {
     setSubmitting(true)
     setErrorMessage('')
+    setRetryRestore(false)
     try {
       const signedIn = await api.auth.signIn<MobileSession>({ username, password })
       await persistRefreshToken
@@ -217,6 +234,15 @@ export default function App() {
           value={password}
         />
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        {retryRestore ? (
+          <TouchableOpacity
+            disabled={loading}
+            onPress={() => void restoreSession()}
+            style={[styles.button, loading && styles.disabled]}
+          >
+            <Text style={styles.buttonText}>{loading ? 'Đang thử lại...' : 'Thử lại'}</Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity
           disabled={submitting || !username || !password}
           onPress={() => void signIn()}
