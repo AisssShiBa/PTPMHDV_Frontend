@@ -3,12 +3,14 @@
 export type NotificationType =
   | 'PAYMENT_SUCCESS'
   | 'PAYMENT_FAILED'
+  | 'PAYMENT_EXPIRED'
   | 'PAYMENT_REFUNDED'
   | 'PAYMENT_CANCELLED'
   | 'WALLET_CREDITED'
   | 'WALLET_DEBITED'
   | 'KYC_APPROVED'
   | 'KYC_REJECTED'
+  | 'KYC_TIER_CHANGED'
   | 'MERCHANT_APPROVED'
   | 'MERCHANT_REJECTED'
 
@@ -22,7 +24,6 @@ export interface NotificationItem {
 }
 
 export interface NotificationListResponse {
-  userId: string
   notifications: NotificationItem[]
   unreadCount: number
   pagination: {
