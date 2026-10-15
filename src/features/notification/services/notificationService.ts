@@ -3,29 +3,29 @@ import api from '@/lib/axios'
 import type { NotificationListResponse, NotificationItem } from '../types/notification.types'
 
 export const notificationService = {
-  /**
-   * Lấy danh sách thông báo của user (kèm unreadCount)
-   */
-  getNotifications: async (userId: string, page = 1, limit = 10): Promise<NotificationListResponse> => {
-    const res = await api.get(`/notifications/${userId}`, {
+  getNotifications: async (page = 1, limit = 10): Promise<NotificationListResponse> => {
+    const res = await api.get('/notifications/me', {
       params: { page, limit }
     })
-    return res.data?.data ?? res.data
+    return res.data.data
   },
 
-  /**
-   * Đánh dấu 1 thông báo đã đọc
-   */
   markRead: async (id: string): Promise<NotificationItem> => {
-    const res = await api.patch(`/notifications/${id}/read`)
-    return res.data?.data ?? res.data
+    const res = await api.patch(`/notifications/${encodeURIComponent(id)}/read`)
+    return res.data.data
   },
 
-  /**
-   * Đánh dấu tất cả thông báo đã đọc
-   */
-  markAllRead: async (userId: string): Promise<{ updatedCount: number }> => {
-    const res = await api.patch(`/notifications/${userId}/read-all`)
-    return res.data?.data ?? res.data
+  markAllRead: async (): Promise<{ updatedCount: number }> => {
+    const res = await api.patch('/notifications/me/read-all')
+    return res.data.data
+  },
+
+  getSocketTicket: async (): Promise<string> => {
+    const res = await api.get<{ success: boolean; data?: { ticket?: string } }>('/notifications/socket-ticket')
+    const ticket = res.data?.data?.ticket
+    if (!res.data?.success || typeof ticket !== 'string' || ticket.length === 0) {
+      throw new Error('Phản hồi socket ticket không hợp lệ.')
+    }
+    return ticket
   }
 }

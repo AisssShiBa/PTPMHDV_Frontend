@@ -1,5 +1,6 @@
 // d:\PTPMHDV\Frontend\src\features\notification\components\NotificationBell.tsx
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import axios from 'axios'
 import { BadgeCheck, Bell, CheckCheck, CreditCard, Loader2, RotateCcw, Store, WalletCards, XCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { notificationService } from '../services/notificationService'
@@ -7,23 +8,34 @@ import type { NotificationItem, NotificationType } from '../types/notification.t
 import { useNotificationSocket } from '../hooks/useNotificationSocket'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { toast } from 'sonner'
+import { errorMessage } from '@/lib/apiResponse'
 
 const notificationIconByType: Record<NotificationType, LucideIcon> = {
   PAYMENT_SUCCESS: CreditCard,
   PAYMENT_FAILED: CreditCard,
+  PAYMENT_EXPIRED: CreditCard,
   PAYMENT_REFUNDED: RotateCcw,
   PAYMENT_CANCELLED: XCircle,
   WALLET_CREDITED: WalletCards,
   WALLET_DEBITED: WalletCards,
   KYC_APPROVED: BadgeCheck,
   KYC_REJECTED: BadgeCheck,
+  KYC_TIER_CHANGED: BadgeCheck,
   MERCHANT_APPROVED: Store,
   MERCHANT_REJECTED: Store
 }
 
+function notificationErrorMessage(error: unknown): string {
+  if (axios.isAxiosError<{ error?: { message?: string }; requestId?: string }>(error)) {
+    const message = error.response?.data?.error?.message
+    const requestId = error.response?.data?.requestId
+    if (message) return requestId ? `${message} (Request ID: ${requestId})` : message
+  }
+  return errorMessage(error)
+}
+
 export const NotificationBell: React.FC = () => {
   const user = useAuthStore((state) => state.user)
-  const accessToken = useAuthStore((state) => state.accessToken)
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -41,29 +53,33 @@ export const NotificationBell: React.FC = () => {
     toast.info(notification.message)
   }
 
-  useNotificationSocket(user?.id ? String(user.id) : undefined, accessToken, handleRealtimeNotification)
+  useNotificationSocket(
+    user?.id ? String(user.id) : undefined,
+    handleRealtimeNotification,
+    (error) => toast.error(notificationErrorMessage(error))
+  )
 
-  const fetchNotifications = async (requestedPage = 1, append = false) => {
+  const fetchNotifications = useCallback(async (requestedPage = 1, append = false) => {
     if (!user?.id) return
     try {
       setLoading(true)
-      const data = await notificationService.getNotifications(String(user.id), requestedPage, 10)
+      const data = await notificationService.getNotifications(requestedPage, 10)
       setNotifications((prev) => (append ? [...prev, ...(data.notifications || [])] : data.notifications || []))
       setUnreadCount(data.unreadCount || 0)
       setPage(requestedPage)
       setTotalPages(data.pagination?.totalPages || 1)
-    } catch {
-      // Silent fail on polling/fetching notifications
+    } catch (error) {
+      toast.error(notificationErrorMessage(error))
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.id])
 
   useEffect(() => {
     fetchNotifications()
     const timer = setInterval(fetchNotifications, 15000) // Poll mỗi 15s
     return () => clearInterval(timer)
-  }, [user?.id])
+  }, [fetchNotifications])
 
   const handleLoadMore = () => {
     if (loading || page >= totalPages) return
@@ -88,19 +104,19 @@ export const NotificationBell: React.FC = () => {
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
       setUnreadCount((c) => Math.max(0, c - 1))
     } catch (err: any) {
-      toast.error('Lỗi cập nhật: ' + err.message)
+      toast.error('Lỗi cập nhật: ' + notificationErrorMessage(err))
     }
   }
 
   const handleMarkAllRead = async () => {
     if (!user?.id || unreadCount === 0) return
     try {
-      await notificationService.markAllRead(String(user.id))
+      await notificationService.markAllRead()
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
       setUnreadCount(0)
       toast.success('Đã đánh dấu đọc tất cả thông báo!')
     } catch (err: any) {
-      toast.error('Lỗi cập nhật: ' + err.message)
+      toast.error('Lỗi cập nhật: ' + notificationErrorMessage(err))
     }
   }
 
