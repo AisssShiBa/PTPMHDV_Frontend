@@ -1,47 +1,61 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 import { notificationService } from '../services/notificationService'
 import type { NotificationItem } from '../types/notification.types'
+import { createSocketAuth, resolveSocketOrigin } from './socketConfig'
 
-const socketUrl = import.meta.env.VITE_NOTIFICATION_SOCKET_URL || 'http://localhost:3006'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
+const useMock = import.meta.env.VITE_USE_MOCK === 'true'
 
 export function useNotificationSocket(
   userId: string | undefined,
-  onNotification: (notification: NotificationItem) => void,
-  onConnectionError: (error: unknown) => void
+  accessToken: string | undefined,
+  onNotification: (notification: NotificationItem) => void
 ) {
   const handlerRef = useRef(onNotification)
-  const errorHandlerRef = useRef(onConnectionError)
+  const [connected, setConnected] = useState(false)
   handlerRef.current = onNotification
-  errorHandlerRef.current = onConnectionError
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId || !accessToken || useMock) {
+      setConnected(false)
+      return
+    }
 
     let active = true
-    let socket: ReturnType<typeof io> | undefined
+    let serverDisconnectTimer: ReturnType<typeof setTimeout> | undefined
+    setConnected(false)
+    const socket = io(resolveSocketOrigin(apiBaseUrl, window.location.origin), {
+      path: '/socket.io',
+      auth: createSocketAuth(
+        () => notificationService.getSocketTicket(),
+        (error) => console.error('Failed to fetch notification socket ticket', error)
+      )
+    })
 
-    void notificationService.getSocketTicket().then((ticket) => {
-      if (!active) return
-      socket = io(socketUrl, {
-        auth: { token: ticket },
-        transports: ['websocket', 'polling'],
-        reconnection: false
-      })
-
-      socket.on('notification:new', (notification: NotificationItem) => {
-        handlerRef.current(notification)
-      })
-      socket.on('connect_error', (error) => {
-        errorHandlerRef.current(error)
-      })
-    }).catch((error: unknown) => {
-      if (active) errorHandlerRef.current(error)
+    socket.on('connect', () => {
+      if (active) setConnected(true)
+    })
+    socket.on('connect_error', (error) => {
+      console.error('Notification socket connection failed', error)
+    })
+    socket.on('disconnect', (reason) => {
+      if (active) setConnected(false)
+      if (active && reason === 'io server disconnect') {
+        serverDisconnectTimer = setTimeout(() => socket.connect(), 1000)
+      }
+    })
+    socket.on('notification:new', (notification: NotificationItem) => {
+      handlerRef.current(notification)
     })
 
     return () => {
       active = false
-      socket?.disconnect()
+      if (serverDisconnectTimer) clearTimeout(serverDisconnectTimer)
+      socket.disconnect()
     }
-  }, [userId])
+  }, [userId, accessToken])
+
+  return connected
 }

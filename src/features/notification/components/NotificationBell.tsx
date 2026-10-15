@@ -1,7 +1,7 @@
 // d:\PTPMHDV\Frontend\src\features\notification\components\NotificationBell.tsx
 import { useCallback, useEffect, useRef, useState } from 'react'
 import axios from 'axios'
-import { BadgeCheck, Bell, CheckCheck, CreditCard, Loader2, RotateCcw, Store, WalletCards, XCircle } from 'lucide-react'
+import { BadgeCheck, Bell, CheckCheck, Clock, CreditCard, Loader2, RotateCcw, ShieldCheck, Store, WalletCards, XCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { notificationService } from '../services/notificationService'
 import type { NotificationItem, NotificationType } from '../types/notification.types'
@@ -13,14 +13,14 @@ import { errorMessage } from '@/lib/apiResponse'
 const notificationIconByType: Record<NotificationType, LucideIcon> = {
   PAYMENT_SUCCESS: CreditCard,
   PAYMENT_FAILED: CreditCard,
-  PAYMENT_EXPIRED: CreditCard,
+  PAYMENT_EXPIRED: Clock,
   PAYMENT_REFUNDED: RotateCcw,
   PAYMENT_CANCELLED: XCircle,
   WALLET_CREDITED: WalletCards,
   WALLET_DEBITED: WalletCards,
   KYC_APPROVED: BadgeCheck,
   KYC_REJECTED: BadgeCheck,
-  KYC_TIER_CHANGED: BadgeCheck,
+  KYC_TIER_CHANGED: ShieldCheck,
   MERCHANT_APPROVED: Store,
   MERCHANT_REJECTED: Store
 }
@@ -36,6 +36,7 @@ function notificationErrorMessage(error: unknown): string {
 
 export const NotificationBell: React.FC = () => {
   const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -43,20 +44,20 @@ export const NotificationBell: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const seenNotificationIds = useRef(new Set<string>())
 
   const handleRealtimeNotification = (notification: NotificationItem) => {
-    setNotifications((prev) => {
-      if (prev.some((item) => item.id === notification.id)) return prev
-      return [notification, ...prev]
-    })
+    if (seenNotificationIds.current.has(notification.id)) return
+    seenNotificationIds.current.add(notification.id)
+    setNotifications((prev) => [notification, ...prev])
     setUnreadCount((count) => count + (notification.read ? 0 : 1))
     toast.info(notification.message)
   }
 
-  useNotificationSocket(
+  const socketConnected = useNotificationSocket(
     user?.id ? String(user.id) : undefined,
-    handleRealtimeNotification,
-    (error) => toast.error(notificationErrorMessage(error))
+    accessToken ?? undefined,
+    handleRealtimeNotification
   )
 
   const fetchNotifications = useCallback(async (requestedPage = 1, append = false) => {
@@ -64,7 +65,17 @@ export const NotificationBell: React.FC = () => {
     try {
       setLoading(true)
       const data = await notificationService.getNotifications(requestedPage, 10)
-      setNotifications((prev) => (append ? [...prev, ...(data.notifications || [])] : data.notifications || []))
+      const items = data.notifications || []
+      if (append) {
+        items.forEach((item) => seenNotificationIds.current.add(item.id))
+        setNotifications((prev) => {
+          const knownIds = new Set(prev.map((item) => item.id))
+          return [...prev, ...items.filter((item) => !knownIds.has(item.id))]
+        })
+      } else {
+        seenNotificationIds.current = new Set(items.map((item) => item.id))
+        setNotifications(items)
+      }
       setUnreadCount(data.unreadCount || 0)
       setPage(requestedPage)
       setTotalPages(data.pagination?.totalPages || 1)
@@ -77,9 +88,9 @@ export const NotificationBell: React.FC = () => {
 
   useEffect(() => {
     fetchNotifications()
-    const timer = setInterval(fetchNotifications, 15000) // Poll mỗi 15s
+    const timer = setInterval(fetchNotifications, socketConnected ? 60000 : 15000)
     return () => clearInterval(timer)
-  }, [fetchNotifications])
+  }, [fetchNotifications, socketConnected])
 
   const handleLoadMore = () => {
     if (loading || page >= totalPages) return
