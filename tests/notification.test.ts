@@ -4,6 +4,7 @@ import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import api from '../src/lib/axios'
 import { useAuthStore } from '../src/features/auth/stores/useAuthStore'
 import { notificationService } from '../src/features/notification/services/notificationService'
+import { createSocketAuth, resolveSocketOrigin } from '../src/features/notification/hooks/socketConfig'
 
 const user = {
   id: '10000000-0000-4000-8000-000000000001',
@@ -119,4 +120,37 @@ test('notification failures preserve backend 404 error and requestId details', a
     assert.equal(error.response?.data.requestId, 'request-123')
     return true
   })
+})
+
+test('socket origin follows an absolute API base URL', () => {
+  assert.equal(
+    resolveSocketOrigin('http://localhost:3000/api', 'http://localhost:5173'),
+    'http://localhost:3000'
+  )
+})
+
+test('relative API base URL uses the current page origin', () => {
+  assert.equal(resolveSocketOrigin('/api', 'https://finvault.example'), 'https://finvault.example')
+})
+
+test('socket auth obtains a fresh ticket every time Socket.IO requests auth', async () => {
+  let requests = 0
+  const auth = createSocketAuth(async () => `ticket-${++requests}`, () => {})
+  const requestAuth = () => new Promise<{ token?: string }>((resolve) => auth(resolve))
+
+  assert.deepEqual(await requestAuth(), { token: 'ticket-1' })
+  assert.deepEqual(await requestAuth(), { token: 'ticket-2' })
+  assert.equal(requests, 2)
+})
+
+test('socket auth reports ticket failures and does not send an empty token', async () => {
+  const ticketError = new Error('ticket unavailable')
+  const errors: unknown[] = []
+  const auth = createSocketAuth(async () => {
+    throw ticketError
+  }, (error) => errors.push(error))
+  const result = await new Promise<{ token?: string }>((resolve) => auth(resolve))
+
+  assert.deepEqual(errors, [ticketError])
+  assert.deepEqual(result, {})
 })
