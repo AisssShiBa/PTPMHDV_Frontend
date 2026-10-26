@@ -34,10 +34,12 @@ export function buildProfileUpdate(profile: ProfileValues, values: ProfileFormVa
 }
 
 export const MAX_KYC_FILE_SIZE = 5 * 1024 * 1024
+const kycImage = z.instanceof(File, { error: 'Vui lòng chọn ảnh giấy tờ.' })
+  .refine((file) => ['image/jpeg', 'image/png'].includes(file.type), 'Chỉ chấp nhận ảnh JPEG hoặc PNG.')
+  .refine((file) => file.size > 0 && file.size <= MAX_KYC_FILE_SIZE, 'Ảnh phải có dữ liệu và không vượt quá 5 MiB.')
 export const kycSchema = z.object({
   idNumber: z.string().trim().min(1, 'Vui lòng nhập số CCCD hoặc Passport.').max(50, 'Số giấy tờ tối đa 50 ký tự.'),
-  document: z.instanceof(File, { error: 'Vui lòng chọn ảnh giấy tờ.' })
-    .refine((file) => ['image/jpeg', 'image/png'].includes(file.type), 'Chỉ chấp nhận ảnh JPEG hoặc PNG.')
-    .refine((file) => file.size > 0 && file.size <= MAX_KYC_FILE_SIZE, 'Ảnh phải có dữ liệu và không vượt quá 5 MiB.')
+  front: kycImage,
+  back: kycImage
 })
 export type KycFormValues = z.infer<typeof kycSchema>

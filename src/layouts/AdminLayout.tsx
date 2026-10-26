@@ -17,16 +17,16 @@ export default function AdminLayout() {
   if (user?.role !== 'ADMIN') return <Navigate to="/" replace />
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
+    <div className="min-h-screen flex flex-col md:flex-row bg-background text-foreground">
       {/* Sidebar Admin */}
-      <aside className="w-64 border-r border-border/60 bg-card/60 p-6 flex flex-col justify-between shrink-0">
+      <aside className="w-full md:w-64 border-b md:border-r border-border/60 bg-card/60 p-4 md:p-6 flex flex-col justify-between gap-4 shrink-0">
         <div className="space-y-6">
           <div className="flex items-center gap-2.5 text-primary font-black text-xl tracking-tight">
             <Shield className="size-6 text-primary" />
             <span>FinVault Admin</span>
           </div>
 
-          <nav className="space-y-1.5">
+          <nav className="grid grid-cols-2 gap-1.5 md:grid-cols-1">
             {adminNav.map((item) => {
               const isActive = location.pathname === item.href
               const Icon = item.icon
@@ -60,7 +60,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Nội dung chính Admin */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="min-w-0 flex-1 p-4 sm:p-8">
         <Outlet />
       </main>
     </div>

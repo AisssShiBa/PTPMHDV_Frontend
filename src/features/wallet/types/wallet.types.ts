@@ -22,3 +22,10 @@ export interface WalletHistoryItem {
   referenceId: string
   createdAt: string
 }
+
+export interface WalletTransferResult {
+  transactionId: string
+  replayed: boolean
+  fromBalance: string
+  toBalance: string
+}

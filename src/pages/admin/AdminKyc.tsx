@@ -1,134 +1,99 @@
-// d:\PTPMHDV\Frontend\src\pages\admin\AdminKyc.tsx
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { ResourceError, ResourceLoading } from '@/components/common/ResourceState'
+import { useRemoteResource } from '@/hooks/useRemoteResource'
+import { errorMessage } from '@/lib/apiResponse'
 import { adminService } from '@/features/admin/services/adminService'
 import type { AdminKycItem } from '@/features/admin/types/admin.types'
+import type { KycStatus } from '@/features/user/types/user.types'
+import { AdminKycDocumentsViewer } from '@/features/admin/components/AdminKycDocumentsViewer'
+import { KycActionForm, type KycAction } from '@/features/admin/components/KycActionForm'
 import { KycStatusBadge } from '@/features/user/components/KycStatusBadge'
-import { Check, X, RefreshCw, Loader2, ExternalLink } from 'lucide-react'
-import { toast } from 'sonner'
+import { KycTierBadge } from '@/features/user/components/KycTierBadge'
+
+type Filters = { page: number; search: string; status: KycStatus | '' }
+const loadList = (key: string, signal: AbortSignal) => {
+  const filters: Filters = JSON.parse(key)
+  return adminService.getKycList({ ...filters, limit: 10, status: filters.status || undefined }, signal)
+}
 
 export default function AdminKyc() {
-  const [list, setList] = useState<AdminKycItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
-
-  const fetchList = async () => {
-    try {
-      setLoading(true)
-      const data = await adminService.getKycList({ limit: 50 })
-      setList(data.content || [])
-    } catch (err: any) {
-      toast.error('Lỗi tải danh sách KYC: ' + (err?.response?.data?.error?.message || err.message))
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  const [filters, setFilters] = useState<Filters>({ page: 1, search: '', status: '' })
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<AdminKycItem | null>(null)
+  const [action, setAction] = useState<KycAction | null>(null)
+  const [busy, setBusy] = useState(false)
+  const detailPanel = useRef<HTMLElement | null>(null)
   useEffect(() => {
-    fetchList()
-  }, [])
+    if (selected) detailPanel.current?.focus()
+  }, [selected, action])
+  const resource = useRemoteResource(JSON.stringify(filters), loadList)
+  const reload = () => { setBusy(false); setSelected(null); setAction(null); resource.reload() }
+  const filter = (next: Filters) => { setSelected(null); setAction(null); setFilters(next) }
+  const select = (item: AdminKycItem, next: KycAction | null) => { setSelected(item); setAction(next) }
 
-  const handleReview = async (userId: string, status: 'APPROVED' | 'REJECTED') => {
-    try {
-      setActionLoading(userId)
-      await adminService.reviewKyc(userId, status, status === 'APPROVED' ? 'Hồ sơ hợp lệ' : 'Ảnh mờ hoặc không hợp lệ')
-      toast.success(status === 'APPROVED' ? 'Đã duyệt hồ sơ KYC!' : 'Đã từ chối hồ sơ KYC!')
-      fetchList()
-    } catch (err: any) {
-      toast.error('Thao tác thất bại: ' + (err?.response?.data?.error?.message || err.message))
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  return (
-    <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Phê duyệt Định danh KYC</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Kiểm tra thông tin giấy tờ và duyệt/từ chối hồ sơ người dùng.
-          </p>
-        </div>
-        <button
-          onClick={fetchList}
-          disabled={loading}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted"
-        >
-          <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Làm mới</span>
-        </button>
+  return <div className="max-w-6xl space-y-6">
+    <header className="flex flex-wrap items-start justify-between gap-3">
+      <div><h1 className="text-2xl font-black tracking-tight">Phê duyệt Định danh KYC</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Kiểm tra giấy tờ, xét duyệt và quản lý cấp xác thực của người dùng.</p></div>
+      <Button variant="outline" disabled={busy || resource.status === 'loading'} onClick={reload}><RefreshCw className="size-4" />Làm mới</Button>
+    </header>
+    <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); if (!busy) filter({ ...filters, page: 1, search: search.trim() }) }}>
+      <div className="min-w-0 basis-full space-y-2 sm:flex-1"><Label htmlFor="kyc-search">Tìm hồ sơ</Label>
+        <Input id="kyc-search" placeholder="Họ tên hoặc email" value={search} maxLength={200} disabled={busy} onChange={(event) => setSearch(event.target.value)} /></div>
+      <div className="space-y-2"><Label htmlFor="kyc-status">Trạng thái</Label>
+        <select id="kyc-status" className="h-9 rounded-lg border border-border bg-background px-3 text-sm" value={filters.status} disabled={busy}
+          onChange={(event) => filter({ ...filters, page: 1, status: event.target.value as Filters['status'] })}>
+          <option value="">Tất cả trạng thái</option><option value="PENDING">Đang chờ duyệt</option><option value="APPROVED">Đã xác thực</option>
+          <option value="REJECTED">Đã từ chối</option><option value="NONE">Chưa nộp</option>
+        </select></div>
+      <Button type="submit" disabled={busy}>Tìm kiếm</Button>
+    </form>
+    {resource.status === 'loading' && <ResourceLoading message="Đang tải danh sách KYC…" />}
+    {resource.status === 'error' && <ResourceError message={errorMessage(resource.error)} onRetry={reload} />}
+    {resource.status === 'success' && <>
+      {selected && <section ref={detailPanel} tabIndex={-1} aria-label="Chi tiết hồ sơ KYC" className="space-y-5 rounded-2xl border border-primary/20 bg-card p-4 outline-none sm:p-6">
+        <div className="flex items-start justify-between gap-3"><div className="min-w-0 space-y-2">
+          <h2 className="break-words text-lg font-bold">{selected.fullName || 'Chưa cập nhật họ tên'}</h2>
+          <p className="break-all text-sm text-muted-foreground">{selected.email}</p>
+          <div className="flex gap-2"><KycStatusBadge status={selected.kycStatus} /><KycTierBadge tier={selected.kycTier} /></div>
+        </div><Button variant="ghost" disabled={busy} onClick={() => { setSelected(null); setAction(null) }}>Đóng</Button></div>
+        <AdminKycDocumentsViewer key={selected.id} userId={selected.id} />
+        {action !== null && <KycActionForm key={`${selected.id}-${action}`} item={selected} action={action} onBusy={setBusy} onSaved={reload} />}
+      </section>}
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+        <table className="w-full text-left text-sm">
+          <caption className="sr-only">Danh sách hồ sơ và cấp KYC</caption>
+          <thead className="border-b border-border bg-muted/50 text-xs text-muted-foreground"><tr>
+            <th className="p-4">Họ tên / Email</th><th className="p-4">Giấy tờ</th><th className="p-4">Trạng thái</th><th className="p-4">Cấp KYC</th><th className="p-4">Thao tác</th>
+          </tr></thead>
+          <tbody className="divide-y divide-border">
+            {resource.data.content.map((item) => <tr key={item.id} className="align-top">
+              <td className="p-4"><div className="font-semibold">{item.fullName || 'Chưa cập nhật'}</div><div className="text-xs text-muted-foreground">{item.email}</div></td>
+              <td className="p-4"><div className="mb-2 whitespace-nowrap font-mono text-xs">{item.idNumber ? '•••• ' + item.idNumber.slice(-4) : 'Chưa có giấy tờ'}</div>
+                <Button size="sm" variant="outline" disabled={busy || !item.hasKycDocument} onClick={() => select(item, null)}>Xem hồ sơ</Button></td>
+              <td className="p-4"><KycStatusBadge status={item.kycStatus} /></td><td className="p-4"><KycTierBadge tier={item.kycTier} /></td>
+              <td className="p-4"><div className="flex min-w-48 flex-wrap gap-2">
+                <Button size="sm" disabled={busy || item.kycStatus !== 'PENDING'} onClick={() => select(item, 'APPROVED')}>Duyệt</Button>
+                <Button size="sm" variant="destructive" disabled={busy || !['PENDING', 'APPROVED'].includes(item.kycStatus)} onClick={() => select(item, 'REJECTED')}>Từ chối</Button>
+                {item.kycStatus === 'APPROVED' && <Button size="sm" variant="outline" disabled={busy} onClick={() => select(item, item.kycTier === 2 ? 1 : 2)}>
+                  {item.kycTier === 2 ? 'Đưa về cấp 1' : 'Nâng cấp 2'}
+                </Button>}
+                {item.kycStatus === 'APPROVED' && item.kycTier === 0 && <Button size="sm" variant="outline" disabled={busy} onClick={() => select(item, 1)}>Đặt cấp 1</Button>}
+              </div></td>
+            </tr>)}
+            {!resource.data.content.length && <tr><td colSpan={5} className="p-10 text-center text-muted-foreground">Không có hồ sơ phù hợp.</td></tr>}
+          </tbody>
+        </table>
       </div>
-
-      <div className="rounded-2xl border border-border/60 bg-card/60 overflow-hidden shadow-xs">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="size-6 animate-spin text-primary" />
-          </div>
-        ) : list.length === 0 ? (
-          <div className="py-16 text-center text-xs text-muted-foreground">
-            Hiện không có hồ sơ KYC nào trên hệ thống
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 text-muted-foreground font-semibold border-b border-border/60">
-                <tr>
-                  <th className="p-3.5">Họ tên / Email</th>
-                  <th className="p-3.5">Số CCCD</th>
-                  <th className="p-3.5">Ảnh CCCD</th>
-                  <th className="p-3.5">Trạng thái</th>
-                  <th className="p-3.5 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {list.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="p-3.5">
-                      <div className="font-bold text-foreground">{item.fullName || 'Chưa cập nhật'}</div>
-                      <div className="text-muted-foreground text-[11px]">{item.email}</div>
-                    </td>
-                    <td className="p-3.5 font-mono font-medium">{item.idNumber || '—'}</td>
-                    <td className="p-3.5">
-                      {item.idImageUrl ? (
-                        <a
-                          href={item.idImageUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-primary hover:underline font-semibold"
-                        >
-                          <span>Xem ảnh</span>
-                          <ExternalLink className="size-3" />
-                        </a>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="p-3.5">
-                      <KycStatusBadge status={item.kycStatus} />
-                    </td>
-                    <td className="p-3.5 text-right space-x-2">
-                      <button
-                        onClick={() => handleReview(item.id, 'APPROVED')}
-                        disabled={actionLoading === item.id || item.kycStatus === 'APPROVED'}
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold text-[11px] hover:bg-emerald-700 disabled:opacity-30 inline-flex items-center gap-1"
-                      >
-                        <Check className="size-3" /> Duyệt
-                      </button>
-                      <button
-                        onClick={() => handleReview(item.id, 'REJECTED')}
-                        disabled={actionLoading === item.id || item.kycStatus === 'REJECTED'}
-                        className="px-2.5 py-1.5 rounded-lg bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 disabled:opacity-30 inline-flex items-center gap-1"
-                      >
-                        <X className="size-3" /> Từ chối
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <p className="text-muted-foreground">{resource.data.totalElements} hồ sơ · Trang {filters.page} / {Math.max(filters.page, resource.data.totalPages)}</p>
+        <div className="flex gap-2"><Button variant="outline" disabled={busy || filters.page === 1} onClick={() => filter({ ...filters, page: filters.page - 1 })}>Trang trước</Button>
+          <Button variant="outline" disabled={busy || filters.page >= resource.data.totalPages} onClick={() => filter({ ...filters, page: filters.page + 1 })}>Trang sau</Button></div>
       </div>
-    </div>
-  )
+    </>}
+  </div>
 }

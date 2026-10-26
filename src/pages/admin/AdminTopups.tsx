@@ -7,7 +7,6 @@ import { Loader2, CheckCircle, XCircle, Clock } from 'lucide-react'
 export default function AdminTopups() {
   const [topups, setTopups] = useState<TopupRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [selectedRejectId, setSelectedRejectId] = useState<string | null>(null)
 
@@ -26,38 +25,6 @@ export default function AdminTopups() {
   useEffect(() => {
     fetchTopups()
   }, [])
-
-  const handleApprove = async (id: string) => {
-    try {
-      setActionLoading(id)
-      await paymentService.approveTopup(id)
-      toast.success('Duyệt nạp tiền thành công')
-      setTopups(prev => prev.filter(t => t.id !== id))
-    } catch (error: any) {
-      toast.error('Duyệt thất bại: ' + (error?.response?.data?.error?.message || error.message))
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  const handleReject = async (id: string) => {
-    if (!rejectReason.trim()) {
-      toast.error('Vui lòng nhập lý do từ chối')
-      return
-    }
-    try {
-      setActionLoading(id)
-      await paymentService.rejectTopup(id, rejectReason)
-      toast.success('Đã từ chối giao dịch nạp tiền')
-      setTopups(prev => prev.filter(t => t.id !== id))
-      setSelectedRejectId(null)
-      setRejectReason('')
-    } catch (error: any) {
-      toast.error('Từ chối thất bại: ' + (error?.response?.data?.error?.message || error.message))
-    } finally {
-      setActionLoading(null)
-    }
-  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
