@@ -1,6 +1,7 @@
 // d:\PTPMHDV\Frontend\src\features\wallet\services\walletService.ts
 import api from '@/lib/axios'
-import type { WalletBalance, WalletHistoryItem } from '../types/wallet.types'
+import type { WalletBalance, WalletHistoryItem, WalletTransferResult } from '../types/wallet.types'
+import { unwrap, type ApiResponse } from '@/lib/apiResponse'
 
 export const walletService = {
   /**
@@ -38,13 +39,17 @@ export const walletService = {
   /**
    * Chuyển tiền P2P
    */
-  transfer: async (userId: string, toUserId: string, amount: string | number): Promise<any> => {
-    const res = await api.post(`/wallets/${userId}/transfer`, {
+  transfer: async (userId: string, toUserId: string, amount: string, referenceId: string): Promise<WalletTransferResult> => {
+    const res = await api.post<ApiResponse<WalletTransferResult>>(`/wallets/${encodeURIComponent(userId)}/transfer`, {
       toUserId,
       amount: String(amount),
-      referenceId: `P2P-${Date.now()}`
+      referenceId
     })
-    return res.data?.data ?? res.data
+    const result = unwrap(res.data)
+    if (!result || typeof result.transactionId !== 'string' || !result.transactionId) {
+      throw new Error('Invalid transfer response')
+    }
+    return result
   },
 
   /**

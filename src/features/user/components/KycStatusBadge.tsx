@@ -9,5 +9,5 @@ const statuses: Record<KycStatus, { label: string; style: string }> = {
 
 export function KycStatusBadge({ status = 'NONE', className = '' }: { status?: KycStatus; className?: string }) {
   const display = statuses[status] ?? { label: 'Chưa rõ trạng thái', style: 'bg-muted text-muted-foreground' }
-  return <span role="status" className={'inline-flex rounded-full px-3 py-1 text-xs font-medium ' + display.style + ' ' + className}>{display.label}</span>
+  return <span role="status" className={'inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ' + display.style + ' ' + className}>{display.label}</span>
 }

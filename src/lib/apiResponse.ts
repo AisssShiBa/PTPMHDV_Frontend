@@ -22,6 +22,11 @@ export function errorMessage(error: unknown): string {
   const messages: Record<string, string> = {
     DUPLICATE_RESOURCE: 'Thông tin đã tồn tại. Vui lòng kiểm tra lại.',
     KYC_DOCUMENT_REQUIRED: 'Vui lòng chọn ảnh giấy tờ JPEG hoặc PNG.',
+    KYC_DOCUMENTS_REQUIRED: 'Hồ sơ cần đủ ảnh mặt trước và mặt sau trước khi gửi hoặc duyệt.',
+    KYC_DOCUMENTS_INCOMPLETE: 'Hồ sơ chưa có đủ hai mặt giấy tờ. Người dùng cần nộp lại hồ sơ.',
+    KYC_NOT_APPROVED: 'Chỉ có thể đổi cấp cho hồ sơ đã được duyệt. Vui lòng tải lại danh sách.',
+    AUDIT_UNAVAILABLE: 'Chưa thể ghi nhật ký duyệt hồ sơ. Vui lòng thử lại sau.',
+    KYC_OUTCOME_UNKNOWN: 'Chưa xác định được kết quả. Hãy tải lại hồ sơ và đối chiếu nhật ký trước khi thao tác lại.',
     INVALID_IMAGE: 'Ảnh không hợp lệ. Vui lòng chọn ảnh JPEG hoặc PNG khác.',
     INVALID_UPLOAD: 'Tệp tải lên không hợp lệ. Vui lòng chọn lại ảnh.',
     FILE_TOO_LARGE: 'Ảnh phải có dung lượng tối đa 5 MiB.',

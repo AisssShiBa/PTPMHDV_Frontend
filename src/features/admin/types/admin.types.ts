@@ -1,4 +1,4 @@
-// d:\PTPMHDV\Frontend\src\features\admin\types\admin.types.ts
+import type { KycStatus, KycTier } from '@/features/user/types/user.types'
 
 export interface DashboardStats {
   totalUsers?: number
@@ -15,9 +15,22 @@ export interface AdminKycItem {
   fullName: string | null
   phone: string | null
   idNumber: string | null
-  idImageUrl: string | null
-  kycStatus: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'
+  hasKycDocument: boolean
+  kycStatus: KycStatus
+  kycTier: KycTier
   createdAt: string
+}
+
+export interface AdminKycDocuments {
+  frontUrl: string
+  backUrl: string
+  expiresAt: string
+}
+
+export interface AdminKycPage {
+  content: AdminKycItem[]
+  totalElements: number
+  totalPages: number
 }
 
 export interface AdminMerchantItem {

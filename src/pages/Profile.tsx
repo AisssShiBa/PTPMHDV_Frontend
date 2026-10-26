@@ -7,6 +7,7 @@ import { useUserProfile } from '@/features/user/hooks/useUserProfile'
 import { ProfileForm } from '@/features/user/components/ProfileForm'
 import { KycForm } from '@/features/user/components/KycForm'
 import { KycStatusBadge } from '@/features/user/components/KycStatusBadge'
+import { KycTierBadge } from '@/features/user/components/KycTierBadge'
 import { errorMessage } from '@/lib/apiResponse'
 
 export default function Profile() {
@@ -37,8 +38,8 @@ function ProfileContent({ authUserId }: { authUserId: string }) {
       <Card>
         <CardHeader><CardTitle className="flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2"><ShieldCheck className="size-5 text-primary" />Xác thực danh tính</span>
-          <KycStatusBadge status={resource.data.kycStatus} />
-        </CardTitle><CardDescription>Xác thực bằng CCCD hoặc Passport của bạn.</CardDescription></CardHeader>
+          <div className="flex flex-wrap gap-2"><KycStatusBadge status={resource.data.kycStatus} /><KycTierBadge tier={resource.data.kycTier} /></div>
+        </CardTitle><CardDescription>Gửi đủ hai mặt giấy tờ để xét duyệt cấp 1. Cấp 2 do quản trị viên cập nhật sau bước mô phỏng liên kết ngân hàng.</CardDescription></CardHeader>
         <CardContent><KycForm key={resource.data.id + resource.data.kycStatus} profile={resource.data}
           onSaved={resource.replace} onReload={resource.reload} /></CardContent>
       </Card>

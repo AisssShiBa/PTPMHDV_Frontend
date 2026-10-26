@@ -13,6 +13,7 @@
     "lint": "oxlint",
     "test": "node --import ./tests/register.mjs --test tests/*.test.ts",
     "test:browser": "node tests/browser-smoke.mjs",
+    "test:phase3:live": "node tests/phase3-live.mjs",
     "preview": "vite preview",
     "mock": "prism mock packages/api-contract/openapi.yaml -p 4010 -h 0.0.0.0",
     "contract:lint": "redocly lint --extends=minimal packages/api-contract/openapi.yaml",

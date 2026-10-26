@@ -1,8 +1,14 @@
-import { useState } from 'react'
-import { walletService } from '../services/walletService'
-import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { X, ArrowLeftRight, Loader2, CheckCircle2, ChevronUp, ChevronDown, AlertCircle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import axios from 'axios'
+import { X, ArrowLeftRight, Loader2, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { useRecipientLookup } from '@/features/user/hooks/useRecipientLookup'
+import { errorMessage } from '@/lib/apiResponse'
+import { walletService } from '../services/walletService'
 
 interface Props {
   isOpen: boolean
@@ -10,168 +16,106 @@ interface Props {
   onSuccess?: () => void
 }
 
-const STEP = 50000
-
-export const TransferModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
+export function TransferModal({ isOpen, onClose, onSuccess }: Props) {
   const user = useAuthStore((state) => state.user)
-  const [toUserId, setToUserId] = useState('')
-  const [amountDisplay, setAmountDisplay] = useState('50,000')
-  const [amountValue, setAmountValue] = useState('50000')
+  return isOpen && user ? <TransferForm key={user.id} authUserId={user.id} onClose={onClose} onSuccess={onSuccess} /> : null
+}
+
+function TransferForm({ authUserId, onClose, onSuccess }: Omit<Props, 'isOpen'> & { authUserId: string }) {
+  const lookup = useRecipientLookup(authUserId)
+  const [amount, setAmount] = useState('50000')
+  const [confirmed, setConfirmed] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [checkingWallet, setCheckingWallet] = useState(false)
-  const [isWalletValid, setIsWalletValid] = useState<boolean | null>(null)
+  const [error, setError] = useState('')
+  const [uncertain, setUncertain] = useState(false)
+  const dialog = useRef<HTMLDialogElement | null>(null)
+  const busy = useRef(false)
+  const reference = useRef<string | null>(null)
+  const amountValue = Number(amount)
+  const validAmount = /^\d+$/.test(amount) && Number.isSafeInteger(amountValue) && amountValue > 0
+  const disabled = loading || uncertain
+  const amountDisplay = amount ? amountValue.toLocaleString('vi-VN') : ''
 
-  if (!isOpen) return null
+  useEffect(() => {
+    const element = dialog.current
+    element?.showModal()
+    return () => element?.close()
+  }, [])
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/\D/g, '')
-    setAmountValue(rawValue)
-    setAmountDisplay(rawValue ? Number(rawValue).toLocaleString('vi-VN') : '')
-  }
-
-  const handleStep = (direction: 'up' | 'down') => {
-    let currentVal = Number(amountValue) || 0;
-    if (direction === 'up') currentVal += STEP;
-    else currentVal = Math.max(0, currentVal - STEP);
-
-    setAmountValue(currentVal.toString());
-    setAmountDisplay(currentVal ? currentVal.toLocaleString('vi-VN') : '0');
-  }
-
-  const handleCheckReceiver = async () => {
-    if (!toUserId.trim()) return
+  const submit = async () => {
+    if (busy.current || !lookup.recipient || !confirmed || !validAmount || lookup.loading || lookup.remaining) return
+    if (useAuthStore.getState().user?.id !== authUserId) return
+    busy.current = true; setLoading(true); setError('')
+    reference.current ??= 'P2P-' + crypto.randomUUID()
     try {
-      setCheckingWallet(true)
-      setIsWalletValid(null)
-      await walletService.getBalance(toUserId.trim())
-      setIsWalletValid(true)
-      toast.success('Tìm thấy ví người nhận hợp lệ!')
-    } catch (err) {
-      setIsWalletValid(false)
-      // Không ném toast error nữa để tránh giật màn hình (toast pop-up)
-    } finally {
-      setCheckingWallet(false)
-    }
+      await walletService.transfer(authUserId, lookup.recipient.authUserId, String(amountValue), reference.current)
+      if (useAuthStore.getState().user?.id !== authUserId) return
+      toast.success(`Đã chuyển ${amountDisplay} VND cho ${lookup.recipient.maskedName}.`)
+      onSuccess?.(); onClose()
+    } catch (failure) {
+      if (useAuthStore.getState().user?.id !== authUserId) return
+      if (!axios.isAxiosError(failure) || !failure.response || failure.response.status >= 500) {
+        setUncertain(true)
+        setError('Chưa xác định được kết quả chuyển tiền. Bạn có thể thử lại đúng giao dịch này với cùng mã tham chiếu.')
+      } else {
+        setError(errorMessage(failure))
+        // A definite rejection can be corrected and submitted as a new attempt.
+        if (!uncertain) reference.current = null
+      }
+    } finally { busy.current = false; setLoading(false) }
   }
 
-  const handleTransfer = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user?.id) {
-      toast.error('Vui lòng đăng nhập')
-      return
-    }
-    if (isWalletValid === false) {
-      toast.error('Ví người nhận không hợp lệ!')
-      return
-    }
-
-    try {
-      setLoading(true)
-      await walletService.transfer(String(user.id), toUserId.trim(), amountValue)
-      toast.success(`Chuyển ${amountDisplay} VND thành công!`)
-      onSuccess?.()
-      onClose()
-    } catch (err: any) {
-      toast.error('Chuyển tiền thất bại: ' + (err?.response?.data?.error?.message || err.message))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-      <div className="w-full max-w-md rounded-2xl bg-card border border-border p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-foreground font-bold text-lg">
-            <ArrowLeftRight className="size-5 text-primary" />
-            <span>Chuyển tiền nội bộ (P2P)</span>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted text-muted-foreground transition-colors">
-            <X className="size-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleTransfer} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium">ID ví người nhận</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={toUserId}
-                onChange={(e) => {
-                  setToUserId(e.target.value)
-                  setIsWalletValid(null)
-                }}
-                className={`flex-1 rounded-xl border bg-background px-4 py-2 outline-none transition-all ${
-                  isWalletValid === true ? 'border-emerald-500 focus:border-emerald-500' : isWalletValid === false ? 'border-rose-500 focus:border-rose-500' : 'border-input focus:border-primary'
-                }`}
-                placeholder="Nhập User ID"
-                required
-              />
-              <button
-                type="button"
-                onClick={handleCheckReceiver}
-                disabled={!toUserId || checkingWallet}
-                className="rounded-xl bg-secondary px-4 py-2 text-sm font-semibold hover:bg-secondary/80 disabled:opacity-50 transition-colors flex items-center justify-center min-w-[90px]"
-              >
-                {checkingWallet ? <Loader2 className="size-4 animate-spin" /> : 'Kiểm tra'}
-              </button>
-            </div>
-            {/* Vùng giữ chỗ cho dòng thông báo để tránh giật layout */}
-            <div className="min-h-[20px] pt-1">
-              {isWalletValid === true && (
-                <p className="text-xs text-emerald-500 flex items-center gap-1 animate-in fade-in">
-                  <CheckCircle2 className="size-3" /> Hợp lệ
-                </p>
-              )}
-              {isWalletValid === false && (
-                <p className="text-xs text-rose-500 flex items-center gap-1 animate-in fade-in">
-                  <AlertCircle className="size-3" /> Mã ID / Tài khoản không tồn tại
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Số tiền chuyển (VND)</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={amountDisplay}
-                onChange={handleAmountChange}
-                className="w-full rounded-xl border border-input bg-background pl-4 pr-10 py-3 text-lg font-bold shadow-sm focus:border-primary outline-none transition-all"
-                placeholder="0"
-                required
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => handleStep('up')}
-                  className="p-1 bg-muted/80 hover:bg-muted text-muted-foreground rounded-t-sm transition-colors"
-                >
-                  <ChevronUp className="size-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleStep('down')}
-                  className="p-1 bg-muted/80 hover:bg-muted text-muted-foreground rounded-b-sm transition-colors"
-                >
-                  <ChevronDown className="size-3" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || !amountValue || Number(amountValue) <= 0 || isWalletValid === false}
-            className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-all mt-4"
-          >
-            {loading && <Loader2 className="size-4 animate-spin" />}
-            Xác nhận chuyển
-          </button>
-        </form>
-      </div>
+  return <dialog ref={dialog} aria-labelledby="transfer-title" aria-describedby="transfer-help"
+    onCancel={(event) => { event.preventDefault(); if (!busy.current) onClose() }}
+    className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5 text-foreground shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-xs sm:p-6">
+    <div className="mb-5 flex items-center justify-between gap-3">
+      <h2 id="transfer-title" className="flex items-center gap-2 text-lg font-bold"><ArrowLeftRight className="size-5 shrink-0 text-primary" />Chuyển tiền nội bộ</h2>
+      <Button type="button" size="icon-sm" variant="ghost" aria-label="Đóng chuyển tiền" disabled={loading} onClick={onClose}><X className="size-4" /></Button>
     </div>
-  )
+    <p id="transfer-help" className="mb-5 text-sm text-muted-foreground">Tra cứu bằng email hoặc số điện thoại đã đăng ký, rồi kiểm tra tên người nhận trước khi chuyển.</p>
+    <form className="space-y-5" onSubmit={(event) => { event.preventDefault(); if (!uncertain) void submit() }} noValidate>
+      <div className="space-y-2">
+        <Label htmlFor="transfer-recipient">Email hoặc số điện thoại người nhận</Label>
+        <div className="flex gap-2">
+          <Input id="transfer-recipient" value={lookup.query} maxLength={254} autoComplete="off" spellCheck={false} disabled={disabled}
+            className="min-w-0 flex-1" aria-invalid={!!lookup.error} aria-describedby="recipient-help recipient-status"
+            placeholder="binh@example.com hoặc 0912345678"
+            onChange={(event) => { lookup.changeQuery(event.target.value); setConfirmed(false); setError(''); reference.current = null }}
+            onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); if (!disabled) { setConfirmed(false); void lookup.lookup() } } }} />
+          <Button type="button" variant="secondary" disabled={disabled || lookup.loading || !!lookup.remaining || !lookup.query.trim()}
+            onClick={() => { setConfirmed(false); void lookup.lookup() }}>
+            {lookup.loading ? <><Loader2 className="size-4 animate-spin" />Đang tìm</> : 'Tra cứu'}
+          </Button>
+        </div>
+        <p id="recipient-help" className="text-xs text-muted-foreground">Nhập đầy đủ và chính xác. Số điện thoại cần khớp cả mã quốc gia và cách viết đã lưu.</p>
+        <div id="recipient-status" aria-live="polite" className="space-y-2 text-sm">
+          {lookup.error && <p role="alert" className="text-destructive">{lookup.error}</p>}
+          {!!lookup.remaining && <p role="status" className="rounded-lg bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">Bạn đã tra cứu quá nhiều lần. Thử lại sau {lookup.remaining} giây.</p>}
+          {lookup.recipient && <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+            <p className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="size-4" />Người nhận tìm thấy</p>
+            <p className="mt-1 break-words font-semibold" data-testid="recipient-name">{lookup.recipient.maskedName}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Tên được che một phần để bảo vệ thông tin cá nhân.</p>
+          </div>}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="transfer-amount">Số tiền chuyển (VND)</Label>
+        <Input id="transfer-amount" inputMode="numeric" value={amountDisplay} maxLength={21} disabled={disabled}
+          aria-invalid={!validAmount} aria-describedby={!validAmount ? 'transfer-amount-error' : undefined}
+          onChange={(event) => { setAmount(event.target.value.replace(/\D/g, '').slice(0, 15)); setConfirmed(false); setError(''); reference.current = null }} />
+        {!validAmount && <p id="transfer-amount-error" className="text-sm text-destructive">Nhập số tiền nguyên lớn hơn 0.</p>}
+      </div>
+      <label className="flex items-start gap-3 text-sm">
+        <input id="transfer-confirm" type="checkbox" className="mt-0.5 size-4 accent-primary" checked={confirmed}
+          disabled={disabled || !lookup.recipient || !validAmount} onChange={(event) => setConfirmed(event.target.checked)} />
+        <span>Tôi xác nhận chuyển {validAmount ? `${amountDisplay} VND` : 'số tiền trên'} cho {lookup.recipient?.maskedName || 'người nhận đã tra cứu'}.</span>
+      </label>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {uncertain && <p className="text-xs text-muted-foreground">Nếu đóng cửa sổ, hãy kiểm tra lịch sử ví trước khi tạo giao dịch mới.</p>}
+      <Button type={uncertain ? 'button' : 'submit'} className="w-full" disabled={loading || !lookup.recipient || !confirmed || !validAmount || lookup.loading || !!lookup.remaining}
+        onClick={uncertain ? () => void submit() : undefined}>
+        {loading && <Loader2 className="size-4 animate-spin" />}{loading ? 'Đang chuyển…' : uncertain ? 'Thử lại giao dịch này' : 'Xác nhận chuyển'}
+      </Button>
+    </form>
+  </dialog>
 }

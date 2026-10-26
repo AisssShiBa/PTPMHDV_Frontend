@@ -1,4 +1,5 @@
 export type KycStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED'
+export type KycTier = 0 | 1 | 2
 
 export interface UserProfile {
   id: string
@@ -8,6 +9,7 @@ export interface UserProfile {
   phone: string | null
   address: string | null
   kycStatus: KycStatus
+  kycTier: KycTier
   idNumber: string | null
   hasKycDocument: boolean
   createdAt: string
@@ -23,7 +25,8 @@ export interface UpdateUserDto {
 
 export interface SubmitKycDto {
   idNumber: string
-  document: File
+  front: File
+  back: File
 }
 
 export interface KycDocument {
