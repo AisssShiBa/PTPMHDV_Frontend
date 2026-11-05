@@ -1,6 +1,6 @@
 import api from '@/lib/axios'
 import { unwrap, type ApiResponse } from '@/lib/apiResponse'
-import type { AuthSession, User } from '@/types/User'
+import type { AuthSession, User } from '../types/auth.types'
 
 function session(body: ApiResponse<AuthSession>) {
   const value = unwrap(body)

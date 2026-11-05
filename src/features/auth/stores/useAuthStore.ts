@@ -2,12 +2,12 @@ import { create } from 'zustand'
 import { toast } from 'sonner'
 import { authService } from '@/features/auth/services/authService'
 import { errorMessage } from '@/lib/apiResponse'
-import type { authState } from '@/types/store'
+import type { AuthState } from '../types/auth.types'
 
 let refreshInFlight: Promise<boolean> | null = null
 let generation = 0
 
-export const useAuthStore = create<authState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
   user: null,
   loading: false,

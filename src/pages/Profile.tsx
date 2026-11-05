@@ -28,7 +28,7 @@ function ProfileContent({ authUserId }: { authUserId: string }) {
         ? 'Chưa tìm thấy hồ sơ của bạn. Nếu vừa đăng ký, vui lòng thử tải lại sau ít phút.'
         : errorMessage(resource.error)
     } />}
-    {resource.status === 'success' && <div className="grid items-start gap-6 lg:grid-cols-2">
+    {resource.status === 'success' && resource.data && <div className="grid items-start gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><UserRound className="size-5 text-primary" />Thông tin cá nhân</CardTitle>
           <CardDescription>Cập nhật thông tin để chúng tôi có thể liên hệ với bạn.</CardDescription></CardHeader>

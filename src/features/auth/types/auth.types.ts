@@ -1,6 +1,19 @@
-import type { User } from './User'
+export interface User {
+  id: string
+  username: string
+  firstName: string
+  lastName: string
+  email: string
+  role: 'USER' | 'ADMIN' | 'MERCHANT'
+  createdAt?: string
+}
 
-export interface authState {
+export interface AuthSession {
+  accessToken: string
+  user: User
+}
+
+export interface AuthState {
   accessToken: string | null
   user: User | null
   loading: boolean
@@ -12,3 +25,6 @@ export interface authState {
   initialize: () => Promise<void>
   refresh: () => Promise<boolean>
 }
+
+// Alias tương thích ngược
+export type authState = AuthState
