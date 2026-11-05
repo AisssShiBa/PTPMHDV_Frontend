@@ -27,5 +27,7 @@
         "./src/*"
       ]
     }
-  }
+  },
+  "include": ["src"],
+  "exclude": ["src_legacy", "dist", "node_modules", "docs"]
 }

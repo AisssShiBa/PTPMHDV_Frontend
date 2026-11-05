@@ -1,45 +1,93 @@
+import { type ReactNode, useEffect } from 'react'
+import { Navigate, useLocation, Outlet } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import type { UserRole } from '@/features/auth/types/auth.types'
+import { Loader2 } from 'lucide-react'
+
+interface GuardProps {
+  children?: ReactNode
+}
 
 /**
- * Guard yêu cầu người dùng đã đăng nhập.
- * Chờ initialize hoàn tất trước khi quyết định điều hướng, tránh nháy sang /signin.
+ * Chờ khôi phục phiên trước khi quyết định điều hướng
  */
-export function RequireAuth() {
-  const { accessToken, user, initialized } = useAuthStore()
+function useEnsureInitialized() {
+  const { initialized, initialize } = useAuthStore()
+  useEffect(() => {
+    if (!initialized) {
+      initialize()
+    }
+  }, [initialized, initialize])
+  return initialized
+}
+
+/**
+ * Guard yêu cầu người dùng phải đăng nhập.
+ * Nhớ đường dẫn hiện tại để chuyển hướng quay lại sau khi đăng nhập thành công.
+ */
+export function RequireAuth({ children }: GuardProps) {
   const location = useLocation()
+  const initialized = useEnsureInitialized()
+  const { accessToken, user } = useAuthStore()
 
   if (!initialized) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background text-muted-foreground" role="status">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm">Đang khôi phục phiên đăng nhập…</span>
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground" role="status">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground font-medium">Đang tải phiên làm việc…</p>
         </div>
       </div>
     )
   }
 
   if (!accessToken || !user) {
-    return <Navigate to="/signin" replace state={{ from: location.pathname }} />
+    return <Navigate to="/sign-in" state={{ from: location.pathname }} replace />
   }
 
-  return <Outlet key={user.id} />
+  return children ? <>{children}</> : <Outlet />
 }
 
 /**
- * Guard yêu cầu quyền cụ thể (vd: ADMIN)
+ * Guard kiểm tra vai trò người dùng (vd: ADMIN)
  */
-interface RequireRoleProps {
-  role: 'ADMIN' | 'USER' | 'MERCHANT'
-}
-
-export function RequireRole({ role }: RequireRoleProps) {
+export function RequireRole({ role, children }: { role: UserRole; children?: ReactNode }) {
+  const initialized = useEnsureInitialized()
   const { user } = useAuthStore()
 
-  if (!user || user.role !== role) {
-    return <Navigate to="/dashboard" replace />
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background" role="status">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  return <Outlet />
+  if (user?.role !== role) {
+    return <Navigate to="/403" replace />
+  }
+
+  return children ? <>{children}</> : <Outlet />
+}
+
+/**
+ * Chuyển hướng người dùng đã đăng nhập sang /app nếu truy cập các trang công khai (/, /sign-in, /sign-up)
+ */
+export function RedirectIfAuthed({ children }: GuardProps) {
+  const initialized = useEnsureInitialized()
+  const { accessToken, user } = useAuthStore()
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background" role="status">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (accessToken && user) {
+    return <Navigate to="/app" replace />
+  }
+
+  return children ? <>{children}</> : <Outlet />
 }

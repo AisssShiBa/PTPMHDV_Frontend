@@ -1,10 +1,19 @@
 import { type ReactNode } from 'react'
-import type { UseQueryResult } from '@tanstack/react-query'
 import { errorMessage } from '@/lib/apiResponse'
 import { AlertCircle, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+export interface QueryLike<T> {
+  data?: T
+  isLoading?: boolean
+  isPending?: boolean
+  isError?: boolean
+  error?: unknown
+  refetch?: () => unknown
+}
 
 interface QueryBoundaryProps<T> {
-  query: UseQueryResult<T, unknown>
+  query: QueryLike<T>
   skeleton?: ReactNode
   emptyFallback?: ReactNode
   isEmpty?: (data: T) => boolean
@@ -12,7 +21,7 @@ interface QueryBoundaryProps<T> {
 }
 
 /**
- * Component bọc query tự động quản lý Loading, Error và Empty state theo frontend_rules.md
+ * Component bọc query tự động quản lý 4 trạng thái: Loading, Error, Empty, Success
  */
 export function QueryBoundary<T>({
   query,
@@ -21,7 +30,9 @@ export function QueryBoundary<T>({
   isEmpty,
   children
 }: QueryBoundaryProps<T>) {
-  if (query.isLoading) {
+  const isLoading = query.isLoading ?? query.isPending ?? false
+
+  if (isLoading) {
     return skeleton ? (
       <>{skeleton}</>
     ) : (
@@ -42,21 +53,24 @@ export function QueryBoundary<T>({
         </div>
         <h4 className="mt-2 text-sm font-semibold text-foreground">Không thể tải dữ liệu</h4>
         <p className="mt-1 text-xs text-muted-foreground">{errorMessage(query.error)}</p>
-        <button
-          type="button"
-          onClick={() => query.refetch()}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-ring"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          <span>Thử lại</span>
-        </button>
+        {query.refetch && (
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={() => query.refetch?.()}
+            className="mt-4"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Thử lại</span>
+          </Button>
+        )}
       </div>
     )
   }
 
   const data = query.data as T
 
-  // Kiểm tra empty data nếu có
   const checkEmpty = isEmpty
     ? isEmpty(data)
     : Array.isArray(data)

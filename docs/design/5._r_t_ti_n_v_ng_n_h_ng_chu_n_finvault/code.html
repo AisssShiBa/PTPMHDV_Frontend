@@ -1,0 +1,531 @@
+<!DOCTYPE html><html class="light" lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Rút tiền về ngân hàng - FinVault Desktop</title>
+<!-- Google Fonts: Be Vietnam Pro -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#bcc9c5",
+            "on-secondary-fixed": "#001e2c",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed": "#002113",
+            "inverse-surface": "#1f333f",
+            "error": "#ba1a1a",
+            "on-primary-fixed": "#00201b",
+            "surface": "#f5faff",
+            "tertiary": "#006947",
+            "on-surface": "#081e29",
+            "surface-container": "#def0ff",
+            "surface-container-high": "#d6ebfb",
+            "primary-fixed": "#83f6e0",
+            "surface-container-highest": "#d0e5f6",
+            "background": "#f5faff",
+            "surface-container-lowest": "#ffffff",
+            "on-primary-container": "#f4fffb",
+            "surface-tint": "#006b5d",
+            "on-tertiary-container": "#f5fff6",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#eaf5ff",
+            "on-tertiary-fixed-variant": "#005236",
+            "primary": "#00685b",
+            "secondary-fixed-dim": "#adcbde",
+            "outline": "#6d7a76",
+            "on-secondary-fixed-variant": "#2e4a5a",
+            "surface-variant": "#d0e5f6",
+            "on-primary-fixed-variant": "#005046",
+            "primary-fixed-dim": "#65dac4",
+            "on-surface-variant": "#3d4946",
+            "secondary-fixed": "#c9e7fb",
+            "inverse-on-surface": "#e4f3ff",
+            "on-error-container": "#93000a",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface-bright": "#f5faff",
+            "on-secondary-container": "#4a6677",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#65dac4",
+            "secondary-container": "#c6e4f8",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary-container": "#00855b",
+            "on-primary": "#ffffff",
+            "secondary": "#466273",
+            "primary-container": "#008373",
+            "on-error": "#ffffff",
+            "surface-dim": "#c8dded",
+            "on-background": "#081e29"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "margin": "1rem",
+            "margin-md": "1.5rem",
+            "margin-lg": "3rem",
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "gutter-md": "1.5rem",
+            "space-2xl": "3rem",
+            "space-xs": "0.25rem",
+            "gutter-lg": "2rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Be Vietnam Pro"],
+            "label-lg": ["Be Vietnam Pro"],
+            "body-lg": ["Be Vietnam Pro"],
+            "label-md": ["Be Vietnam Pro"],
+            "headline-md": ["Be Vietnam Pro"],
+            "body-sm": ["Be Vietnam Pro"],
+            "label-sm": ["Be Vietnam Pro"],
+            "display-lg": ["Be Vietnam Pro"],
+            "body-md": ["Be Vietnam Pro"],
+            "headline-lg": ["Be Vietnam Pro"],
+            "currency-display": ["Be Vietnam Pro"],
+            "currency-body": ["Be Vietnam Pro"],
+            "display-lg-mobile": ["Be Vietnam Pro"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "currency-display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "currency-body": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background-color: #f5faff;
+      color: #081e29;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #bcc9c5;
+      border-radius: 9999px;
+    }
+    /* Brand custom tint overrides */
+    .brand-btn-teal {
+      background-color: #00685b;
+      color: #ffffff;
+      height: 50px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .brand-btn-teal:hover {
+      background-color: #008373;
+    }
+    .brand-btn-teal:active {
+      transform: scale(0.99);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased flex min-h-screen">
+<!-- ========================================================================= -->
+<!-- SHARED COMPONENT: SideNavBar (Active Tab: "Rút tiền")                     -->
+<!-- ========================================================================= -->
+<aside class="fixed top-0 left-0 h-screen w-72 flex flex-col justify-between bg-surface-container-lowest border-r border-outline-variant/30 shadow-sm z-30">
+<div class="px-4 py-6 flex flex-col gap-6">
+<!-- Header Brand Logo -->
+<div class="flex items-center gap-3 px-3">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-[24px]">account_balance_wallet</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md text-primary tracking-tight">FinVault</h1>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Ví điện tử cá nhân</p>
+</div>
+</div>
+<!-- Main Navigation Links -->
+<nav class="flex flex-col gap-1.5 mt-2">
+<!-- 0: Tổng quan -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:text-on-surface hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Tổng quan</span>
+</a>
+<!-- 1: Chuyển tiền -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:text-on-surface hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-[20px]">send</span>
+<span>Chuyển tiền</span>
+</a>
+<!-- 2: Nạp tiền -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:text-on-surface hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-[20px]">add_card</span>
+<span>Nạp tiền</span>
+</a>
+<!-- 3: Rút tiền (ACTIVE COMPONENT STATE) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-low text-primary font-label-lg text-label-lg active:scale-[0.99] transition-transform duration-100 shadow-sm border border-primary/20" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span>Rút tiền</span>
+</a>
+<!-- 4: Thanh toán hóa đơn & Nạp ĐT -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:text-on-surface hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+<span>Thanh toán hóa đơn &amp; Nạp ĐT</span>
+</a>
+<!-- 5: Lịch sử giao dịch -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:text-on-surface hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>Lịch sử giao dịch</span>
+</a>
+<!-- 6: Hồ sơ & KYC -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:text-on-surface hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+<span>Hồ sơ &amp; KYC</span>
+</a>
+</nav>
+</div>
+<!-- Footer Actions & Role Switching -->
+</aside>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE & TOP NAV                                                   -->
+<!-- ========================================================================= -->
+<div class="pl-72 flex-1 flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 w-full z-20 flex justify-between items-center h-16 px-8 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
+<div class="flex items-center gap-2 text-outline font-label-md text-label-md">
+<a class="hover:text-primary transition-colors" href="#">Trang chủ</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Rút tiền về ngân hàng</span>
+</div>
+<div class="flex items-center gap-4 w-80">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full h-10 pl-11 pr-4 bg-surface-container-low border border-outline-variant/40 rounded-xl font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Tìm kiếm giao dịch, tài khoản..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container text-primary font-label-md text-label-md border border-primary/20">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+<span>Số dư ví: <strong class="text-primary font-bold">1.250.000đ</strong></span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-low text-primary font-label-md text-label-md border border-primary/20">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span>Cấp xác minh: Cấp 2</span>
+</div>
+<button class="w-10 h-10 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-95 relative" title="Thông báo">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-error text-white text-[11px] font-bold flex items-center justify-center">3</span>
+</button>
+<div class="flex items-center gap-3 pl-2 border-l border-outline-variant/30">
+<img class="w-9 h-9 rounded-full object-cover ring-2 ring-primary/20" data-alt="An Nguyen profile portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMVt5enmAWWy-GV7XbeDGHZL-1uvmaL9Ews5M9X7oH89yUhQyzum82feytGqYHY6J7jNKjpkdP8zdgNhKud7Nvkn8mKcAZr35S1hIM4eQEp3nMHzoF-rKSaef0iawmVOFHqZCWndgvKyCI78CDsPr58OT9lj69IQetWzKmgekBoLx2tymHR05A9Vdik4bOmP0bIgB0LxeUixLRiqub9gkDF80sF89aGN29-ShIzF_iDE8l47c5iKyN">
+<div class="hidden lg:block text-left">
+<p class="font-label-lg text-label-lg text-on-surface leading-tight font-bold">An Nguyễn</p>
+<p class="font-label-sm text-label-sm text-outline">0987 *** 888</p>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Body Canvas -->
+<main class="flex-1 px-8 py-8 max-w-7xl w-full mx-auto">
+<!-- Page Header -->
+<div class="mb-8">
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Rút tiền về tài khoản ngân hàng</h1>
+<p class="text-body-lg font-body-lg text-on-surface-variant mt-1">Rút tiền từ ví FinVault về tài khoản ngân hàng liên kết an toàn, nhanh chóng</p>
+</div>
+<!-- Status Processing Banner (Màn hình trạng thái sau khi xác nhận / In-progress Notice) -->
+<div class="mb-8 bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm">
+<div class="flex items-center justify-between pb-4 mb-4 border-b border-outline-variant/20">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">published_with_changes</span>
+        Trạng thái lệnh rút tiền gần nhất
+      </h2>
+<p class="text-body-sm font-body-sm text-outline mt-0.5">Theo dõi minh bạch tiến trình chuyển tiền về tài khoản ngân hàng của bạn</p>
+</div>
+<span class="text-label-sm font-label-sm text-outline">Cập nhật tự động</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- State 1: Đang xử lý -->
+<div class="p-4 rounded-xl bg-[#FEF7E7] border border-[#F59E0B]/40 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#FDE7BA] text-[#B45309]">
+<span class="material-symbols-outlined text-[15px] animate-spin">progress_activity</span>
+            Đang xử lý
+          </span>
+<span class="text-xs text-[#B45309] font-medium">Vừa xong</span>
+</div>
+<p class="font-headline-sm text-headline-sm text-[#78350F] font-bold">-500.000đ</p>
+<p class="text-body-sm font-body-sm text-[#78350F] mt-2 leading-relaxed">
+          Ngân hàng đang xác nhận, bạn không cần làm gì thêm. Tiền sẽ về tài khoản trong vài phút.
+        </p>
+</div>
+<div class="mt-3 pt-2.5 border-t border-[#F59E0B]/20 text-xs text-[#B45309] flex justify-between items-center">
+<span>Tài khoản nhận: VCB *8829</span>
+<span class="font-mono">#FV-8921849</span>
+</div>
+</div>
+<!-- State 2: Thành công -->
+<div class="p-4 rounded-xl bg-surface-container-low border border-primary/30 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            Thành công
+          </span>
+<span class="text-xs text-outline">10:15 Hôm nay</span>
+</div>
+<p class="font-headline-sm text-headline-sm text-primary font-bold">-500.000đ</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-2 leading-relaxed">
+          Rút tiền thành công. Tiền đã được chuyển vào tài khoản Vietcombank **** 8829.
+        </p>
+</div>
+<div class="mt-3 pt-2.5 border-t border-outline-variant/30 text-xs text-outline flex justify-between items-center">
+<span>Mã GD: #FV-8874102</span>
+<button class="text-primary hover:underline inline-flex items-center gap-1 font-semibold" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span> Sao chép
+        </button>
+</div>
+</div>
+<!-- State 3: Thất bại - tiền đã hoàn về ví -->
+<div class="p-4 rounded-xl bg-error-container/40 border border-error/30 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-error/10 text-error">
+<span class="material-symbols-outlined text-[15px]">error</span>
+            Thất bại – tiền đã hoàn về ví
+          </span>
+<span class="text-xs text-outline">Hôm qua</span>
+</div>
+<p class="font-headline-sm text-headline-sm text-error font-bold">Hoàn lại 500.000đ</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-2 leading-relaxed">
+          Giao dịch không thành công và tiền đã được cộng lại ví của bạn (Số dư: 1.250.000đ).
+        </p>
+</div>
+<div class="mt-3 pt-2.5 border-t border-error/20 flex justify-between items-center pt-2">
+<span class="text-xs text-outline">Ngân hàng bảo trì</span>
+<button class="px-3 py-1 bg-surface-container-lowest border border-error text-error rounded-lg text-xs font-bold hover:bg-error/10 transition-colors" type="button">
+          Thử lại
+        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Dual Column Layout: Left Form + Right Summary & PIN -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left Panel: Ngân hàng thụ hưởng & Số tiền cần rút (7 cols) -->
+<div class="lg:col-span-7 flex flex-col gap-6">
+<!-- Thẻ 1: Ngân hàng thụ hưởng -->
+<section class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm">
+<div class="flex justify-between items-center mb-4">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Ngân hàng thụ hưởng</h2>
+<p class="text-body-sm font-body-sm text-outline">Chuyển khoản nhận ngay 24/7 an toàn và chuẩn xác</p>
+</div>
+<button class="inline-flex items-center gap-1.5 text-primary font-label-lg text-label-lg hover:underline" type="button">
+<span class="material-symbols-outlined text-[18px]">account_balance</span>
+<span>Chọn ngân hàng khác</span>
+</button>
+</div>
+<!-- Ngân hàng đã liên kết (Selected Default Card) -->
+<div class="p-4 rounded-xl border-2 border-primary bg-surface-container-low/50 flex items-center justify-between relative group cursor-pointer transition-all">
+<div class="flex items-center gap-4">
+<!-- Vietcombank Logo representation -->
+<div class="w-12 h-12 rounded-xl bg-surface-container-lowest border border-outline-variant/40 flex items-center justify-center p-2 shadow-xs">
+<div class="w-8 h-8 rounded-lg bg-[#005B38] flex items-center justify-center text-white font-bold text-xs tracking-tighter">
+                    VCB
+                  </div>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm font-headline-sm text-on-surface">Vietcombank</span>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm">Mặc định</span>
+</div>
+<p class="font-currency-body text-currency-body text-on-surface-variant mt-0.5 tracking-wider">**** 8829 <span class="text-outline text-body-sm font-normal">| AN NGUYEN</span></p>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+</div>
+<!-- Fast-switch bank pill list -->
+<div class="mt-4 pt-4 border-t border-outline-variant/20">
+<label class="text-label-sm font-label-sm text-outline block mb-2.5">Hoặc chuyển nhanh sang ngân hàng đã lưu:</label>
+<div class="grid grid-cols-3 gap-3">
+<!-- MB Bank -->
+<button class="flex items-center gap-2.5 p-2.5 rounded-xl border border-outline-variant/30 hover:border-primary/50 hover:bg-surface-container-low transition-all text-left" type="button">
+<div class="w-7 h-7 rounded-lg bg-[#1B358F] text-white flex items-center justify-center text-[10px] font-bold">MB</div>
+<div class="truncate">
+<p class="font-label-md text-label-md text-on-surface truncate">MBBank</p>
+<p class="text-[11px] text-outline truncate">*3192</p>
+</div>
+</button>
+<!-- Techcombank -->
+<button class="flex items-center gap-2.5 p-2.5 rounded-xl border border-outline-variant/30 hover:border-primary/50 hover:bg-surface-container-low transition-all text-left" type="button">
+<div class="w-7 h-7 rounded-lg bg-[#E31837] text-white flex items-center justify-center text-[10px] font-bold">TCB</div>
+<div class="truncate">
+<p class="font-label-md text-label-md text-on-surface truncate">Techcombank</p>
+<p class="text-[11px] text-outline truncate">*5501</p>
+</div>
+</button>
+<!-- ACB -->
+<button class="flex items-center gap-2.5 p-2.5 rounded-xl border border-outline-variant/30 hover:border-primary/50 hover:bg-surface-container-low transition-all text-left" type="button">
+<div class="w-7 h-7 rounded-lg bg-[#004B91] text-white flex items-center justify-center text-[10px] font-bold">ACB</div>
+<div class="truncate">
+<p class="font-label-md text-label-md text-on-surface truncate">ACB Bank</p>
+<p class="text-[11px] text-outline truncate">*9910</p>
+</div>
+</button>
+</div>
+</div>
+</section>
+<!-- Thẻ 2: Ô nhập số tiền cần rút -->
+<section class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm">
+<div class="flex justify-between items-center mb-2">
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Số tiền cần rút</h2>
+<span class="text-body-sm font-body-sm text-outline">Số dư khả dụng: <strong class="text-on-surface">1.250.000đ</strong></span>
+</div>
+<!-- Big Input Area -->
+<div class="relative mt-4">
+<div class="flex items-center border-2 border-primary rounded-xl px-5 py-4 bg-surface-container-lowest focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+<input class="w-full text-currency-display font-currency-display text-on-surface focus:outline-none border-none p-0 bg-transparent tracking-tight placeholder:text-outline/40" placeholder="0" type="text" value="500.000">
+<span class="text-headline-md font-headline-md text-primary font-bold ml-2">đ</span>
+</div>
+</div>
+<!-- Chip chọn nhanh số tiền -->
+<div class="flex flex-wrap gap-2.5 mt-4">
+<button class="px-4 py-2 rounded-xl border border-outline-variant/40 bg-surface-container-lowest hover:border-primary text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors active:scale-95" type="button">
+                200.000đ
+              </button>
+<button class="px-4 py-2 rounded-xl border-2 border-primary bg-surface-container text-primary font-label-md text-label-md font-bold shadow-xs active:scale-95" type="button">
+                500.000đ
+              </button>
+<button class="px-4 py-2 rounded-xl border border-outline-variant/40 bg-surface-container-lowest hover:border-primary text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors active:scale-95" type="button">
+                1.000.000đ
+              </button>
+<button class="px-4 py-2 rounded-xl border border-outline-variant/40 bg-surface-container-lowest hover:border-primary text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors active:scale-95" type="button">
+                Tất cả (1.250.000đ)
+              </button>
+</div>
+<!-- Hạn mức ghi chú -->
+<div class="mt-5 flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low text-body-sm font-body-sm text-on-surface-variant"><div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">info</span>
+<span>Hạn mức rút tiền còn lại hôm nay:</span>
+</div>
+<span class="font-currency-body text-currency-body text-on-surface font-semibold">19.700.000đ <span class="text-outline text-body-sm font-normal">(Cấp 2 tối đa 50.000.000đ/lần)</span></span></div>
+</section>
+</div>
+<!-- Right Panel: Bảng tóm tắt phí + Mã PIN bảo mật + Nút xác nhận (5 cols) -->
+<div class="lg:col-span-5 flex flex-col gap-6">
+<!-- Bảng tóm tắt chi phí & Nguồn tiền -->
+<section class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm">
+<h2 class="text-headline-sm font-headline-sm text-on-surface pb-3 border-b border-outline-variant/20">
+              Chi tiết giao dịch
+            </h2>
+<div class="flex flex-col gap-3.5 mt-4">
+<div class="flex justify-between items-center text-body-md font-body-md">
+<span class="text-on-surface-variant">Nguồn tiền trích nợ</span>
+<span class="font-label-lg text-label-lg text-on-surface">Ví FinVault chính</span>
+</div>
+<div class="flex justify-between items-center text-body-md font-body-md">
+<span class="text-on-surface-variant">Số tiền rút</span>
+<span class="font-currency-body text-currency-body text-on-surface">500.000đ</span>
+</div>
+<div class="flex justify-between items-center text-body-md font-body-md">
+<div class="flex items-center gap-1.5">
+<span class="text-on-surface-variant">Phí rút tiền</span>
+<span class="material-symbols-outlined text-outline text-[16px]" title="Miễn phí chính sách FinVault">help</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="line-through text-outline text-body-sm font-body-sm">3.300đ</span>
+<span class="font-label-lg text-label-lg text-tertiary">0đ (Miễn phí)</span>
+</div>
+</div>
+<div class="flex justify-between items-center text-body-md font-body-md">
+<span class="text-on-surface-variant">Thời gian nhận dự kiến</span>
+<div class="flex items-center gap-1 text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[18px]">schedule</span>
+<span>Tiền về tài khoản sau 1 - 3 phút</span></div>
+</div>
+<div class="pt-3 border-t border-outline-variant/20 flex justify-between items-baseline">
+<span class="font-headline-sm font-headline-sm text-on-surface">Tổng tiền trừ ví</span>
+<span class="font-currency-display text-currency-display text-primary font-bold">500.000đ</span>
+</div>
+</div>
+</section>
+<!-- Khối nhập mã PIN bảo mật 6 số (Security PIN inline card) -->
+<section class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">lock</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Mã PIN bảo mật</h3>
+</div>
+<span class="text-label-sm font-label-sm text-outline">Xác thực ví</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mb-4">
+    Nhập mã PIN gồm 6 chữ số để phê duyệt lệnh rút về tài khoản Vietcombank:
+  </p>
+<div class="grid grid-cols-6 gap-2 sm:gap-3 mb-4">
+<input class="h-12 text-center text-xl font-bold rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-surface-container-low text-on-surface" maxlength="1" type="password" value="8">
+<input class="h-12 text-center text-xl font-bold rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-surface-container-low text-on-surface" maxlength="1" type="password" value="2">
+<input class="h-12 text-center text-xl font-bold rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-2 focus:ring-primary/20 bg-surface-container-low text-on-surface" maxlength="1" type="password" value="9">
+<input class="h-12 text-center text-xl font-bold rounded-xl border-2 border-primary ring-2 ring-primary/20 bg-surface-container-lowest text-on-surface" maxlength="1" placeholder="•" type="password" value="">
+<input class="h-12 text-center text-xl font-bold rounded-xl border border-outline-variant/40 bg-surface-container-lowest text-on-surface" maxlength="1" placeholder="•" type="password" value="">
+<input class="h-12 text-center text-xl font-bold rounded-xl border border-outline-variant/40 bg-surface-container-lowest text-on-surface" maxlength="1" placeholder="•" type="password" value="">
+</div>
+<div class="flex justify-between items-center">
+<button class="text-label-sm font-label-sm text-primary hover:underline font-semibold transition-colors" type="button">Quên mã PIN?</button>
+<div class="flex items-center gap-1.5 text-label-sm font-label-sm text-outline">
+<span class="material-symbols-outlined text-[16px] text-primary">shield</span>
+<span>Giao dịch an toàn</span>
+</div>
+</div>
+</section>
+<!-- Nút hành động chính cao 50px -->
+<button class="brand-btn-teal w-full rounded-xl font-headline-sm text-headline-sm font-bold flex items-center justify-center gap-2 shadow-sm" type="button">
+<span>Xác nhận rút 500.000đ</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+<p class="text-center text-label-sm font-label-sm text-outline">Bằng việc xác nhận, bạn đồng ý với <a class="underline text-primary hover:underline" href="#">Điều khoản dịch vụ rút tiền FinVault</a></p>
+</div>
+</div>
+<footer class="mt-12 pt-6 border-t border-outline-variant/30 text-center text-body-sm font-body-sm text-outline">
+<p>© 2025 FinVault. Nền tảng ví điện tử cá nhân an toàn &amp; bảo mật hàng đầu Việt Nam.</p>
+</footer></main>
+</div>
+<script>
+    // Lightweight script to enable interactive behavior on chips & inputs
+    document.querySelectorAll('.grid-cols-6 input').forEach((elem, index, array) => {
+      elem.addEventListener('keyup', (e) => {
+        if (e.key >= '0' && e.key <= '9') {
+          if (index < array.length - 1) array[index + 1].focus();
+        } else if (e.key === 'Backspace') {
+          if (index > 0) array[index - 1].focus();
+        }
+      });
+    });
+  </script>
+</body></html>

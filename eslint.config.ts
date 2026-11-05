@@ -6,7 +6,7 @@ import pluginReactHooks from 'eslint-plugin-react-hooks'
 import pluginReactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist', 'node_modules', 'coverage', 'repomix-output.xml'] },
+  { ignores: ['dist', 'node_modules', 'coverage', 'repomix-output.xml', 'src_legacy/**', 'docs/**', 'tests/**'] },
 
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinVault Admin Console - Phê duyệt KYC</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#bcc9c5",
+            "on-secondary-fixed": "#001e2c",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed": "#002113",
+            "inverse-surface": "#1f333f",
+            "error": "#ba1a1a",
+            "on-primary-fixed": "#00201b",
+            "surface": "#f5faff",
+            "tertiary": "#006947",
+            "on-surface": "#081e29",
+            "surface-container": "#def0ff",
+            "surface-container-high": "#d6ebfb",
+            "primary-fixed": "#83f6e0",
+            "surface-container-highest": "#d0e5f6",
+            "background": "#f5faff",
+            "surface-container-lowest": "#ffffff",
+            "on-primary-container": "#f4fffb",
+            "surface-tint": "#006b5d",
+            "on-tertiary-container": "#f5fff6",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#eaf5ff",
+            "on-tertiary-fixed-variant": "#005236",
+            "primary": "#00685b",
+            "secondary-fixed-dim": "#adcbde",
+            "outline": "#6d7a76",
+            "on-secondary-fixed-variant": "#2e4a5a",
+            "surface-variant": "#d0e5f6",
+            "on-primary-fixed-variant": "#005046",
+            "primary-fixed-dim": "#65dac4",
+            "on-surface-variant": "#3d4946",
+            "secondary-fixed": "#c9e7fb",
+            "inverse-on-surface": "#e4f3ff",
+            "on-error-container": "#93000a",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface-bright": "#f5faff",
+            "on-secondary-container": "#4a6677",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#65dac4",
+            "secondary-container": "#c6e4f8",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary-container": "#00855b",
+            "on-primary": "#ffffff",
+            "secondary": "#466273",
+            "primary-container": "#008373",
+            "on-error": "#ffffff",
+            "surface-dim": "#c8dded",
+            "on-background": "#081e29"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "margin": "1rem",
+            "margin-md": "1.5rem",
+            "margin-lg": "3rem",
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "gutter-md": "1.5rem",
+            "space-2xl": "3rem",
+            "space-xs": "0.25rem",
+            "gutter-lg": "2rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Be Vietnam Pro"],
+            "label-lg": ["Be Vietnam Pro"],
+            "body-lg": ["Be Vietnam Pro"],
+            "label-md": ["Be Vietnam Pro"],
+            "headline-md": ["Be Vietnam Pro"],
+            "body-sm": ["Be Vietnam Pro"],
+            "label-sm": ["Be Vietnam Pro"],
+            "display-lg": ["Be Vietnam Pro"],
+            "body-md": ["Be Vietnam Pro"],
+            "headline-lg": ["Be Vietnam Pro"],
+            "currency-display": ["Be Vietnam Pro"],
+            "currency-body": ["Be Vietnam Pro"],
+            "display-lg-mobile": ["Be Vietnam Pro"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "currency-display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "currency-body": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background-color: #F7F9FC;
+      color: #081e29;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #bcc9c5;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body class="bg-[#F7F9FC] text-on-surface flex h-screen overflow-hidden antialiased">
+<!-- ADMIN SIDEBAR (Shared Component: SideNavBar adapted for Admin Hub) -->
+<aside class="w-72 h-screen px-4 py-6 flex flex-col justify-between shrink-0 bg-surface-container-lowest border-r border-outline-variant/30 shadow-sm z-30">
+<div class="flex flex-col gap-6">
+<!-- Admin Brand Identity -->
+<div class="flex items-center gap-3 px-3">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[24px]">account_balance_wallet</span></div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-primary tracking-tight">FinVault</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-container text-on-primary-container tracking-wide">ADMIN</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hệ thống thẩm định KYC v2.4</p>
+</div>
+</div>
+<!-- Navigation Menu Items -->
+<nav class="flex flex-col gap-1.5"><a class="flex items-center justify-between px-4 py-3 rounded-xl bg-surface-container-low text-primary font-semibold text-sm border-l-4 border-primary transition-colors" href="#"><div class="flex items-center gap-3"><span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">verified_user</span><span>Duyệt hồ sơ KYC</span></div><span class="px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-on-primary">5</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-medium text-sm hover:bg-surface-container-low hover:text-on-surface transition-colors" href="#"><span class="material-symbols-outlined text-xl">account_balance</span><span>Đối soát tài chính</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-medium text-sm hover:bg-surface-container-low hover:text-on-surface transition-colors" href="#"><span class="material-symbols-outlined text-xl">group</span><span>Quản lý người dùng</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-medium text-sm hover:bg-surface-container-low hover:text-on-surface transition-colors" href="#"><span class="material-symbols-outlined text-xl">history_edu</span><span>Nhật ký kiểm toán</span></a></nav>
+</div>
+<!-- Sidebar Footer Context -->
+<div class="flex flex-col gap-3 pt-4 border-t border-outline-variant/30"><div class="px-3 py-2 bg-surface-container-low rounded-xl flex items-center justify-between"><div class="flex items-center gap-2.5"><div class="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold text-xs">HN</div><div class="overflow-hidden"><p class="font-semibold text-xs text-on-surface truncate">Hoàng Nam</p><p class="text-[11px] text-on-surface-variant">Kiểm soát viên</p></div></div><span class="material-symbols-outlined text-outline cursor-pointer hover:text-error text-lg" title="Đăng xuất">logout</span></div><a class="flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium text-on-surface-variant hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined text-sm">arrow_back</span><span>Quay về ví cá nhân</span></a></div>
+</aside>
+<!-- MAIN VIEWPORT CONTAINER -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- Top Sticky Admin Header (Shared Component: TopNavBar adapted) -->
+<header class="h-16 px-8 flex justify-between items-center bg-surface-container-lowest border-b border-outline-variant/30 shrink-0 z-20"><div class="flex items-center gap-4"><div class="relative w-80"><span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-lg">search</span><input class="w-full pl-9 pr-4 py-2 text-sm bg-surface-container-low border border-outline-variant/40 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="Tìm theo Mã hồ sơ, Tên, CCCD..." type="text"/></div></div><div class="flex items-center gap-4"><div class="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-surface-container-low/50 border border-outline-variant/30"><div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs">HN</div><div class="text-left"><div class="text-xs font-semibold text-on-surface">Hoàng Nam</div><div class="text-[11px] text-on-surface-variant">Kiểm soát viên</div></div></div><button class="relative p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Thông báo"><span class="material-symbols-outlined">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><button class="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Trợ giúp"><span class="material-symbols-outlined">help_outline</span></button></div></header>
+<!-- CONTENT WORKSPACE: Asymmetric 2-Column Split (Table Queue + Detailed Inspection Panel) -->
+<main class="flex-1 flex overflow-hidden p-6 gap-6 bg-[#F7F9FC]">
+<!-- LEFT COLUMN: KYC Queue & Table (40% width) -->
+<section class="w-5/12 flex flex-col bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-[0_4px_20px_-2px_rgba(11,43,58,0.05)] overflow-hidden">
+<!-- Queue Header -->
+<div class="p-5 border-b border-outline-variant/30 flex flex-col gap-2 bg-surface-bright"><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-2xl font-bold">folder_shared</span><h1 class="font-headline-sm text-headline-sm text-on-surface">Phê duyệt định danh khách hàng</h1></div><span class="px-3 py-1 rounded-full text-xs font-bold bg-[#FEF7E7] text-[#B45309] border border-amber-200 shadow-sm flex items-center gap-1"><span class="material-symbols-outlined text-xs">hourglass_empty</span>5 hồ sơ đang chờ duyệt thủ công</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">Chọn hồ sơ bên dưới để tiến hành kiểm tra thông tin thực tế và ra quyết định cấp hạn mức.</p></div>
+<!-- Filter bar -->
+<div class="px-5 py-3 border-b border-outline-variant/20 bg-surface-container-lowest flex items-center justify-between text-xs">
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant font-medium">Bộ lọc:</span>
+<button class="px-2.5 py-1 rounded-lg bg-surface-container-low text-primary font-semibold">Tất cả (5)</button>
+<button class="px-2.5 py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors">Yêu cầu Cấp 2</button>
+<button class="px-2.5 py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors">Độ tin cậy &gt; 95%</button>
+</div>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-on-surface">filter_list</span>
+</div>
+<!-- 5 KYC Records Table -->
+<div class="flex-1 overflow-y-auto custom-scroll">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/30 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider bg-surface-container-low/50">
+<th class="py-3 px-4">Mã hồ sơ</th>
+<th class="py-3 px-3">Khách hàng</th>
+<th class="py-3 px-2">Cấp độ xin cấp</th>
+<th class="py-3 px-3">Ngày gửi</th>
+<th class="py-3 px-3 text-right">Trạng thái</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 font-body-sm text-body-sm">
+<!-- Row 1: SELECTED ACTIVE ITEM (Nguyễn Văn An) -->
+<tr class="bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer relative border-l-4 border-primary">
+<td class="py-3.5 px-4 font-mono font-medium text-xs text-primary">#KYC-98421</td>
+<td class="py-3.5 px-3">
+<div class="font-semibold text-on-surface">Nguyễn Văn An</div>
+<div class="text-[11px] text-on-surface-variant">0909***123</div>
+</td>
+<td class="py-3.5 px-2">
+<span class="px-2 py-0.5 rounded text-xs font-semibold bg-surface-container-high text-primary border border-primary/20">
+                    Cấp 2
+                  </span>
+</td>
+<td class="py-3.5 px-3 text-xs text-on-surface-variant">Hôm nay 10:14</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF7E7] text-[#B45309]">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    Đang xét
+                  </span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors cursor-pointer">
+<td class="py-3.5 px-4 font-mono font-medium text-xs text-on-surface-variant">#KYC-98420</td>
+<td class="py-3.5 px-3">
+<div class="font-medium text-on-surface">Trần Thị Bích</div>
+<div class="text-[11px] text-on-surface-variant">0912***889</div>
+</td>
+<td class="py-3.5 px-2">
+<span class="px-2 py-0.5 rounded text-xs font-semibold bg-surface-container-high text-on-surface-variant">
+                    Cấp 2
+                  </span>
+</td>
+<td class="py-3.5 px-3 text-xs text-on-surface-variant">Hôm nay 09:50</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF7E7] text-[#B45309]">
+                    Chờ duyệt
+                  </span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors cursor-pointer">
+<td class="py-3.5 px-4 font-mono font-medium text-xs text-on-surface-variant">#KYC-98419</td>
+<td class="py-3.5 px-3">
+<div class="font-medium text-on-surface">Lê Hoàng Quân</div>
+<div class="text-[11px] text-on-surface-variant">0988***456</div>
+</td>
+<td class="py-3.5 px-2">
+<span class="px-2 py-0.5 rounded text-xs font-semibold bg-surface-container-high text-on-surface-variant">
+                    Cấp 2
+                  </span>
+</td>
+<td class="py-3.5 px-3 text-xs text-on-surface-variant">Hôm nay 09:32</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF7E7] text-[#B45309]">
+                    Chờ duyệt
+                  </span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors cursor-pointer">
+<td class="py-3.5 px-4 font-mono font-medium text-xs text-on-surface-variant">#KYC-98418</td>
+<td class="py-3.5 px-3">
+<div class="font-medium text-on-surface">Phạm Minh Đức</div>
+<div class="text-[11px] text-on-surface-variant">0971***621</div>
+</td>
+<td class="py-3.5 px-2">
+<span class="px-2 py-0.5 rounded text-xs font-semibold bg-surface-container-high text-on-surface-variant">
+                    Cấp 1
+                  </span>
+</td>
+<td class="py-3.5 px-3 text-xs text-on-surface-variant">Hôm nay 08:45</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF7E7] text-[#B45309]">
+                    Chờ duyệt
+                  </span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors cursor-pointer">
+<td class="py-3.5 px-4 font-mono font-medium text-xs text-on-surface-variant">#KYC-98415</td>
+<td class="py-3.5 px-3">
+<div class="font-medium text-on-surface">Đỗ Thùy Trang</div>
+<div class="text-[11px] text-on-surface-variant">0934***333</div>
+</td>
+<td class="py-3.5 px-2">
+<span class="px-2 py-0.5 rounded text-xs font-semibold bg-surface-container-high text-on-surface-variant">
+                    Cấp 2
+                  </span>
+</td>
+<td class="py-3.5 px-3 text-xs text-on-surface-variant">Hôm qua 18:20</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF7E7] text-[#B45309]">
+                    Chờ duyệt
+                  </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination Footer -->
+<div class="p-3 border-t border-outline-variant/30 bg-surface-container-low/30 flex items-center justify-between text-xs text-on-surface-variant">
+<span>Hiển thị 5 trên 5 hồ sơ hàng đợi</span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container-low disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-low disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- RIGHT COLUMN: Detailed KYC Verification & Decision Panel (60% width) -->
+<section class="w-7/12 flex flex-col bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-[0_4px_20px_-2px_rgba(11,43,58,0.05)] overflow-hidden">
+<!-- Panel Header -->
+<div class="p-5 border-b border-outline-variant/30 flex items-center justify-between bg-surface-bright"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary font-bold">NA</div><div><div class="flex items-center gap-2"><h2 class="font-headline-sm text-headline-sm text-on-surface">Nguyễn Văn An</h2><span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#E7F9F0] text-primary border border-emerald-200">Yêu cầu: Nâng Cấp 2</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">Mã yêu cầu: <span class="font-mono text-on-surface font-semibold">#KYC-98421</span> • Thời gian gửi: 10:14 24/10/2023</p></div></div><div class="flex items-center gap-2"><span class="px-3 py-1 rounded-full text-xs font-semibold bg-surface-container-low text-primary border border-primary/20 flex items-center gap-1"><span class="material-symbols-outlined text-sm">rule</span>Thẩm định thủ công</span></div></div>
+<!-- Scrollable Inspector Canvas -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scroll">
+<!-- Section 1: Customer Data Grid (Masked Security CCND) -->
+<div class="bg-surface-container-low/40 rounded-xl p-4 border border-outline-variant/30"><div class="flex items-center justify-between mb-3"><h3 class="font-label-lg text-label-lg text-on-surface flex items-center gap-1.5 font-semibold"><span class="material-symbols-outlined text-primary text-base">badge</span>Dữ liệu định danh khách hàng</h3><span class="text-[11px] text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-xs">lock</span>Thông tin định danh đã được bảo vệ</span></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-4"><div><span class="text-[11px] text-on-surface-variant block mb-0.5">Họ và tên</span><span class="font-semibold text-sm text-on-surface">NGUYỄN VĂN AN</span></div><div><span class="text-[11px] text-on-surface-variant block mb-0.5">Số CCCD</span><div class="flex items-center gap-1.5 font-mono text-sm font-bold text-on-surface"><span>********3829</span><span class="material-symbols-outlined text-xs text-outline cursor-pointer hover:text-primary" title="Xem đầy đủ">visibility_off</span></div></div><div><span class="text-[11px] text-on-surface-variant block mb-0.5">Số điện thoại</span><span class="font-mono text-sm text-on-surface font-medium">0909***123</span></div><div><span class="text-[11px] text-on-surface-variant block mb-0.5">Địa chỉ thư điện tử</span><span class="text-sm text-on-surface font-medium truncate block">an.nguyen@...</span></div></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-3 pt-3 border-t border-outline-variant/20"><div><span class="text-[11px] text-on-surface-variant block mb-0.5">Ngày sinh</span><span class="text-sm text-on-surface font-medium">15/08/1993</span></div><div><span class="text-[11px] text-on-surface-variant block mb-0.5">Giới tính</span><span class="text-sm text-on-surface font-medium">Nam</span></div><div><span class="text-[11px] text-on-surface-variant block mb-0.5">Quốc tịch</span><span class="text-sm text-on-surface font-medium">Việt Nam</span></div><div><span class="text-[11px] text-on-surface-variant block mb-0.5">Hạn thẻ CCCD</span><span class="text-sm text-primary font-semibold">15/08/2033 (Còn hạn)</span></div></div></div>
+<!-- Section 2: Document Inspection & Biometrics (CCCD Mặt trước, Mặt sau & Selfie Liveness) -->
+<div><h3 class="font-label-lg text-label-lg text-on-surface mb-3 flex items-center justify-between"><span class="flex items-center gap-1.5 font-semibold"><span class="material-symbols-outlined text-primary text-base">description</span>Tài liệu tải lên để kiểm tra thực tế (2 ảnh)</span><span class="text-xs text-primary font-medium cursor-pointer hover:underline flex items-center gap-1"><span class="material-symbols-outlined text-xs">zoom_in</span>Chế độ phóng to kính lúp</span></h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="bg-surface-container-low/30 rounded-xl p-3 border border-outline-variant/30 flex flex-col justify-between group"><div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-on-surface">Ảnh CCCD mặt trước</span><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">Bản chụp gốc</span></div><div class="relative rounded-lg overflow-hidden border border-outline-variant/40 bg-surface-container h-44 flex items-center justify-center cursor-pointer"><img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200" data-alt="Ảnh CCCD mặt trước" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcy2dnxrAGOdKcrn--rRP-yVFlCrNTTT3KUEeiWYPIuo9mxysWDS93h6SaLd7fxldegElvsavnMV3EHX9vfy6UEA-VpfoHn9QIEdaT5bO1jSTbUfCYHAwy1_UECKpcb6-E6PsHGOTUpGDIDb5Vc4uNTojTimMYNao_Wpd90w4pG2bGqxnx33LFKipPOf7rfIWGnOLncCvDmUKbqPaPvlExijZtzIMlZbcB-3vNyCvU0FahUqnoWELC"/><div class="absolute bottom-2 right-2 px-2 py-0.5 bg-surface-container-lowest/90 backdrop-blur-sm rounded text-[10px] text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-xs">zoom_in</span>Nhấn để phóng to</div></div><div class="mt-2 text-xs text-on-surface-variant flex justify-between"><span>Chất lượng ảnh: Rõ nét</span><span class="text-primary font-medium">Nguyên vẹn</span></div></div><div class="bg-surface-container-low/30 rounded-xl p-3 border border-outline-variant/30 flex flex-col justify-between group"><div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold text-on-surface">Ảnh CCCD mặt sau</span><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface-variant">Bản chụp gốc</span></div><div class="relative rounded-lg overflow-hidden border border-outline-variant/40 bg-surface-container h-44 flex items-center justify-center cursor-pointer"><img class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200" data-alt="Ảnh CCCD mặt sau" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCefzZvmW2exaAeTAE_NRQ-TtJii0O2zkucXJmbu6DiPprAEVLL8pDfUUJaD8dLcMHPZuELHuRdvUuCLrye_WliiiHOtdsb30j2uGS8ilbXcs_NwyljE_tSjo1qRFXgntHXpdMxjRT82foFoKhq0xLkopbxRmYdkKGb0nnO7LmEf5w1VmWvalX5n-JUzG1uAJFDtnfoVJvSs2ePO5NUNTnKe1VRnp4W3VT-t1na9VQnYtq-WWmLlKoX"/><div class="absolute bottom-2 right-2 px-2 py-0.5 bg-surface-container-lowest/90 backdrop-blur-sm rounded text-[10px] text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-xs">zoom_in</span>Nhấn để phóng to</div></div><div class="mt-2 text-xs text-on-surface-variant flex justify-between"><span>Chíp điện tử &amp; con dấu</span><span class="text-primary font-medium">Đầy đủ</span></div></div></div></div>
+<!-- Section 3: Auditor Notes -->
+<div class="space-y-2"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block font-semibold text-xs text-on-surface mb-1.5">Ghi chú của kiểm soát viên:</label><textarea class="w-full text-xs p-3 rounded-xl border border-outline-variant/40 bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="Nhập nhận xét nội bộ hoặc lưu ý thẩm định..." rows="3">Hình ảnh CCCD 2 mặt rõ nét, đầy đủ góc cạnh, thông tin trùng khớp hoàn toàn. Đủ điều kiện phê duyệt nâng Cấp 2 hạn mức giao dịch 100.000.000đ/ngày.</textarea></div><div><label class="block font-semibold text-xs text-error mb-1.5">Lý do từ chối (bắt buộc khi bấm Từ chối):</label><textarea class="w-full text-xs p-3 rounded-xl border border-outline-variant/40 bg-surface-container-lowest focus:border-error focus:ring-1 focus:ring-error outline-none text-on-surface placeholder:text-on-surface-variant" placeholder="Nhập lý do cụ thể gửi thông báo cho khách hàng (ví dụ: Ảnh chụp bị lóa, mờ số CCCD, giấy tờ không rõ góc...)" rows="3"></textarea></div></div></div>
+</div>
+<!-- STICKY ACTION BAR: Decision Controls (Approve & Reject with Dropdown) -->
+<div class="p-5 border-t border-outline-variant/30 bg-surface-container-lowest flex items-center justify-between gap-4 shrink-0 shadow-[0_-4px_20px_-2px_rgba(11,43,58,0.03)]"><div class="flex items-center gap-2"><select class="h-12 px-3 text-xs rounded-xl border border-outline-variant/50 bg-surface-container-low text-on-surface focus:border-error focus:ring-1 focus:ring-error outline-none"><option value="">Chọn lý do mẫu nếu từ chối...</option><option value="blur">Ảnh mờ, lóa không rõ số</option><option value="crop">Mất góc, không rõ viền thẻ</option><option value="mismatch">Thông tin không khớp dữ liệu</option><option value="expired">Giấy tờ đã hết hạn sử dụng</option><option value="other">Lý do khác (nhập ở ô trên)</option></select><button class="h-12 px-5 rounded-xl border-2 border-error text-error hover:bg-[#FEECEB] active:scale-95 transition-all text-xs font-bold flex items-center gap-1.5 whitespace-nowrap" type="button"><span class="material-symbols-outlined text-base">cancel</span>Từ chối hồ sơ</button></div><div class="flex items-center gap-3"><button class="h-12 px-8 rounded-xl bg-primary hover:bg-[#005046] active:scale-95 transition-all text-white font-bold text-sm shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer" type="button"><span class="material-symbols-outlined text-xl">verified</span>Duyệt hồ sơ &amp; Cấp hạn mức</button></div></div>
+</section>
+</main>
+</div>
+</body></html>

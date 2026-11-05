@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinVault - Thanh toán hóa đơn &amp; Nạp ĐT</title>
+<!-- Google Fonts: Be Vietnam Pro -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-surface": "#081e29",
+            "on-primary-fixed-variant": "#005046",
+            "surface-container-lowest": "#ffffff",
+            "surface-bright": "#f5faff",
+            "on-tertiary-fixed": "#002113",
+            "inverse-on-surface": "#e4f3ff",
+            "surface-container-highest": "#d0e5f6",
+            "primary": "#00685b",
+            "tertiary-fixed-dim": "#4edea3",
+            "inverse-primary": "#65dac4",
+            "surface-container-high": "#d6ebfb",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#c9e7fb",
+            "surface-container": "#def0ff",
+            "surface-tint": "#006b5d",
+            "surface-dim": "#c8dded",
+            "primary-fixed-dim": "#65dac4",
+            "on-primary-container": "#f4fffb",
+            "on-surface-variant": "#3d4946",
+            "outline": "#6d7a76",
+            "secondary-fixed-dim": "#adcbde",
+            "tertiary-container": "#00855b",
+            "surface": "#f5faff",
+            "secondary": "#466273",
+            "on-secondary-fixed": "#001e2c",
+            "primary-container": "#008373",
+            "error": "#ba1a1a",
+            "inverse-surface": "#1f333f",
+            "on-secondary-container": "#4a6677",
+            "outline-variant": "#bcc9c5",
+            "secondary-container": "#c6e4f8",
+            "on-secondary": "#ffffff",
+            "tertiary": "#006947",
+            "background": "#f5faff",
+            "on-secondary-fixed-variant": "#2e4a5a",
+            "on-background": "#081e29",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-primary": "#ffffff",
+            "tertiary-fixed": "#6ffbbe",
+            "on-tertiary-container": "#f5fff6",
+            "surface-variant": "#d0e5f6",
+            "on-error": "#ffffff",
+            "on-error-container": "#93000a",
+            "surface-container-low": "#eaf5ff",
+            "primary-fixed": "#83f6e0",
+            "error-container": "#ffdad6",
+            "on-primary-fixed": "#00201b"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-xl": "2rem",
+            "space-xs": "0.25rem",
+            "margin": "1rem",
+            "margin-md": "1.5rem",
+            "gutter-lg": "2rem",
+            "margin-lg": "3rem",
+            "space-lg": "1.5rem",
+            "gutter-md": "1.5rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "space-2xl": "3rem",
+            "space-md": "1rem"
+          },
+          fontFamily: {
+            "body-sm": ["Be Vietnam Pro", "sans-serif"],
+            "display-lg-mobile": ["Be Vietnam Pro", "sans-serif"],
+            "label-lg": ["Be Vietnam Pro", "sans-serif"],
+            "currency-display": ["Be Vietnam Pro", "sans-serif"],
+            "label-sm": ["Be Vietnam Pro", "sans-serif"],
+            "headline-sm": ["Be Vietnam Pro", "sans-serif"],
+            "currency-body": ["Be Vietnam Pro", "sans-serif"],
+            "body-lg": ["Be Vietnam Pro", "sans-serif"],
+            "label-md": ["Be Vietnam Pro", "sans-serif"],
+            "headline-lg": ["Be Vietnam Pro", "sans-serif"],
+            "body-md": ["Be Vietnam Pro", "sans-serif"],
+            "headline-md": ["Be Vietnam Pro", "sans-serif"],
+            "display-lg": ["Be Vietnam Pro", "sans-serif"]
+          },
+          fontSize: {
+            "body-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }],
+            "display-lg-mobile": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+            "currency-display": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.02em", fontWeight: "500" }],
+            "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "600" }],
+            "currency-body": ["16px", { lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "600" }],
+            "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "display-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background-color: #f5faff;
+      color: #081e29;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined[data-weight="fill"] {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .card-monolith {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 20px -2px rgba(11, 43, 58, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased flex min-h-screen">
+<!-- SIDEBAR (THUẦN VIỆT 7 MỤC CHUẨN, RỘNG 288px) -->
+<aside class="fixed top-0 left-0 h-screen w-72 bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col justify-between z-30 select-none">
+<div class="px-6 py-6 flex flex-col h-full justify-between">
+<div>
+<!-- Logo & Brand Header -->
+<div class="flex items-center gap-3.5 px-2 mb-8">
+<div class="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="account_balance_wallet" data-weight="fill">account_balance_wallet</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">FinVault</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ví điện tử cá nhân</span>
+</div>
+</div>
+<!-- 7 Menu Navigation Items -->
+<nav class="space-y-1.5">
+<!-- 1. Tổng quan -->
+<a class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span>Tổng quan</span>
+</a>
+<!-- 2. Chuyển tiền -->
+<a class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="send">send</span>
+<span>Chuyển tiền</span>
+</a>
+<!-- 3. Nạp tiền -->
+<a class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="add_card">add_card</span>
+<span>Nạp tiền</span>
+</a>
+<!-- 4. Rút tiền -->
+<a class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="payments">payments</span>
+<span>Rút tiền</span>
+</a>
+<!-- 5. Thanh toán hóa đơn & Nạp ĐT (Đang kích hoạt) -->
+<a class="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-teal-50 text-primary font-bold text-label-lg transition-colors duration-150 shadow-sm border border-primary/10" href="#">
+<span class="material-symbols-outlined text-xl text-primary" data-icon="receipt_long" data-weight="fill">receipt_long</span>
+<span>Thanh toán hóa đơn &amp; Nạp ĐT</span>
+</a>
+<!-- 6. Lịch sử giao dịch -->
+<a class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="history">history</span>
+<span>Lịch sử giao dịch</span>
+</a>
+<!-- 7. Hồ sơ & KYC -->
+<a class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="verified_user">verified_user</span>
+<span>Hồ sơ &amp; KYC</span>
+</a>
+</nav>
+</div>
+<!-- Quick support note in sidebar bottom -->
+<div class="p-4 rounded-2xl bg-surface-container-low/70 border border-outline-variant/30 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="support_agent">support_agent</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Tổng đài 24/7</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">1900 6868 (Miễn cước)</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- MAIN WRAPPER (Cách Sidebar 288px) -->
+<div class="pl-72 flex-1 flex flex-col min-h-screen">
+<!-- TOPBAR (Cao 64px chuẩn Desktop) -->
+<header class="sticky top-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/30 px-8 flex items-center justify-between z-20">
+<!-- Left: Breadcrumb -->
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="hover:text-primary cursor-pointer">Trang chủ</span>
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface font-semibold">Thanh toán hóa đơn &amp; Nạp ĐT</span>
+</div>
+<!-- Center: Search input -->
+<div class="relative w-96 max-w-sm hidden lg:block">
+<span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="search">search</span>
+</span>
+<input class="w-full h-10 pl-9 pr-4 bg-surface-container-low border border-transparent rounded-xl text-body-md font-body-md focus:bg-white focus:border-primary focus:ring-0 focus:outline-none transition-all placeholder:text-on-surface-variant/70" placeholder="Tìm kiếm hóa đơn, tiền điện, nước..." type="text"/>
+</div>
+<!-- Right: Balance, Verification Level, Notifications & Profile -->
+<div class="flex items-center gap-3.5">
+<!-- Chip số dư ví -->
+<div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800">
+<span class="material-symbols-outlined text-base text-primary" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-label-md text-label-md font-semibold">Số dư: <span class="font-bold text-primary">1.250.000đ</span></span>
+</div>
+<!-- Chip Cấp xác minh -->
+<div class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/40 text-secondary">
+<span class="material-symbols-outlined text-base text-primary" data-icon="verified" data-weight="fill">verified</span>
+<span class="font-label-md text-label-md font-medium">Cấp xác minh: Cấp 2</span>
+</div>
+<!-- Chuông thông báo có badge 3 -->
+<button class="relative w-10 h-10 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-2xl" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-4 h-4 bg-error text-white font-label-sm text-[10px] leading-tight rounded-full flex items-center justify-center font-bold">3</span>
+</button>
+<div class="h-6 w-px bg-outline-variant/30"></div>
+<!-- Avatar & User name -->
+<div class="flex items-center gap-2.5 cursor-pointer pl-1">
+<div class="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm border border-primary/20 overflow-hidden">
+<span class="font-semibold">AN</span>
+</div>
+<div class="flex flex-col text-left">
+<span class="font-label-md text-label-md font-bold text-on-surface leading-tight">An Nguyễn</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant leading-none">0987***888</span>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN CONTENT CANVAS -->
+<main class="flex-1 p-8 max-w-[1360px] mx-auto w-full">
+<!-- Title Section -->
+<div class="mb-6">
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">Thanh toán hóa đơn &amp; Nạp điện thoại</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Nạp tiền điện thoại chiết khấu hấp dẫn và thanh toán hóa đơn sinh hoạt tiện lợi, nhanh chóng</p>
+</div>
+<!-- 2 TABS LỚN ĐẦU TRANG -->
+<div class="flex items-center gap-3 mb-8 border-b border-outline-variant/30 pb-4">
+<button class="flex items-center gap-2.5 px-6 py-3 rounded-xl bg-primary text-white font-label-lg text-label-lg shadow-sm transition-all duration-150" id="tab-btn-topup" onclick="switchMainTab('topup')">
+<span class="material-symbols-outlined text-xl" data-icon="phone_android" data-weight="fill">phone_android</span>
+<span>Nạp điện thoại</span>
+</button>
+<button class="flex items-center gap-2.5 px-6 py-3 rounded-xl bg-white border border-outline-variant/60 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest font-label-lg text-label-lg transition-all duration-150" id="tab-btn-bills" onclick="switchMainTab('bills')">
+<span class="material-symbols-outlined text-xl" data-icon="receipt_long">receipt_long</span>
+<span>Thanh toán hóa đơn sinh hoạt</span>
+</button>
+</div>
+<!-- 2 CỘT CHÍNH (Layout chuẩn FinVault) -->
+<div class="grid grid-cols-12 gap-8 items-start">
+<!-- CỘT TRÁI (Form nhập liệu 7 Cột) -->
+<div class="col-span-12 lg:col-span-7 space-y-6">
+<!-- SECTION 1: NỘI DUNG TAB NẠP ĐIỆN THOẠI -->
+<div class="card-monolith rounded-2xl p-6 sm:p-7 space-y-6" id="content-tab-topup">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span>
+                Thông tin nạp tiền di động
+              </h2>
+<span class="font-label-md text-label-md text-primary bg-teal-50 px-3 py-1 rounded-full font-semibold border border-teal-100">Chiết khấu tức thì 3%</span>
+</div>
+<!-- Ô nhập số điện thoại -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="font-label-lg text-label-lg font-semibold text-on-surface">Số điện thoại người nhận</label>
+<button class="text-primary font-label-md text-label-md hover:underline flex items-center gap-1 font-semibold" onclick="selectSelfPhone()" type="button">
+<span class="material-symbols-outlined text-base" data-icon="person">person</span>
+                  Dùng số của tôi (0987***888)
+                </button>
+</div>
+<div class="relative">
+<input class="w-full h-12 px-4 pr-12 rounded-xl bg-white border-[1.5px] border-outline-variant/60 focus:border-primary focus:ring-2 focus:ring-primary/20 text-on-surface font-body-lg text-body-lg transition-all outline-none" id="input-phone" placeholder="Nhập số điện thoại (10 số)..." type="text" value="0987345888"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary p-1" title="Mở danh bạ" type="button">
+<span class="material-symbols-outlined text-2xl" data-icon="contacts">contacts</span>
+</button>
+</div>
+</div>
+<!-- Chọn nhà mạng -->
+<div class="space-y-2.5">
+<label class="font-label-lg text-label-lg font-semibold text-on-surface">Chọn nhà mạng viễn thông</label>
+<div class="grid grid-cols-3 gap-3">
+<!-- Viettel (Đang chọn) -->
+<button class="p-3.5 rounded-xl border-2 border-primary bg-teal-50/50 flex flex-col items-center justify-center gap-1.5 transition-all text-center relative shadow-sm" type="button">
+<div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs tracking-tighter">VT</div>
+<span class="font-label-lg text-label-lg font-bold text-primary">Viettel</span>
+<div class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-xs" data-icon="check">check</span>
+</div>
+</button>
+<!-- Mobifone -->
+<button class="p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex flex-col items-center justify-center gap-1.5 transition-all text-center" type="button">
+<div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs tracking-tighter">MB</div>
+<span class="font-label-lg text-label-lg font-medium text-on-surface">Mobifone</span>
+</button>
+<!-- Vinaphone -->
+<button class="p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex flex-col items-center justify-center gap-1.5 transition-all text-center" type="button">
+<div class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-xs tracking-tighter">VN</div>
+<span class="font-label-lg text-label-lg font-medium text-on-surface">Vinaphone</span>
+</button>
+</div>
+</div>
+<!-- Chọn mệnh giá nạp -->
+<div class="space-y-2.5">
+<div class="flex justify-between items-center">
+<label class="font-label-lg text-label-lg font-semibold text-on-surface">Chọn mệnh giá tiền nạp</label>
+<span class="font-body-sm text-body-sm text-emerald-700 font-medium">Hoàn 3% trực tiếp vào hóa đơn</span>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<!-- 20.000đ -->
+<button class="denom-btn p-3.5 rounded-xl border border-slate-200 bg-white hover:border-primary/40 flex flex-col items-center justify-center transition-all text-left" onclick="selectDenomination(20000, 600)" type="button">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">20.000đ</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Trả: 19.400đ</span>
+</button>
+<!-- 50.000đ -->
+<button class="denom-btn p-3.5 rounded-xl border border-slate-200 bg-white hover:border-primary/40 flex flex-col items-center justify-center transition-all text-left" onclick="selectDenomination(50000, 1500)" type="button">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">50.000đ</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Trả: 48.500đ</span>
+</button>
+<!-- 100.000đ (Đang chọn) -->
+<button class="denom-btn p-3.5 rounded-xl border-2 border-primary bg-teal-50 flex flex-col items-center justify-center transition-all text-left relative shadow-sm" onclick="selectDenomination(100000, 3000)" type="button">
+<span class="font-label-lg text-label-lg font-bold text-primary">100.000đ</span>
+<span class="font-body-sm text-body-sm text-primary font-medium">Trả: 97.000đ</span>
+<span class="absolute -top-2 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Phổ biến</span>
+</button>
+<!-- 200.000đ -->
+<button class="denom-btn p-3.5 rounded-xl border border-slate-200 bg-white hover:border-primary/40 flex flex-col items-center justify-center transition-all text-left" onclick="selectDenomination(200000, 6000)" type="button">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">200.000đ</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Trả: 194.000đ</span>
+</button>
+<!-- 500.000đ -->
+<button class="denom-btn p-3.5 rounded-xl border border-slate-200 bg-white hover:border-primary/40 flex flex-col items-center justify-center transition-all text-left" onclick="selectDenomination(500000, 15000)" type="button">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">500.000đ</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Trả: 485.000đ</span>
+</button>
+<!-- Gói Data / Thẻ cào nhanh -->
+<div class="p-3 rounded-xl border border-dashed border-outline-variant/80 bg-surface-container-low/40 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="wifi_tethering">wifi_tethering</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium mt-0.5">Gói Data 4G/5G</span>
+</div>
+</div>
+</div>
+<!-- Dòng hiển thị khuyến mãi -->
+<div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-center gap-3">
+<span class="material-symbols-outlined text-emerald-600 text-2xl shrink-0" data-icon="savings" data-weight="fill">savings</span>
+<div class="text-body-md font-body-md text-emerald-950">
+<span class="font-semibold text-emerald-800">Ưu đãi hoàn tiền 3% (tiết kiệm 3.000đ)</span>
+<span class="text-xs text-emerald-700 block mt-0.5 font-normal">Áp dụng trực tiếp vào giao dịch nạp tiền hôm nay cho thành viên Cấp 2.</span>
+</div>
+</div>
+</div>
+<!-- SECTION 2: NỘI DUNG TAB THANH TOÁN HÓA ĐƠN (TIỆN ÍCH) -->
+<div class="card-monolith rounded-2xl p-6 sm:p-7 space-y-6 hidden" id="content-tab-bills">
+<div class="flex items-center justify-between pb-3 border-b border-slate-100">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span>
+                Tra cứu hóa đơn sinh hoạt
+              </h2>
+<span class="font-label-md text-label-md text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full font-semibold">Không thu phí thu hộ</span>
+</div>
+<!-- Loại dịch vụ -->
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg font-semibold text-on-surface">Chọn loại hóa đơn cần trả</label>
+<div class="grid grid-cols-3 gap-3">
+<button class="p-3.5 rounded-xl border-2 border-primary bg-teal-50 flex flex-col items-center justify-center gap-2 text-center" type="button">
+<div class="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl" data-icon="electric_bolt" data-weight="fill">electric_bolt</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-primary block">Tiền Điện</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">EVN toàn quốc</span>
+</div>
+</button>
+<button class="p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex flex-col items-center justify-center gap-2 text-center" type="button">
+<div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl" data-icon="water_drop" data-weight="fill">water_drop</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface block">Tiền Nước</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sawaco / Cấp nước</span>
+</div>
+</button>
+<button class="p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex flex-col items-center justify-center gap-2 text-center" type="button">
+<div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl" data-icon="language">language</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface block">Internet &amp; TV</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">VNPT / FPT / Viettel</span>
+</div>
+</button>
+</div>
+</div>
+<!-- Mã khách hàng / Mã hóa đơn -->
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg font-semibold text-on-surface">Mã khách hàng / Mã danh bộ</label>
+<div class="flex gap-2">
+<input class="flex-1 h-12 px-4 rounded-xl bg-white border-[1.5px] border-outline-variant/60 focus:border-primary text-on-surface font-body-lg text-body-lg outline-none font-medium" type="text" value="PE0100028491"/>
+<button class="px-5 h-12 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-lg text-label-lg font-semibold transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="search">search</span>
+<span>Tra cứu hóa đơn</span>
+</button>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Mã khách hàng in trên hóa đơn giấy hoặc tin nhắn SMS điện lực.</span>
+</div>
+<!-- Kết quả tra cứu hóa đơn -->
+<div class="p-4 rounded-xl border border-teal-200 bg-teal-50/40 space-y-3">
+<div class="flex items-center justify-between pb-2 border-b border-teal-100">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="check_circle" data-weight="fill">check_circle</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Đã tìm thấy hóa đơn tiền điện</span>
+</div>
+<span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Chưa thanh toán</span>
+</div>
+<div class="grid grid-cols-2 gap-3 text-body-md font-body-md">
+<div>
+<span class="text-on-surface-variant text-xs block">Tên khách hàng:</span>
+<span class="font-semibold text-on-surface">Nguyễn Văn An</span>
+</div>
+<div>
+<span class="text-on-surface-variant text-xs block">Kỳ hóa đơn:</span>
+<span class="font-semibold text-on-surface">Tháng 10/2024 (Tiền điện sinh hoạt)</span>
+</div>
+<div>
+<span class="text-on-surface-variant text-xs block">Địa chỉ sử dụng:</span>
+<span class="text-on-surface">Quận 1, TP. Hồ Chí Minh</span>
+</div>
+<div>
+<span class="text-on-surface-variant text-xs block">Hạn thanh toán:</span>
+<span class="text-error font-medium">25/10/2024</span>
+</div>
+</div>
+<div class="pt-2 border-t border-teal-100 flex items-baseline justify-between">
+<span class="font-label-lg text-label-lg text-on-surface-variant">Số tiền cần thanh toán:</span>
+<span class="font-currency-display text-2xl font-bold text-primary">420.000đ</span>
+</div>
+</div>
+</div>
+<!-- Ghi chú bảo đảm an toàn -->
+<div class="flex items-center gap-3 p-4 rounded-xl bg-white border border-outline-variant/30 text-on-surface-variant font-body-sm text-body-sm shadow-sm">
+<span class="material-symbols-outlined text-primary text-xl shrink-0" data-icon="shield">shield</span>
+<span>Mọi giao dịch thanh toán tại FinVault đều được mã hóa an toàn và gửi biên nhận điện tử tức thì về hòm thư người dùng.</span>
+</div>
+</div>
+<!-- CỘT PHẢI (Hóa đơn tóm tắt + PIN + Kết quả - 5 Cột) -->
+<div class="col-span-12 lg:col-span-5 space-y-6">
+<!-- 1. KHỐI TÓM TẮT THANH TOÁN (BILL SUMMARY) -->
+<div class="card-monolith rounded-2xl p-6 sm:p-7 space-y-5" id="box-summary">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface pb-3 border-b border-slate-100 flex items-center justify-between">
+<span>Chi tiết thanh toán</span>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="receipt">receipt</span>
+</h2>
+<div class="space-y-3.5 font-body-md text-body-md">
+<!-- Nguồn tiền -->
+<div class="flex items-center justify-between py-1">
+<span class="text-on-surface-variant">Nguồn thanh toán:</span>
+<div class="text-right">
+<div class="font-semibold text-on-surface flex items-center gap-1.5 justify-end">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Ví FinVault
+                  </div>
+<span class="text-xs text-on-surface-variant font-medium">(Số dư: 1.250.000đ)</span>
+</div>
+</div>
+<!-- Dịch vụ -->
+<div class="flex items-center justify-between py-1 border-t border-slate-100">
+<span class="text-on-surface-variant">Dịch vụ:</span>
+<span class="font-semibold text-on-surface" id="summary-service-name">Nạp ĐT Viettel (0987345888)</span>
+</div>
+<!-- Mệnh giá nạp -->
+<div class="flex items-center justify-between py-1 border-t border-slate-100">
+<span class="text-on-surface-variant">Mệnh giá gốc:</span>
+<span class="font-semibold text-on-surface" id="summary-denom">100.000đ</span>
+</div>
+<!-- Chiết khấu -->
+<div class="flex items-center justify-between py-1 border-t border-slate-100 text-emerald-700">
+<span class="font-medium">Chiết khấu / Ưu đãi:</span>
+<span class="font-bold" id="summary-discount">-3.000đ</span>
+</div>
+<!-- Phí giao dịch -->
+<div class="flex items-center justify-between py-1 border-t border-slate-100">
+<span class="text-on-surface-variant">Phí giao dịch:</span>
+<span class="text-emerald-700 font-semibold">Miễn phí 0đ</span>
+</div>
+<!-- Tổng tiền in đậm 32px -->
+<div class="pt-4 border-t-2 border-dashed border-slate-200">
+<div class="flex items-baseline justify-between">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Tổng tiền thanh toán:</span>
+<div class="text-right">
+<span class="font-currency-display text-[32px] leading-tight font-extrabold text-primary tracking-tight" id="summary-total">97.000đ</span>
+</div>
+</div>
+<div class="text-right mt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Số dư còn lại sau khi thanh toán: <strong class="text-on-surface">1.153.000đ</strong></span>
+</div>
+</div>
+</div>
+<!-- Nút chính duy nhất cao tối thiểu 48px màu teal -->
+<button class="w-full h-12 rounded-xl bg-primary hover:bg-[#005a4e] text-white font-label-lg text-label-lg font-bold tracking-wide shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2" id="btn-main-pay" onclick="showPinStep()" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="lock">lock</span>
+<span id="btn-pay-text">Thanh toán ngay 97.000đ</span>
+</button>
+</div>
+<!-- 2. KHỐI NHẬP MÃ PIN BẢO MẬT (Xác thực 6 ô tròn) -->
+<div class="card-monolith rounded-2xl p-6 sm:p-7 space-y-5 hidden border-2 border-primary/20" id="box-pin">
+<div class="text-center space-y-1">
+<div class="w-12 h-12 mx-auto rounded-full bg-teal-50 text-primary flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-2xl" data-icon="pin" data-weight="fill">pin</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Xác nhận thanh toán</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Vui lòng nhập mã PIN cá nhân 6 số của bạn để hoàn tất</p>
+</div>
+<!-- 6 ô tròn mã PIN -->
+<div class="flex justify-center items-center gap-3 py-3">
+<div class="w-10 h-10 rounded-xl border-2 border-primary bg-primary text-white flex items-center justify-center font-bold text-xl">●</div>
+<div class="w-10 h-10 rounded-xl border-2 border-primary bg-primary text-white flex items-center justify-center font-bold text-xl">●</div>
+<div class="w-10 h-10 rounded-xl border-2 border-primary bg-primary text-white flex items-center justify-center font-bold text-xl">●</div>
+<div class="w-10 h-10 rounded-xl border-2 border-primary bg-primary text-white flex items-center justify-center font-bold text-xl">●</div>
+<div class="w-10 h-10 rounded-xl border-2 border-outline-variant bg-white flex items-center justify-center text-on-surface-variant font-bold text-xl">_</div>
+<div class="w-10 h-10 rounded-xl border-2 border-outline-variant bg-white flex items-center justify-center text-on-surface-variant font-bold text-xl">_</div>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm px-1">
+<button class="text-on-surface-variant hover:text-on-surface font-medium flex items-center gap-1" onclick="cancelPinStep()" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_back">arrow_back</span> Quay lại
+              </button>
+<a class="text-primary hover:underline font-semibold" href="#">Quên mã PIN?</a>
+</div>
+<button class="w-full h-12 rounded-xl bg-primary hover:bg-[#005a4e] text-white font-label-lg text-label-lg font-bold shadow-md transition-all flex items-center justify-center gap-2" onclick="completePaymentSuccess()" type="button">
+<span>Xác nhận &amp; Trừ tiền ví</span>
+</button>
+</div>
+<!-- 3. KHỐI GIAO DỊCH THÀNH CÔNG (Mô phỏng hoàn tất chuẩn FinVault) -->
+<div class="card-monolith rounded-2xl p-6 sm:p-7 text-center space-y-5 hidden border-2 border-emerald-500/20 bg-gradient-to-b from-emerald-50/30 to-white" id="box-success">
+<div class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center ring-8 ring-emerald-50 shadow-inner">
+<span class="material-symbols-outlined text-4xl" data-icon="check_circle" data-weight="fill">check_circle</span>
+</div>
+<div class="space-y-1">
+<h3 class="font-headline-md text-headline-md font-bold text-emerald-900">Thanh toán thành công!</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Giao dịch nạp tiền điện thoại đã được thực hiện ngay lập tức</p>
+</div>
+<div class="bg-surface-container-low/60 rounded-xl p-4 text-left space-y-2.5 text-body-md font-body-md border border-outline-variant/30">
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Số tiền đã thanh toán:</span>
+<span class="font-bold text-primary text-lg">97.000đ</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Mã giao dịch:</span>
+<span class="font-semibold text-on-surface">#FV-8492019</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Thời gian thực hiện:</span>
+<span class="text-on-surface">14:32:08 - 24/10/2024</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Số dư ví khả dụng mới:</span>
+<span class="font-bold text-emerald-700">1.153.000đ</span>
+</div>
+</div>
+<div class="space-y-2.5 pt-2">
+<button class="w-full h-12 rounded-xl bg-primary hover:bg-[#005a4e] text-white font-label-lg text-label-lg font-bold shadow-md transition-all" onclick="resetFlow()" type="button">
+                Về trang chủ FinVault
+              </button>
+<button class="w-full h-12 rounded-xl border-[1.5px] border-primary text-primary hover:bg-teal-50 font-label-lg text-label-lg font-semibold transition-all" onclick="resetFlow()" type="button">
+                Thực hiện giao dịch khác
+              </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- INTERACTION JAVASCRIPT -->
+<script>
+    // Tab switching logic
+    function switchMainTab(tab) {
+      const btnTopup = document.getElementById('tab-btn-topup');
+      const btnBills = document.getElementById('tab-btn-bills');
+      const contentTopup = document.getElementById('content-tab-topup');
+      const contentBills = document.getElementById('content-tab-bills');
+      const summaryService = document.getElementById('summary-service-name');
+      const summaryDenom = document.getElementById('summary-denom');
+      const summaryDiscount = document.getElementById('summary-discount');
+      const summaryTotal = document.getElementById('summary-total');
+      const btnPayText = document.getElementById('btn-pay-text');
+
+      if (tab === 'topup') {
+        // Active Topup
+        btnTopup.className = "flex items-center gap-2.5 px-6 py-3 rounded-xl bg-primary text-white font-label-lg text-label-lg shadow-sm transition-all duration-150";
+        btnBills.className = "flex items-center gap-2.5 px-6 py-3 rounded-xl bg-white border border-outline-variant/60 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest font-label-lg text-label-lg transition-all duration-150";
+        contentTopup.classList.remove('hidden');
+        contentBills.classList.add('hidden');
+
+        summaryService.textContent = "Nạp ĐT Viettel (0987345888)";
+        summaryDenom.textContent = "100.000đ";
+        summaryDiscount.textContent = "-3.000đ";
+        summaryTotal.textContent = "97.000đ";
+        btnPayText.textContent = "Thanh toán ngay 97.000đ";
+      } else {
+        // Active Bills
+        btnBills.className = "flex items-center gap-2.5 px-6 py-3 rounded-xl bg-primary text-white font-label-lg text-label-lg shadow-sm transition-all duration-150";
+        btnTopup.className = "flex items-center gap-2.5 px-6 py-3 rounded-xl bg-white border border-outline-variant/60 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest font-label-lg text-label-lg transition-all duration-150";
+        contentBills.classList.remove('hidden');
+        contentTopup.classList.add('hidden');
+
+        summaryService.textContent = "Tiền điện sinh hoạt EVN (PE0100028491)";
+        summaryDenom.textContent = "420.000đ";
+        summaryDiscount.textContent = "-0đ (Không thu phí)";
+        summaryTotal.textContent = "420.000đ";
+        btnPayText.textContent = "Thanh toán hóa đơn 420.000đ";
+      }
+      cancelPinStep();
+    }
+
+    // Denomination Selection
+    function selectDenomination(amount, discount) {
+      const pay = amount - discount;
+      document.getElementById('summary-denom').textContent = amount.toLocaleString('vi-VN') + 'đ';
+      document.getElementById('summary-discount').textContent = '-' + discount.toLocaleString('vi-VN') + 'đ';
+      document.getElementById('summary-total').textContent = pay.toLocaleString('vi-VN') + 'đ';
+      document.getElementById('btn-pay-text').textContent = "Thanh toán ngay " + pay.toLocaleString('vi-VN') + 'đ';
+    }
+
+    // Self phone filler
+    function selectSelfPhone() {
+      document.getElementById('input-phone').value = "0987345888";
+    }
+
+    // PIN Step Flow
+    function showPinStep() {
+      document.getElementById('box-summary').classList.add('hidden');
+      document.getElementById('box-pin').classList.remove('hidden');
+      document.getElementById('box-success').classList.add('hidden');
+    }
+
+    function cancelPinStep() {
+      document.getElementById('box-pin').classList.add('hidden');
+      document.getElementById('box-summary').classList.remove('hidden');
+      document.getElementById('box-success').classList.add('hidden');
+    }
+
+    function completePaymentSuccess() {
+      document.getElementById('box-pin').classList.add('hidden');
+      document.getElementById('box-summary').classList.add('hidden');
+      document.getElementById('box-success').classList.remove('hidden');
+    }
+
+    function resetFlow() {
+      document.getElementById('box-success').classList.add('hidden');
+      document.getElementById('box-pin').classList.add('hidden');
+      document.getElementById('box-summary').classList.remove('hidden');
+    }
+  </script>
+</body></html>

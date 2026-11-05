@@ -10,8 +10,8 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster position="top-right" richColors closeButton />
       {children}
+      <Toaster position="top-right" richColors closeButton />
     </QueryClientProvider>
   )
 }

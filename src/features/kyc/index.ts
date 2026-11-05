@@ -1,0 +1,2 @@
+// Feature: kyc
+export {}

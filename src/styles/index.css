@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource/be-vietnam-pro/400.css";
 @import "@fontsource/be-vietnam-pro/500.css";
@@ -7,13 +7,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─────────────────────────────────────────────────────────────
-   1. TAILWIND V4 THEME MAPPING
-   Ánh xạ CSS variables thành token class của Tailwind
-   ───────────────────────────────────────────────────────────── */
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Be Vietnam Pro', sans-serif;
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -26,9 +22,24 @@
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
 
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+
+  --color-surface: var(--surface);
+  --color-on-surface: var(--on-surface);
+  --color-surface-variant: var(--surface-variant);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-high: var(--surface-container-high);
 
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
@@ -52,161 +63,136 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   2. BẢNG MÀU TOKEN THEME (SÁNG MẶC ĐỊNH & TỐI)
-   ───────────────────────────────────────────────────────────── */
-
-/* Light Theme (Mặc định) */
 :root {
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.145 0 0);
-
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-
-  /* Primary Fintech Navy/Indigo */
-  --primary: oklch(0.48 0.22 265);
-  --primary-foreground: oklch(0.99 0 0);
-
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.2 0 0);
-
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.52 0 0);
-
-  --accent: oklch(0.94 0.03 265);
-  --accent-foreground: oklch(0.3 0.1 265);
-
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
-
-  --success: oklch(0.62 0.19 145);
-  --success-foreground: oklch(0.99 0 0);
-
-  --warning: oklch(0.72 0.17 65);
-  --warning-foreground: oklch(0.15 0 0);
-
-  --info: oklch(0.58 0.19 240);
-  --info-foreground: oklch(0.99 0 0);
-
-  --border: oklch(0.91 0 0);
-  --input: oklch(0.91 0 0);
-  --ring: oklch(0.48 0.22 265);
-
-  --chart-1: oklch(0.48 0.22 265);
-  --chart-2: oklch(0.62 0.19 145);
-  --chart-3: oklch(0.72 0.17 65);
-  --chart-4: oklch(0.58 0.19 240);
-  --chart-5: oklch(0.35 0 0);
-
   --radius: 0.625rem;
 
-  --sidebar: oklch(0.98 0 0);
-  --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.48 0.22 265);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.94 0.03 265);
-  --sidebar-accent-foreground: oklch(0.3 0.1 265);
-  --sidebar-border: oklch(0.91 0 0);
-  --sidebar-ring: oklch(0.48 0.22 265);
+  /* FinVault Design System Tokens (Light) */
+  --background: #f5faff;
+  --foreground: #081e29;
+
+  --surface: #f5faff;
+  --on-surface: #081e29;
+  --surface-variant: #d0e5f6;
+  --on-surface-variant: #3d4946;
+  --surface-container-low: #eaf5ff;
+  --surface-container: #def0ff;
+  --surface-container-high: #d6ebfb;
+
+  --card: #ffffff;
+  --card-foreground: #081e29;
+
+  --popover: #ffffff;
+  --popover-foreground: #081e29;
+
+  /* Primary Deep Teal */
+  --primary: #00685b;
+  --primary-foreground: #ffffff;
+  --primary-container: #008373;
+  --on-primary-container: #f4fffb;
+
+  /* Secondary Slate Blue */
+  --secondary: #466273;
+  --secondary-foreground: #ffffff;
+  --secondary-container: #c6e4f8;
+  --on-secondary-container: #4a6677;
+
+  /* Tertiary Pine Green */
+  --tertiary: #006947;
+  --tertiary-foreground: #ffffff;
+
+  --muted: #eaf5ff;
+  --muted-foreground: #466273;
+
+  --accent: #def0ff;
+  --accent-foreground: #00685b;
+
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+
+  --success: #006947;
+  --success-foreground: #ffffff;
+
+  --warning: #b26a00;
+  --warning-foreground: #ffffff;
+
+  --info: #00685b;
+  --info-foreground: #ffffff;
+
+  --border: #bcc9c5;
+  --input: #bcc9c5;
+  --ring: #00685b;
 }
 
-/* Dark Theme */
 .dark {
-  --background: oklch(0.12 0.01 265);
-  --foreground: oklch(0.96 0 0);
+  --background: #081e29;
+  --foreground: #f5faff;
 
-  --card: oklch(0.16 0.015 265);
-  --card-foreground: oklch(0.96 0 0);
+  --surface: #081e29;
+  --on-surface: #f5faff;
+  --surface-variant: #1f333f;
+  --on-surface-variant: #bcc9c5;
+  --surface-container-low: #0f2734;
+  --surface-container: #17303e;
+  --surface-container-high: #1f3948;
 
-  --popover: oklch(0.16 0.015 265);
-  --popover-foreground: oklch(0.96 0 0);
+  --card: #0d232f;
+  --card-foreground: #f5faff;
 
-  --primary: oklch(0.65 0.2 265);
-  --primary-foreground: oklch(0.1 0 0);
+  --popover: #0d232f;
+  --popover-foreground: #f5faff;
 
-  --secondary: oklch(0.22 0.015 265);
-  --secondary-foreground: oklch(0.95 0 0);
+  --primary: #65dac4;
+  --primary-foreground: #003830;
+  --primary-container: #005046;
+  --on-primary-container: #83f6e0;
 
-  --muted: oklch(0.22 0.015 265);
-  --muted-foreground: oklch(0.65 0 0);
+  --secondary: #adcbde;
+  --secondary-foreground: #173343;
+  --secondary-container: #2e4a5a;
+  --on-secondary-container: #c9e7fb;
 
-  --accent: oklch(0.25 0.03 265);
-  --accent-foreground: oklch(0.95 0 0);
+  --tertiary: #4edea3;
+  --tertiary-foreground: #003822;
 
-  --destructive: oklch(0.65 0.2 25);
-  --destructive-foreground: oklch(0.99 0 0);
+  --muted: #17303e;
+  --muted-foreground: #adcbde;
 
-  --success: oklch(0.68 0.18 145);
-  --success-foreground: oklch(0.1 0 0);
+  --accent: #1f3948;
+  --accent-foreground: #65dac4;
 
-  --warning: oklch(0.75 0.16 65);
-  --warning-foreground: oklch(0.1 0 0);
+  --destructive: #ffb4ab;
+  --destructive-foreground: #690005;
 
-  --info: oklch(0.65 0.18 240);
-  --info-foreground: oklch(0.1 0 0);
+  --success: #4edea3;
+  --success-foreground: #003822;
 
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.65 0.2 265);
+  --warning: #ffb951;
+  --warning-foreground: #452b00;
 
-  --chart-1: oklch(0.65 0.2 265);
-  --chart-2: oklch(0.68 0.18 145);
-  --chart-3: oklch(0.75 0.16 65);
-  --chart-4: oklch(0.65 0.18 240);
-  --chart-5: oklch(0.25 0 0);
+  --info: #65dac4;
+  --info-foreground: #003830;
 
-  --sidebar: oklch(0.14 0.015 265);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.65 0.2 265);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.22 0.015 265);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.65 0.2 265);
+  --border: #3d4946;
+  --input: #3d4946;
+  --ring: #65dac4;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   3. BASE STYLES & RESET
-   ───────────────────────────────────────────────────────────── */
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
+* {
+  border-color: var(--border);
+}
 
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-
-  html {
-    @apply font-sans;
-  }
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

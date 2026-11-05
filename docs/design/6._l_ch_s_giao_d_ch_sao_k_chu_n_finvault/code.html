@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lịch sử giao dịch &amp; Sao kê tài khoản - FinVault</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#bcc9c5",
+            "on-secondary-fixed": "#001e2c",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed": "#002113",
+            "inverse-surface": "#1f333f",
+            "error": "#ba1a1a",
+            "on-primary-fixed": "#00201b",
+            "surface": "#f5faff",
+            "tertiary": "#006947",
+            "on-surface": "#081e29",
+            "surface-container": "#def0ff",
+            "surface-container-high": "#d6ebfb",
+            "primary-fixed": "#83f6e0",
+            "surface-container-highest": "#d0e5f6",
+            "background": "#f5faff",
+            "surface-container-lowest": "#ffffff",
+            "on-primary-container": "#f4fffb",
+            "surface-tint": "#006b5d",
+            "on-tertiary-container": "#f5fff6",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#eaf5ff",
+            "on-tertiary-fixed-variant": "#005236",
+            "primary": "#00685b",
+            "secondary-fixed-dim": "#adcbde",
+            "outline": "#6d7a76",
+            "on-secondary-fixed-variant": "#2e4a5a",
+            "surface-variant": "#d0e5f6",
+            "on-primary-fixed-variant": "#005046",
+            "primary-fixed-dim": "#65dac4",
+            "on-surface-variant": "#3d4946",
+            "secondary-fixed": "#c9e7fb",
+            "inverse-on-surface": "#e4f3ff",
+            "on-error-container": "#93000a",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface-bright": "#f5faff",
+            "on-secondary-container": "#4a6677",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#65dac4",
+            "secondary-container": "#c6e4f8",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary-container": "#00855b",
+            "on-primary": "#ffffff",
+            "secondary": "#466273",
+            "primary-container": "#008373",
+            "on-error": "#ffffff",
+            "surface-dim": "#c8dded",
+            "on-background": "#081e29"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "margin": "1rem",
+            "margin-md": "1.5rem",
+            "margin-lg": "3rem",
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "gutter-md": "1.5rem",
+            "space-2xl": "3rem",
+            "space-xs": "0.25rem",
+            "gutter-lg": "2rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Be Vietnam Pro"],
+            "label-lg": ["Be Vietnam Pro"],
+            "body-lg": ["Be Vietnam Pro"],
+            "label-md": ["Be Vietnam Pro"],
+            "headline-md": ["Be Vietnam Pro"],
+            "body-sm": ["Be Vietnam Pro"],
+            "label-sm": ["Be Vietnam Pro"],
+            "display-lg": ["Be Vietnam Pro"],
+            "body-md": ["Be Vietnam Pro"],
+            "headline-lg": ["Be Vietnam Pro"],
+            "currency-display": ["Be Vietnam Pro"],
+            "currency-body": ["Be Vietnam Pro"],
+            "display-lg-mobile": ["Be Vietnam Pro"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600"}],
+            "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+            "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+            "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+            "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "700"}],
+            "currency-display": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+            "currency-body": ["16px", {"lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased overflow-x-hidden font-body-md">
+<!-- SideNavBar Component -->
+<aside class="fixed top-0 left-0 h-screen w-72 flex flex-col justify-between bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant/30 dark:border-outline/20 shadow-sm dark:shadow-none z-30">
+<div class="px-4 py-6">
+<!-- Brand Logo / Header -->
+<div class="flex items-center gap-3 px-3 pb-6 border-b border-outline-variant/20 mb-6">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-2xl" data-icon="account_balance_wallet">account_balance_wallet</span></div>
+<div>
+<h1 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed tracking-tight">FinVault</h1>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Ví điện tử cá nhân</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="space-y-1">
+<!-- 1. Tổng quan -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant font-label-lg text-label-lg hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span>Tổng quan</span>
+</a>
+<!-- 2. Chuyển tiền -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant font-label-lg text-label-lg hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="send">send</span>
+<span>Chuyển tiền</span>
+</a>
+<!-- 3. Nạp tiền -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant font-label-lg text-label-lg hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="add_card">add_card</span>
+<span>Nạp tiền</span>
+</a>
+<!-- 4. Rút tiền -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant font-label-lg text-label-lg hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="payments">payments</span>
+<span>Rút tiền</span>
+</a>
+<!-- 5. Thanh toán hóa đơn & Nạp ĐT -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant font-label-lg text-label-lg hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="receipt_long">receipt_long</span>
+<span>Thanh toán hóa đơn &amp; Nạp ĐT</span>
+</a>
+<!-- 6. Lịch sử giao dịch (ACTIVE TAB) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-low dark:bg-surface-container-high text-primary dark:text-primary-fixed font-label-lg text-label-lg active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+<span>Lịch sử giao dịch</span>
+</a>
+<!-- 7. Hồ sơ & KYC -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant font-label-lg text-label-lg hover:text-on-surface dark:hover:text-inverse-on-surface hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="verified_user">verified_user</span>
+<span>Hồ sơ &amp; KYC</span>
+</a>
+</nav>
+</div>
+<!-- SideNavBar Footer -->
+</aside>
+<!-- Main Desktop Content Area -->
+<div class="ml-72 min-h-screen flex flex-col bg-surface">
+<!-- TopNavBar Component -->
+<header class="sticky top-0 w-full z-20 bg-surface-container-lowest/90 dark:bg-inverse-surface/90 backdrop-blur-md border-b border-outline-variant/30 dark:border-outline/20 shadow-sm dark:shadow-none"><div class="flex justify-between items-center h-16 px-8 w-full"><div class="flex items-center gap-2 text-label-md font-label-md text-secondary"><span class="hover:text-primary cursor-pointer transition-colors">Trang chủ</span><span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span><span class="text-primary font-semibold">Lịch sử giao dịch</span></div><div class="relative w-80"><span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-xl" data-icon="search">search</span><input class="w-full h-10 pl-11 pr-4 bg-surface-container-low/50 rounded-xl border border-outline-variant/40 text-body-md font-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Tìm kiếm giao dịch, người nhận..." type="text"/></div><div class="flex items-center gap-4"><div class="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-low rounded-xl border border-outline-variant/30 text-on-surface text-label-md font-label-md shadow-sm"><span class="text-secondary text-body-sm">Số dư ví:</span><span class="font-bold text-primary font-mono text-sm">1.250.000đ</span></div><div class="flex items-center gap-1.5 px-3 py-1 bg-surface-container rounded-full text-primary font-label-md text-label-md"><span class="material-symbols-outlined text-sm" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span><span>Cấp xác minh: Cấp 2</span></div><button class="relative p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150 active:scale-95" title="Thông báo"><span class="material-symbols-outlined text-2xl" data-icon="notifications">notifications</span><span class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error text-on-error text-[10px] font-bold flex items-center justify-center leading-none">3</span></button><div class="h-6 w-[1px] bg-outline-variant/30"></div><div class="flex items-center gap-2.5 pl-1 cursor-pointer group"><div class="w-9 h-9 rounded-full ring-2 ring-primary/20 overflow-hidden bg-surface-container-high"><img class="w-full h-full object-cover" data-alt="Ảnh đại diện của An Nguyễn" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEjOPWU0Tu63RXbETj6ZWET4yVv7OyIg1EM7DmM6C6tmh8o2cipt6g3Jn6KkuXeC5F7arW7bC6Rk3nklOCcqOAz_p4_yv97o8TEbRKI3cEJeLksoveeVI0PtUmUbJVA_PX0m7p7OHDyjTogdB0Bpr48KQ_mF0zBpoOR9qCy9wkGvAaNfB6IrDkpg0jypLUM82X_MKsSCg0skoFLHe3zwOieT0N0qBq9qISOvnXjyrn_HvVpNhZenyx"/></div><div class="hidden xl:block text-left"><p class="text-label-md font-label-md text-on-surface font-semibold group-hover:text-primary transition-colors">An Nguyễn</p><p class="text-[11px] text-secondary">Ví cá nhân</p></div></div></div></div></header>
+<!-- Page Body Content -->
+<main class="flex-1 p-8 max-w-[1400px] w-full mx-auto space-y-6">
+<!-- Header & Breadcrumbs / Context -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div><h2 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Lịch sử giao dịch &amp; Sao kê tài khoản</h2><p class="text-body-md font-body-md text-secondary mt-1">Tra cứu và theo dõi biến động số dư trong tài khoản ví FinVault của bạn.</p></div><div class="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant/30 px-3 py-1.5 rounded-xl text-body-sm text-secondary"><span class="material-symbols-outlined text-primary text-base" data-icon="info">info</span><span>Sao kê được cập nhật tự động tức thì</span></div></div>
+<!-- Multifunction Filter Toolbar (Bento Grid Card) -->
+<section class="bg-surface-container-lowest rounded-2xl p-4 border border-outline-variant/30 shadow-[0_4px_20px_-2px_rgba(11,43,58,0.05)] space-y-3"><div class="flex flex-col lg:flex-row items-center gap-3 w-full"><div class="relative flex-1 min-w-[200px] w-full"><select class="w-full h-12 appearance-none rounded-xl border border-outline-variant/40 bg-surface-container-lowest pl-9 pr-8 text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"><option selected="">30 ngày qua (01/10 - 31/10/2023)</option><option>7 ngày gần nhất</option><option>Tháng 10/2023</option><option>Tháng 09/2023</option><option>Tùy chọn ngày...</option></select><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg" data-icon="calendar_today">calendar_today</span><span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg" data-icon="expand_more">expand_more</span></div><div class="relative w-full lg:w-44"><select class="w-full h-12 appearance-none rounded-xl border border-outline-variant/40 bg-surface-container-lowest pl-9 pr-8 text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"><option selected="">Tất cả loại GD</option><option>Nạp tiền</option><option>Chuyển tiền</option><option>Rút tiền</option><option>Thanh toán hóa đơn</option></select><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg" data-icon="swap_horiz">swap_horiz</span><span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg" data-icon="expand_more">expand_more</span></div><div class="relative w-full lg:w-40"><select class="w-full h-12 appearance-none rounded-xl border border-outline-variant/40 bg-surface-container-lowest pl-9 pr-8 text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"><option selected="">Tất cả trạng thái</option><option>Thành công</option><option>Đang xử lý</option><option>Thất bại</option></select><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg" data-icon="filter_alt">filter_alt</span><span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg" data-icon="expand_more">expand_more</span></div><div class="relative flex-1 min-w-[220px] w-full"><input class="w-full h-12 pl-9 pr-4 bg-surface-container-lowest rounded-xl border border-outline-variant/40 text-body-md font-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Tìm người nhận, nội dung..." type="text"/><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg" data-icon="search">search</span></div><button class="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg transition-all duration-150 active:scale-[0.98] shadow-sm shrink-0 w-full lg:w-auto" onclick="openDrawer('FT231024-884210', 'Chuyển tiền cho Bình', '- 60.000đ', '14:30 24/10/2023', 'Thành công', 'Ví FinVault', '0đ', 'Ví FinVault (Nguyễn Văn Bình)', 'Chuyển tiền ăn trưa', 'outflow')"><span class="material-symbols-outlined text-xl" data-icon="picture_as_pdf">picture_as_pdf</span><span>Tải sao kê PDF</span></button></div><div class="pt-2.5 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-2 text-body-sm font-body-sm text-secondary"><div class="flex items-center gap-2 flex-wrap"><span>Bộ lọc:</span><span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-secondary-container font-label-sm text-label-sm">30 ngày qua</span><span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-secondary-container font-label-sm text-label-sm">Tất cả giao dịch</span><button class="text-primary hover:underline text-label-sm font-label-sm ml-1 font-medium" onclick="showEmptyState()">Đặt lại bộ lọc</button></div><div class="text-right"><span>Tìm thấy <strong class="text-on-surface font-semibold">6</strong> giao dịch</span></div></div></section>
+<!-- Transactions Table Card -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-[0_4px_20px_-2px_rgba(11,43,58,0.05)] overflow-hidden flex flex-col" id="transaction-list-card"><div class="overflow-x-auto custom-scrollbar"><table class="w-full text-left border-collapse"><thead><tr class="bg-surface-container-low/40 border-b border-outline-variant/30 text-secondary text-label-sm font-label-sm uppercase tracking-wider"><th class="py-3.5 px-6 w-44">Thời gian</th><th class="py-3.5 px-6">Nội dung giao dịch</th><th class="py-3.5 px-6 text-center w-36">Trạng thái</th><th class="py-3.5 px-6 text-right w-44">Số tiền</th><th class="py-3.5 px-4 text-center w-12"></th></tr></thead><tbody class="divide-y divide-outline-variant/20 text-body-md font-body-md text-on-surface"><tr class="h-16 hover:bg-surface-container-low/30 transition-colors cursor-pointer group" onclick="openDrawer('FT231024-884210', 'Chuyển tiền cho Bình', '- 60.000đ', '14:30 24/10/2023', 'Thành công', 'Ví FinVault', '0đ', 'Ví FinVault (Nguyễn Văn Bình)', 'Chuyển tiền ăn trưa', 'outflow')"><td class="py-4 px-6 text-secondary text-body-sm whitespace-nowrap"><div class="font-medium text-on-surface">14:30</div><div class="text-xs text-outline">24/10/2023</div></td><td class="py-4 px-6"><div class="flex items-center gap-3.5"><div class="w-10 h-10 rounded-xl bg-error-container/40 text-error flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl" data-icon="arrow_outward">arrow_outward</span></div><div><div class="font-semibold text-on-surface group-hover:text-primary transition-colors text-body-md">Chuyển tiền cho Bình</div><div class="text-xs text-secondary mt-0.5">Chuyển tiền ăn trưa</div></div></div></td><td class="py-4 px-6 text-center whitespace-nowrap"><span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#E7F9F0] text-[#10B981]"><span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>Thành công</span></td><td class="py-4 px-6 text-right whitespace-nowrap"><span class="font-headline-sm text-headline-sm text-[#EF4444] tracking-tight">- 60.000đ</span></td><td class="py-4 px-4 text-center text-outline group-hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span></td></tr><tr class="h-16 hover:bg-surface-container-low/30 transition-colors cursor-pointer group" onclick="openDrawer('FT231024-091544', 'Nạp tiền VNPAY', '+ 100.000đ', '09:15 24/10/2023', 'Thành công', 'Thẻ ngân hàng nội địa', '0đ', 'Tài khoản MB Bank', 'Nạp tiền vào ví', 'inflow')"><td class="py-4 px-6 text-secondary text-body-sm whitespace-nowrap"><div class="font-medium text-on-surface">09:15</div><div class="text-xs text-outline">24/10/2023</div></td><td class="py-4 px-6"><div class="flex items-center gap-3.5"><div class="w-10 h-10 rounded-xl bg-tertiary-fixed/30 text-tertiary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl" data-icon="arrow_downward">arrow_downward</span></div><div><div class="font-semibold text-on-surface group-hover:text-primary transition-colors text-body-md">Nạp tiền VNPAY</div><div class="text-xs text-secondary mt-0.5">Nguồn thẻ liên kết MB Bank (..4589)</div></div></div></td><td class="py-4 px-6 text-center whitespace-nowrap"><span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#E7F9F0] text-[#10B981]"><span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>Thành công</span></td><td class="py-4 px-6 text-right whitespace-nowrap"><span class="font-headline-sm text-headline-sm text-[#10B981] tracking-tight">+ 100.000đ</span></td><td class="py-4 px-4 text-center text-outline group-hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span></td></tr><tr class="h-16 hover:bg-surface-container-low/30 transition-colors cursor-pointer group" onclick="openDrawer('FT231023-772911', 'Thanh toán Highlands Coffee', '- 45.000đ', '18:20 23/10/2023', 'Thành công', 'Số dư ví FinVault', '0đ', 'Highlands Coffee Hàm Nghi Q1', 'Hóa đơn nước uống', 'outflow')"><td class="py-4 px-6 text-secondary text-body-sm whitespace-nowrap"><div class="font-medium text-on-surface">18:20</div><div class="text-xs text-outline">23/10/2023</div></td><td class="py-4 px-6"><div class="flex items-center gap-3.5"><div class="w-10 h-10 rounded-xl bg-surface-container text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl" data-icon="local_cafe">local_cafe</span></div><div><div class="font-semibold text-on-surface group-hover:text-primary transition-colors text-body-md">Thanh toán Highlands Coffee</div><div class="text-xs text-secondary mt-0.5">Cửa hàng Hàm Nghi Quận 1</div></div></div></td><td class="py-4 px-6 text-center whitespace-nowrap"><span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#E7F9F0] text-[#10B981]"><span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>Thành công</span></td><td class="py-4 px-6 text-right whitespace-nowrap"><span class="font-headline-sm text-headline-sm text-[#EF4444] tracking-tight">- 45.000đ</span></td><td class="py-4 px-4 text-center text-outline group-hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span></td></tr><tr class="h-16 hover:bg-surface-container-low/30 transition-colors cursor-pointer group" onclick="openDrawer('FT231023-551029', 'Nạp ĐT Viettel', '- 50.000đ', '11:05 23/10/2023', 'Thành công', 'Số dư ví FinVault', '0đ', 'Viettel Telecom', 'Nạp thẻ cho 0984.***.889', 'outflow')"><td class="py-4 px-6 text-secondary text-body-sm whitespace-nowrap"><div class="font-medium text-on-surface">11:05</div><div class="text-xs text-outline">23/10/2023</div></td><td class="py-4 px-6"><div class="flex items-center gap-3.5"><div class="w-10 h-10 rounded-xl bg-surface-container-high text-secondary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl" data-icon="smartphone">smartphone</span></div><div><div class="font-semibold text-on-surface group-hover:text-primary transition-colors text-body-md">Nạp ĐT Viettel</div><div class="text-xs text-secondary mt-0.5">Số thuê bao: 0984.***.889</div></div></div></td><td class="py-4 px-6 text-center whitespace-nowrap"><span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#E7F9F0] text-[#10B981]"><span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>Thành công</span></td><td class="py-4 px-6 text-right whitespace-nowrap"><span class="font-headline-sm text-headline-sm text-[#EF4444] tracking-tight">- 50.000đ</span></td><td class="py-4 px-4 text-center text-outline group-hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span></td></tr><tr class="h-16 hover:bg-surface-container-low/30 transition-colors cursor-pointer group" onclick="openDrawer('FT231020-119488', 'Tiền điện tháng 10', '- 420.000đ', '08:00 20/10/2023', 'Thành công', 'Số dư ví FinVault', '0đ', 'Điện lực TP.HCM', 'Mã KH: PE02001928340', 'outflow')"><td class="py-4 px-6 text-secondary text-body-sm whitespace-nowrap"><div class="font-medium text-on-surface">08:00</div><div class="text-xs text-outline">20/10/2023</div></td><td class="py-4 px-6"><div class="flex items-center gap-3.5"><div class="w-10 h-10 rounded-xl bg-surface-container text-tertiary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl" data-icon="bolt">bolt</span></div><div><div class="font-semibold text-on-surface group-hover:text-primary transition-colors text-body-md">Tiền điện tháng 10</div><div class="text-xs text-secondary mt-0.5">Mã khách hàng: PE02001928340</div></div></div></td><td class="py-4 px-6 text-center whitespace-nowrap"><span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#E7F9F0] text-[#10B981]"><span class="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>Thành công</span></td><td class="py-4 px-6 text-right whitespace-nowrap"><span class="font-headline-sm text-headline-sm text-[#EF4444] tracking-tight">- 420.000đ</span></td><td class="py-4 px-4 text-center text-outline group-hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span></td></tr><tr class="h-16 hover:bg-surface-container-low/30 transition-colors cursor-pointer group bg-surface-container-low/10" onclick="openDrawer('FT231019-338291', 'Rút tiền về Vietcombank', '- 500.000đ', '09:00 19/10/2023', 'Đang xử lý', 'Số dư ví FinVault', '0đ', 'Vietcombank (STK: 007100099****)', 'Rút tiền về tài khoản ngân hàng', 'pending')"><td class="py-4 px-6 text-secondary text-body-sm whitespace-nowrap"><div class="font-medium text-on-surface">09:00</div><div class="text-xs text-outline">19/10/2023</div></td><td class="py-4 px-6"><div class="flex items-center gap-3.5"><div class="w-10 h-10 rounded-xl bg-secondary-fixed/50 text-secondary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-xl" data-icon="account_balance">account_balance</span></div><div><div class="font-semibold text-on-surface group-hover:text-primary transition-colors text-body-md">Rút tiền về Vietcombank</div><div class="text-xs text-secondary mt-0.5">Số tài khoản: 007100099**** - VCB</div></div></div></td><td class="py-4 px-6 text-center whitespace-nowrap"><span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF7E7] text-[#F59E0B]"><span class="material-symbols-outlined text-xs animate-pulse" data-icon="schedule">schedule</span>Đang xử lý</span></td><td class="py-4 px-6 text-right whitespace-nowrap"><span class="font-headline-sm text-headline-sm text-[#EF4444] tracking-tight">- 500.000đ</span></td><td class="py-4 px-4 text-center text-outline group-hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span></td></tr></tbody></table></div><div class="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-4"><div class="text-body-sm font-body-sm text-secondary">Hiển thị <span class="font-semibold text-on-surface">1 - 6</span> trên tổng số <span class="font-semibold text-on-surface">6</span> giao dịch</div><div class="flex items-center gap-2"><button class="h-9 px-3 rounded-lg border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-low transition-colors text-label-md font-label-md flex items-center gap-1 disabled:opacity-50" disabled=""><span class="material-symbols-outlined text-base" data-icon="arrow_back">arrow_back</span><span>Trước</span></button><div class="flex items-center gap-1"><button class="w-9 h-9 rounded-lg bg-primary text-on-primary font-label-md text-label-md shadow-sm">1</button></div><button class="h-9 px-3 rounded-lg border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-low transition-colors text-label-md font-label-md flex items-center gap-1 disabled:opacity-50" disabled=""><span>Sau</span><span class="material-symbols-outlined text-base" data-icon="arrow_forward">arrow_forward</span></button></div></div></section><div class="hidden bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-12 text-center shadow-[0_4px_20px_-2px_rgba(11,43,58,0.05)]" id="empty-state-card"><div class="w-16 h-16 rounded-full bg-surface-container-low mx-auto flex items-center justify-center text-outline mb-4"><span class="material-symbols-outlined text-3xl" data-icon="receipt_long">receipt_long</span></div><h4 class="text-headline-sm font-headline-sm text-on-surface mb-1">Chưa có giao dịch trong khoảng này</h4><p class="text-body-md font-body-md text-secondary max-w-md mx-auto mb-5">Không tìm thấy giao dịch nào khớp với bộ lọc bạn đã chọn. Vui lòng thử đổi điều kiện lọc.</p><button class="h-10 px-5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-lg text-label-lg transition-colors inline-flex items-center gap-2" onclick="resetFilterView()"><span class="material-symbols-outlined text-lg" data-icon="restart_alt">restart_alt</span><span>Đặt lại bộ lọc</span></button></div>
+</main>
+</div>
+<!-- Slide-Over Drawer for Transaction Details (Receipt Panel) -->
+<div class="fixed inset-0 bg-[#0B2B3A]/40 backdrop-blur-sm z-50 transition-opacity duration-300 opacity-0 pointer-events-none" id="drawer-backdrop" onclick="closeDrawer()"></div>
+<div class="fixed top-0 right-0 h-screen w-full max-w-md bg-surface-container-lowest shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col" id="transaction-drawer"><div class="px-6 py-5 border-b border-outline-variant/30 flex items-center justify-between bg-surface-container-low/20"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-2xl" data-icon="receipt_long">receipt_long</span><h3 class="text-headline-sm font-headline-sm text-on-surface">Chi tiết giao dịch</h3></div><button class="p-2 rounded-xl text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors" onclick="closeDrawer()"><span class="material-symbols-outlined text-xl" data-icon="close">close</span></button></div><div class="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar"><div class="text-center p-5 rounded-2xl bg-surface-container-low/50 border border-outline-variant/20 relative overflow-hidden"><div class="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-3 bg-[#E7F9F0] text-[#10B981]" id="drawer-status-icon"><span class="material-symbols-outlined text-3xl" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span></div><p class="text-headline-sm font-headline-sm text-on-surface" id="drawer-title">Chuyển tiền cho Bình</p><p class="text-currency-display font-currency-display text-primary mt-1 tracking-tight" id="drawer-amount">- 60.000đ</p><div class="mt-3 inline-block"><span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#E7F9F0] text-[#10B981]" id="drawer-status-pill"><span class="material-symbols-outlined text-xs" data-icon="done">done</span>Giao dịch thành công</span></div></div><div class="space-y-3 bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 text-body-md"><div class="flex items-center justify-between py-1.5 border-b border-outline-variant/20"><span class="text-secondary text-body-sm">Mã giao dịch</span><div class="flex items-center gap-1.5"><span class="font-mono font-semibold text-on-surface text-body-sm" id="drawer-txid">FT231024-884210</span><button class="p-1 text-primary hover:bg-surface-container-low rounded transition-colors" onclick="copyToClipboard('drawer-txid')" title="Sao chép"><span class="material-symbols-outlined text-sm" data-icon="content_copy">content_copy</span></button></div></div><div class="flex items-center justify-between py-1.5 border-b border-outline-variant/20"><span class="text-secondary text-body-sm">Thời gian thực hiện</span><span class="font-medium text-on-surface text-body-sm" id="drawer-time">14:30 - 24/10/2023</span></div><div class="flex items-center justify-between py-1.5 border-b border-outline-variant/20"><span class="text-secondary text-body-sm">Nguồn tiền</span><span class="font-medium text-on-surface text-body-sm" id="drawer-source">Số dư ví FinVault</span></div><div class="flex items-center justify-between py-1.5 border-b border-outline-variant/20"><span class="text-secondary text-body-sm">Bên nhận / Dịch vụ</span><span class="font-medium text-on-surface text-right text-body-sm" id="drawer-target">Ví FinVault (Nguyễn Văn Bình)</span></div><div class="flex items-center justify-between py-1.5 border-b border-outline-variant/20"><span class="text-secondary text-body-sm">Lời nhắn / Hóa đơn</span><span class="font-medium text-on-surface text-right text-body-sm" id="drawer-note">Chuyển tiền ăn trưa</span></div><div class="flex items-center justify-between py-1.5 border-b border-outline-variant/20"><span class="text-secondary text-body-sm">Mã đối tác</span><span class="font-mono text-secondary text-body-sm" id="drawer-refcode">REF231024982143</span></div><div class="flex items-center justify-between py-1.5"><span class="text-secondary text-body-sm">Phí giao dịch</span><span class="font-semibold text-tertiary text-body-sm">Miễn phí (0đ)</span></div></div><div class="p-3.5 rounded-xl bg-surface-container-low/50 flex items-start gap-2.5"><span class="material-symbols-outlined text-primary text-lg mt-0.5" data-icon="verified_user">verified_user</span><div class="text-xs text-secondary leading-relaxed">Giao dịch đã được xác thực an toàn tuyệt đối qua hệ thống bảo mật FinVault.</div></div></div><div class="p-5 border-t border-outline-variant/30 space-y-2 bg-surface-container-lowest"><div class="grid grid-cols-2 gap-3"><button class="h-11 px-3 rounded-xl border border-outline-variant/60 text-on-surface font-label-md text-label-md hover:bg-surface-container-low flex items-center justify-center gap-1.5 transition-colors active:scale-95" onclick="copyToClipboard('drawer-txid')"><span class="material-symbols-outlined text-base" data-icon="content_copy">content_copy</span><span>Sao chép mã</span></button><button class="h-11 px-3 rounded-xl bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container flex items-center justify-center gap-1.5 transition-colors active:scale-95 shadow-sm" onclick="showToast('Đã chuẩn bị biên lai điện tử để chia sẻ!')"><span class="material-symbols-outlined text-base" data-icon="share">share</span><span>Chia sẻ biên lai</span></button></div><button class="w-full text-center text-label-md font-label-md text-secondary hover:text-on-surface py-1" onclick="closeDrawer()">Đóng cửa sổ</button></div></div>
+<!-- Notification Toast for Copy -->
+<div class="fixed bottom-6 right-6 bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-body-sm font-body-sm opacity-0 pointer-events-none transition-opacity duration-200 z-50" id="copy-toast">
+<span class="material-symbols-outlined text-primary-fixed text-lg" data-icon="check_circle">check_circle</span>
+<span id="toast-message">Đã sao chép mã giao dịch vào bộ nhớ tạm!</span>
+</div>
+<!-- Interactive JavaScript logic -->
+<script>
+    function openDrawer(txId, title, amount, time, status, method, fee, target, flowType) {
+      document.getElementById('drawer-txid').innerText = txId;
+      document.getElementById('drawer-refcode').innerText = 'REF-' + Math.floor(100000000 + Math.random() * 900000000);
+      document.getElementById('drawer-title').innerText = title;
+      document.getElementById('drawer-amount').innerText = amount;
+      document.getElementById('drawer-time').innerText = time + ' (GMT+7)';
+      document.getElementById('drawer-source').innerText = 'Số dư ví FinVault';
+      document.getElementById('drawer-target').innerText = target;
+
+      const iconContainer = document.getElementById('drawer-status-icon');
+      const pill = document.getElementById('drawer-status-pill');
+
+      if (status === 'Đang xử lý') {
+        iconContainer.className = 'w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-3 bg-[#FEF7E7] text-[#F59E0B]';
+        iconContainer.innerHTML = '<span class="material-symbols-outlined text-3xl" data-icon="hourglass_empty">hourglass_empty</span>';
+        pill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF7E7] text-[#F59E0B]';
+        pill.innerHTML = '<span class="material-symbols-outlined text-xs" data-icon="sync">sync</span> Đang thực hiện xử lý';
+      } else {
+        iconContainer.className = 'w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-3 bg-[#E7F9F0] text-[#10B981]';
+        iconContainer.innerHTML = '<span class="material-symbols-outlined text-3xl" data-icon="check_circle" style="font-variation-settings: \'FILL\' 1;">check_circle</span>';
+        pill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#E7F9F0] text-[#10B981]';
+        pill.innerHTML = '<span class="material-symbols-outlined text-xs" data-icon="done">done</span> Giao dịch thành công';
+      }
+
+      const backdrop = document.getElementById('drawer-backdrop');
+      const drawer = document.getElementById('transaction-drawer');
+
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      backdrop.classList.add('opacity-100');
+      drawer.classList.remove('translate-x-full');
+      drawer.classList.add('translate-x-0');
+    }
+
+    function closeDrawer() {
+      const backdrop = document.getElementById('drawer-backdrop');
+      const drawer = document.getElementById('transaction-drawer');
+
+      backdrop.classList.remove('opacity-100');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      drawer.classList.remove('translate-x-0');
+      drawer.classList.add('translate-x-full');
+    }
+
+    function copyToClipboard(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Đã sao chép mã GD: ' + text);
+      });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('copy-toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.innerText = message;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+  </script>
+</body></html>

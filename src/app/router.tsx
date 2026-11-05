@@ -1,192 +1,150 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { RequireAuth, RequireRole } from './guards'
-import MainLayout from '@/layouts/MainLayout'
-import AdminLayout from '@/layouts/AdminLayout'
+import { MainLayout } from '@/layouts/MainLayout'
+import { AuthLayout } from '@/layouts/AuthLayout'
+import { AdminLayout } from '@/layouts/AdminLayout'
+import { RequireAuth, RequireRole, RedirectIfAuthed } from './guards'
+import { Loader2 } from 'lucide-react'
 
-// Lazy load các trang theo quy định tại mục 9 frontend_rules.md
+// Lazy load các trang
+const HomePage = lazy(() => import('@/pages/HomePage'))
 const SignInPage = lazy(() => import('@/pages/SignInPage'))
 const SignUpPage = lazy(() => import('@/pages/SignUpPage'))
-const Home = lazy(() => import('@/pages/Home'))
-const Dashboard = lazy(() => import('@/pages/Dashboard'))
-const Wallet = lazy(() => import('@/pages/Wallet'))
-const Transactions = lazy(() => import('@/pages/Transactions'))
-const Profile = lazy(() => import('@/pages/Profile'))
-const MerchantRegister = lazy(() => import('@/pages/MerchantRegister'))
+const QrLoginPage = lazy(() => import('@/pages/QrLoginPage'))
 
-const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
-const AdminKyc = lazy(() => import('@/pages/admin/AdminKyc'))
-const AdminMerchants = lazy(() => import('@/pages/admin/AdminMerchants'))
-const AdminTopups = lazy(() => import('@/pages/admin/AdminTopups'))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const TransferPage = lazy(() => import('@/pages/TransferPage'))
+const TopupPage = lazy(() => import('@/pages/TopupPage'))
+const WithdrawPage = lazy(() => import('@/pages/WithdrawPage'))
+const TransactionsPage = lazy(() => import('@/pages/TransactionsPage'))
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const UtilitiesPage = lazy(() => import('@/pages/UtilitiesPage'))
+
+const MerchantPortalPage = lazy(() => import('@/pages/MerchantPortalPage'))
+const MerchantRegisterPage = lazy(() => import('@/pages/MerchantRegisterPage'))
+
+const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'))
+const AdminKycPage = lazy(() => import('@/pages/AdminKycPage'))
+const AdminReconciliationPage = lazy(() => import('@/pages/AdminReconciliationPage'))
+const AdminTopupPage = lazy(() => import('@/pages/AdminTopupPage'))
+
+const ForbiddenPage = lazy(() => import('@/pages/ForbiddenPage'))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const DevComponentsPage = lazy(() => import('@/pages/DevComponentsPage'))
 
 function PageFallback() {
   return (
-    <div className="flex h-64 w-full items-center justify-center text-muted-foreground" role="status">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    <div className="flex h-64 w-full items-center justify-center" role="status">
+      <Loader2 className="h-6 w-6 animate-spin text-primary" />
     </div>
   )
 }
 
-function RootErrorElement() {
+function withSuspense(Component: React.ComponentType) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-background">
-      <h2 className="text-2xl font-bold text-destructive">Đã xảy ra sự cố không mong muốn</h2>
-      <p className="mt-2 text-sm text-muted-foreground">Vui lòng tải lại trang hoặc liên hệ quản trị viên.</p>
-      <button
-        onClick={() => window.location.reload()}
-        className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-      >
-        Tải lại trang
-      </button>
-    </div>
-  )
-}
-
-function NotFoundPage() {
-  return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
-      <h1 className="text-6xl font-extrabold text-primary">404</h1>
-      <h2 className="mt-4 text-xl font-semibold text-foreground">Không tìm thấy trang</h2>
-      <p className="mt-2 text-sm text-muted-foreground">Trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.</p>
-    </div>
+    <Suspense fallback={<PageFallback />}>
+      <Component />
+    </Suspense>
   )
 }
 
 export const router = createBrowserRouter([
+  // 1. Công khai (Landing Page)
   {
     path: '/',
-    errorElement: <RootErrorElement />,
+    element: (
+      <RedirectIfAuthed>
+        {withSuspense(HomePage)}
+      </RedirectIfAuthed>
+    )
+  },
+
+  // 2. Auth Routes (AuthLayout)
+  {
+    element: (
+      <RedirectIfAuthed>
+        <AuthLayout />
+      </RedirectIfAuthed>
+    ),
     children: [
-      {
-        path: 'signin',
-        element: (
-          <Suspense fallback={<PageFallback />}>
-            <SignInPage />
-          </Suspense>
-        )
-      },
-      {
-        path: 'signup',
-        element: (
-          <Suspense fallback={<PageFallback />}>
-            <SignUpPage />
-          </Suspense>
-        )
-      },
-      {
-        element: <MainLayout />,
-        children: [
-          {
-            index: true,
-            element: (
-              <Suspense fallback={<PageFallback />}>
-                <Home />
-              </Suspense>
-            )
-          },
-          {
-            element: <RequireAuth />,
-            children: [
-              {
-                path: 'dashboard',
-                element: (
-                  <Suspense fallback={<PageFallback />}>
-                    <Dashboard />
-                  </Suspense>
-                )
-              },
-              {
-                path: 'wallet',
-                element: (
-                  <Suspense fallback={<PageFallback />}>
-                    <Wallet />
-                  </Suspense>
-                )
-              },
-              {
-                path: 'transactions',
-                element: (
-                  <Suspense fallback={<PageFallback />}>
-                    <Transactions />
-                  </Suspense>
-                )
-              },
-              {
-                path: 'profile',
-                element: (
-                  <Suspense fallback={<PageFallback />}>
-                    <Profile />
-                  </Suspense>
-                )
-              },
-              {
-                path: 'merchant-register',
-                element: (
-                  <Suspense fallback={<PageFallback />}>
-                    <MerchantRegister />
-                  </Suspense>
-                )
-              },
-              {
-                path: 'merchant/register',
-                element: <Navigate to="/merchant-register" replace />
-              }
-            ]
-          }
-        ]
-      },
-      {
-        path: 'admin',
-        element: <RequireAuth />,
-        children: [
-          {
-            element: <RequireRole role="ADMIN" />,
-            children: [
-              {
-                element: <AdminLayout />,
-                children: [
-                  {
-                    index: true,
-                    element: (
-                      <Suspense fallback={<PageFallback />}>
-                        <AdminDashboard />
-                      </Suspense>
-                    )
-                  },
-                  {
-                    path: 'kyc',
-                    element: (
-                      <Suspense fallback={<PageFallback />}>
-                        <AdminKyc />
-                      </Suspense>
-                    )
-                  },
-                  {
-                    path: 'merchants',
-                    element: (
-                      <Suspense fallback={<PageFallback />}>
-                        <AdminMerchants />
-                      </Suspense>
-                    )
-                  },
-                  {
-                    path: 'topups',
-                    element: (
-                      <Suspense fallback={<PageFallback />}>
-                        <AdminTopups />
-                      </Suspense>
-                    )
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        path: '*',
-        element: <NotFoundPage />
-      }
+      { path: 'sign-in', element: withSuspense(SignInPage) },
+      { path: 'sign-up', element: withSuspense(SignUpPage) },
+      { path: 'qr-login', element: withSuspense(QrLoginPage) }
     ]
+  },
+
+  // 3. Ứng dụng sau đăng nhập (MainLayout + RequireAuth)
+  {
+    path: 'app',
+    element: (
+      <RequireAuth>
+        <MainLayout />
+      </RequireAuth>
+    ),
+    children: [
+      { index: true, element: withSuspense(DashboardPage) },
+      { path: 'transfer', element: withSuspense(TransferPage) },
+      { path: 'topup', element: withSuspense(TopupPage) },
+      { path: 'withdraw', element: withSuspense(WithdrawPage) },
+      { path: 'transactions', element: withSuspense(TransactionsPage) },
+      { path: 'profile', element: withSuspense(ProfilePage) },
+      { path: 'utilities', element: withSuspense(UtilitiesPage) }
+    ]
+  },
+
+  // 4. Cổng Merchant (MainLayout + RequireAuth)
+  {
+    path: 'merchant',
+    element: (
+      <RequireAuth>
+        <MainLayout />
+      </RequireAuth>
+    ),
+    children: [
+      { index: true, element: withSuspense(MerchantPortalPage) },
+      { path: 'register', element: withSuspense(MerchantRegisterPage) }
+    ]
+  },
+
+  // 5. Quản trị Admin (AdminLayout + RequireRole('ADMIN'))
+  {
+    path: 'admin',
+    element: (
+      <RequireAuth>
+        <RequireRole role="ADMIN">
+          <AdminLayout />
+        </RequireRole>
+      </RequireAuth>
+    ),
+    children: [
+      { index: true, element: withSuspense(AdminDashboardPage) },
+      { path: 'kyc', element: withSuspense(AdminKycPage) },
+      { path: 'reconciliation', element: withSuspense(AdminReconciliationPage) },
+      { path: 'topups', element: withSuspense(AdminTopupPage) }
+    ]
+  },
+
+  // 6. Trang kiểm thử components UI (Chỉ dùng nội bộ / dev)
+  {
+    path: 'dev/components',
+    element: (
+      <div className="min-h-screen bg-background p-6">
+        {withSuspense(DevComponentsPage)}
+      </div>
+    )
+  },
+
+  // 7. Lỗi quyền và không tìm thấy trang
+  {
+    path: '403',
+    element: withSuspense(ForbiddenPage)
+  },
+  {
+    path: '404',
+    element: withSuspense(NotFoundPage)
+  },
+  {
+    path: '*',
+    element: <Navigate to="/404" replace />
   }
 ])

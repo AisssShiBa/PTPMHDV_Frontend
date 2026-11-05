@@ -1,19 +1,42 @@
-import { SignupForm } from '@/features/auth/components/signup-form'
-const SignUpPage = () => {
-  return (
-    <div className="relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          background:
-            'radial-gradient(125% 125% at 50% 10%, #fff 20%, #6366f1 100%)'
-        }}
-      />
+import { Link } from 'react-router-dom'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
-      <div className="relative z-10 w-full max-w-sm md:max-w-4xl">
-        <SignupForm />
-      </div>
-    </div>
+export function SignUpPage() {
+  return (
+    <Card className="w-full shadow-lg border-border">
+      <CardHeader className="space-y-1 text-center">
+        <CardTitle className="text-2xl font-bold tracking-tight">Đăng ký tài khoản</CardTitle>
+        <CardDescription>
+          Tạo tài khoản ví điện tử mô phỏng FinVault
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" placeholder="ban@vi-du.com" required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Mật khẩu</Label>
+          <Input id="password" type="password" placeholder="Tối thiểu 8 ký tự" required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Nhập lại mật khẩu</Label>
+          <Input id="confirmPassword" type="password" placeholder="••••••••" required />
+        </div>
+        <Button className="w-full mt-2" disabled>
+          Đăng ký (Khung trang - Phase B-1)
+        </Button>
+      </CardContent>
+      <CardFooter className="text-center text-xs text-muted-foreground flex justify-center">
+        <span>Đã có tài khoản? </span>
+        <Link to="/sign-in" className="ml-1 text-primary hover:underline font-medium">
+          Đăng nhập
+        </Link>
+      </CardFooter>
+    </Card>
   )
 }
 

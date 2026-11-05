@@ -1,0 +1,646 @@
+<!DOCTYPE html><html class="light" lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FinVault Merchant - Highlands Coffee</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Be Vietnam Pro Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#bcc9c5",
+            "on-secondary-fixed": "#001e2c",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed": "#002113",
+            "inverse-surface": "#1f333f",
+            "error": "#ba1a1a",
+            "on-primary-fixed": "#00201b",
+            "surface": "#f5faff",
+            "tertiary": "#006947",
+            "on-surface": "#081e29",
+            "surface-container": "#def0ff",
+            "surface-container-high": "#d6ebfb",
+            "primary-fixed": "#83f6e0",
+            "surface-container-highest": "#d0e5f6",
+            "background": "#f5faff",
+            "surface-container-lowest": "#ffffff",
+            "on-primary-container": "#f4fffb",
+            "surface-tint": "#006b5d",
+            "on-tertiary-container": "#f5fff6",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#eaf5ff",
+            "on-tertiary-fixed-variant": "#005236",
+            "primary": "#00685b",
+            "secondary-fixed-dim": "#adcbde",
+            "outline": "#6d7a76",
+            "on-secondary-fixed-variant": "#2e4a5a",
+            "surface-variant": "#d0e5f6",
+            "on-primary-fixed-variant": "#005046",
+            "primary-fixed-dim": "#65dac4",
+            "on-surface-variant": "#3d4946",
+            "secondary-fixed": "#c9e7fb",
+            "inverse-on-surface": "#e4f3ff",
+            "on-error-container": "#93000a",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface-bright": "#f5faff",
+            "on-secondary-container": "#4a6677",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#65dac4",
+            "secondary-container": "#c6e4f8",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary-container": "#00855b",
+            "on-primary": "#ffffff",
+            "secondary": "#466273",
+            "primary-container": "#008373",
+            "on-error": "#ffffff",
+            "surface-dim": "#c8dded",
+            "on-background": "#081e29"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "margin": "1rem",
+            "margin-md": "1.5rem",
+            "margin-lg": "3rem",
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "gutter-md": "1.5rem",
+            "space-2xl": "3rem",
+            "space-xs": "0.25rem",
+            "gutter-lg": "2rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Be Vietnam Pro"],
+            "label-lg": ["Be Vietnam Pro"],
+            "body-lg": ["Be Vietnam Pro"],
+            "label-md": ["Be Vietnam Pro"],
+            "headline-md": ["Be Vietnam Pro"],
+            "body-sm": ["Be Vietnam Pro"],
+            "label-sm": ["Be Vietnam Pro"],
+            "display-lg": ["Be Vietnam Pro"],
+            "body-md": ["Be Vietnam Pro"],
+            "headline-lg": ["Be Vietnam Pro"],
+            "currency-display": ["Be Vietnam Pro"],
+            "currency-body": ["Be Vietnam Pro"],
+            "display-lg-mobile": ["Be Vietnam Pro"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "currency-display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "currency-body": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #f5faff;
+      color: #081e29;
+      font-family: 'Be Vietnam Pro', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .card-monolith {
+      background-color: #ffffff;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 4px 20px -2px rgba(11, 43, 58, 0.05);
+      border-radius: 16px;
+    }
+    .merchant-teal-btn {
+      background-color: #0F9D8A;
+      color: #ffffff;
+      border-radius: 12px;
+      transition: all 0.15s ease-in-out;
+    }
+    .merchant-teal-btn:hover {
+      background-color: #0C8272;
+    }
+    .merchant-teal-btn:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- SIDEBAR NAVIGATION (Merchant Portal) -->
+<aside class="fixed top-0 left-0 h-screen w-72 flex flex-col justify-between bg-surface-container-lowest border-r border-outline-variant/30 shadow-sm z-30 shrink-0">
+<!-- Brand / Store Anchor -->
+<div class="px-6 py-6 border-b border-outline-variant/20">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm shadow-primary/20">
+<span class="material-symbols-outlined text-2xl" data-icon="storefront">storefront</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-primary tracking-tight">FinVault</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-fixed">MERCHANT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Highlands Coffee VN</p>
+</div>
+</div>
+</div>
+<!-- Navigation Tab Links -->
+<div class="px-4 py-4 flex-1 flex flex-col gap-1 overflow-y-auto">
+<div class="px-3 py-2 text-[11px] font-semibold text-outline uppercase tracking-wider">Cửa hàng &amp; Doanh số</div>
+<!-- Active Item: Tổng quan doanh thu -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-low text-primary font-label-lg text-label-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="dashboard">dashboard</span>
+<span>Tổng quan doanh thu</span>
+</a>
+<!-- Other Nav Items -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-label-lg text-label-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="qr_code_2">qr_code_2</span>
+<span>Mã QR bàn &amp; Điểm bán</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-label-lg text-label-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="receipt_long">receipt_long</span>
+<span>Giao dịch thanh toán</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-label-lg text-label-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span>Đối soát cửa hàng</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-label-lg text-label-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="settings">settings</span>
+<span>Cài đặt</span>
+</a>
+<div class="mt-6 px-3 py-2 text-[11px] font-semibold text-outline uppercase tracking-wider">Hỗ trợ &amp; Quản trị</div>
+<div class="p-3.5 bg-surface-container-low rounded-xl border border-outline-variant/30">
+<div class="flex items-center gap-2 text-primary font-label-md text-label-md">
+<span class="material-symbols-outlined text-lg" data-icon="support_agent">support_agent</span>
+<span>CSKH Đối tác 24/7</span>
+</div>
+<p class="mt-1 text-xs text-on-surface-variant font-body-sm">Hotline riêng: 1900 8899</p>
+</div>
+</div>
+<!-- Switch Portal CTA Footer -->
+<div class="p-4 border-t border-outline-variant/20">
+<a class="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface transition-all group" href="#">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="account_balance">account_balance</span>
+<div class="text-left">
+<span class="block font-label-md text-label-md leading-tight">Ví điện tử cá nhân</span>
+<span class="block text-[11px] text-on-surface-variant">Chuyển vai trò</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-lg group-hover:translate-x-0.5 transition-transform" data-icon="chevron_right">chevron_right</span>
+</a>
+</div>
+</aside>
+<!-- MAIN VIEWPORT CANVAS -->
+<div class="ml-72 flex-1 min-h-screen flex flex-col bg-background">
+<!-- TOP NAVBAR (Sticky header with store title, branch switcher, and actions) -->
+<header class="sticky top-0 z-20 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/30 h-20 px-8 flex items-center justify-between shadow-sm"><div class="flex items-center gap-4">
+  <div>
+    <div class="flex items-center gap-2">
+      <h1 class="font-headline-md text-headline-md text-on-surface tracking-tight">Highlands Coffee</h1>
+      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E7F9F0] text-[#10B981]">
+        <span class="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
+        Đang mở cửa
+      </span>
+    </div>
+    <p class="font-body-sm text-body-sm text-on-surface-variant">Chi nhánh Hàm Nghi Q1</p>
+  </div>
+  <div class="h-8 w-px bg-outline-variant/40 mx-2"></div>
+  <div class="relative">
+    <label class="sr-only" for="branch-selector">Chọn điểm bán</label>
+    <div class="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant/50 rounded-xl px-3.5 py-2 hover:border-primary transition-colors cursor-pointer shadow-sm">
+      <span class="material-symbols-outlined text-primary text-lg" data-icon="location_on">location_on</span>
+      <select class="bg-transparent border-none text-on-surface font-label-md text-label-md focus:ring-0 py-0 pl-0 pr-6 cursor-pointer" id="branch-selector">
+        <option selected="" value="1">Highlands Hàm Nghi Q1</option>
+        <option value="2">Highlands Nguyễn Trãi Q5</option>
+        <option value="3">Highlands Landmark 81 Bình Thạnh</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="hidden md:flex items-center flex-1 max-w-md mx-6">
+  <div class="relative w-full">
+    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-outline">
+      <span class="material-symbols-outlined text-xl" data-icon="search">search</span>
+    </span>
+    <input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant/30 rounded-full text-sm text-on-surface placeholder-on-surface-variant/70 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Tìm kiếm đơn hàng, mã QR, bàn..." type="text">
+  </div>
+</div>
+
+<div class="flex items-center gap-3">
+  <button aria-label="Trợ giúp" class="w-10 h-10 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors" type="button">
+    <span class="material-symbols-outlined text-xl" data-icon="help_outline">help_outline</span>
+  </button>
+  <button aria-label="Thông báo" class="w-10 h-10 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors relative" type="button">
+    <span class="material-symbols-outlined text-xl" data-icon="notifications">notifications</span>
+    <span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface-container-lowest"></span>
+  </button>
+  <div class="flex items-center gap-3 pl-3 border-l border-outline-variant/30 cursor-pointer">
+    <div class="w-10 h-10 rounded-full bg-[#B91C1C] flex items-center justify-center text-white font-bold text-sm shadow-sm ring-2 ring-primary/20">
+      HL
+    </div>
+    <div class="hidden xl:block text-left">
+      <span class="block font-label-md text-label-md text-on-surface font-semibold">Quản lý ca - Highlands</span>
+      <span class="block text-[11px] text-on-surface-variant">Mã NV: HL-8821</span>
+    </div>
+  </div>
+</div></header>
+<!-- MAIN DASHBOARD CONTENT (12-Column Grid Centered) -->
+<main class="flex-1 p-8 max-w-[1360px] w-full mx-auto space-y-6">
+<!-- SECTION 1: 3 REVENUE METRIC CARDS -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Metric 1: Doanh thu hôm nay -->
+<div class="card-monolith p-6 relative overflow-hidden group hover:border-primary/40 transition-all">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant">Doanh thu hôm nay</span>
+<span class="p-2 rounded-xl bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-lg" data-icon="today">today</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2 mb-3">
+<span class="font-headline-lg text-headline-lg text-on-surface tracking-tight">8.450.000<span class="text-xl font-normal text-on-surface-variant">đ</span></span>
+</div>
+<div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-[#10B981]">
+<span class="material-symbols-outlined text-base" data-icon="trending_up">trending_up</span>
+<span>+12% so với hôm qua</span>
+</div>
+<span class="text-xs text-on-surface-variant font-medium bg-surface-container-low px-2 py-0.5 rounded-full">185 đơn</span>
+</div>
+</div>
+<!-- Metric 2: Doanh thu tuần này -->
+<div class="card-monolith p-6 relative overflow-hidden group hover:border-primary/40 transition-all">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant">Doanh thu tuần này</span>
+<span class="p-2 rounded-xl bg-secondary-container/50 text-secondary">
+<span class="material-symbols-outlined text-lg" data-icon="date_range">date_range</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2 mb-3">
+<span class="font-headline-lg text-headline-lg text-on-surface tracking-tight">54.200.000<span class="text-xl font-normal text-on-surface-variant">đ</span></span>
+</div>
+<div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-[#10B981]">
+<span class="material-symbols-outlined text-base" data-icon="trending_up">trending_up</span>
+<span>+8% so với tuần trước</span>
+</div>
+<span class="text-xs text-on-surface-variant font-medium bg-surface-container-low px-2 py-0.5 rounded-full">1.192 đơn</span>
+</div>
+</div>
+<!-- Metric 3: Doanh thu tháng 10 -->
+<div class="card-monolith p-6 relative overflow-hidden group hover:border-primary/40 transition-all">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant">Doanh thu tháng 10</span>
+<span class="p-2 rounded-xl bg-tertiary-fixed/30 text-tertiary">
+<span class="material-symbols-outlined text-lg" data-icon="calendar_month">calendar_month</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2 mb-3">
+<span class="font-headline-lg text-headline-lg text-on-surface tracking-tight">210.800.000<span class="text-xl font-normal text-on-surface-variant">đ</span></span>
+</div>
+<div class="space-y-1.5 pt-3 border-t border-outline-variant/20">
+<div class="flex items-center justify-between text-xs font-label-md">
+<span class="text-primary font-semibold">Đạt 95% mục tiêu tháng</span>
+<span class="text-on-surface-variant">Mục tiêu: 220.000.000đ</span>
+</div>
+<!-- Progress bar -->
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 95%;"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: ANALYTICS HOURLY REVENUE LINE CHART -->
+<section class="card-monolith p-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Biểu đồ dòng doanh thu theo khung giờ</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Theo dõi lưu lượng khách từ 07:00 đến 22:00 hôm nay tại chi nhánh Hàm Nghi</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 text-xs font-label-md text-on-surface-variant">
+<span class="inline-block w-3 h-3 rounded-full bg-[#0F9D8A]"></span>
+<span>Hôm nay (VND)</span>
+</div>
+<div class="flex items-center gap-2 text-xs font-label-md text-on-surface-variant">
+<span class="inline-block w-3 h-3 rounded-full bg-outline-variant"></span>
+<span>Hôm qua</span>
+</div>
+<span class="text-xs font-semibold px-2.5 py-1 bg-surface-container-low text-primary rounded-lg border border-outline-variant/30">
+              Đỉnh: 11:30 &amp; 19:30
+            </span>
+</div>
+</div>
+<!-- SVG Line Chart with Gradient Shading -->
+<div class="relative w-full h-72">
+<svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 900 240">
+<defs>
+<!-- Teal Fill Gradient -->
+<linearGradient id="tealRevenueGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#0F9D8A" stop-opacity="0.25"></stop>
+<stop offset="90%" stop-color="#0F9D8A" stop-opacity="0.0"></stop>
+</linearGradient>
+</defs>
+<!-- Horizontal Gridlines -->
+<line stroke="#E2E8F0" stroke-dasharray="4 4" stroke-width="1" x1="40" x2="880" y1="20" y2="20"></line>
+<line stroke="#E2E8F0" stroke-dasharray="4 4" stroke-width="1" x1="40" x2="880" y1="70" y2="70"></line>
+<line stroke="#E2E8F0" stroke-dasharray="4 4" stroke-width="1" x1="40" x2="880" y1="120" y2="120"></line>
+<line stroke="#E2E8F0" stroke-dasharray="4 4" stroke-width="1" x1="40" x2="880" y1="170" y2="170"></line>
+<line stroke="#E2E8F0" stroke-width="1" x1="40" x2="880" y1="210" y2="210"></line>
+<!-- Y-Axis Labels -->
+<text fill="#6d7a76" font-family="'Be Vietnam Pro'" font-size="11" text-anchor="end" x="32" y="24">1.4M</text>
+<text fill="#6d7a76" font-family="'Be Vietnam Pro'" font-size="11" text-anchor="end" x="32" y="74">1.0M</text>
+<text fill="#6d7a76" font-family="'Be Vietnam Pro'" font-size="11" text-anchor="end" x="32" y="124">600k</text>
+<text fill="#6d7a76" font-family="'Be Vietnam Pro'" font-size="11" text-anchor="end" x="32" y="174">200k</text>
+<text fill="#6d7a76" font-family="'Be Vietnam Pro'" font-size="11" text-anchor="end" x="32" y="214">0đ</text>
+<!-- Yesterday baseline line (Gray dashed) -->
+<path d="M 60 195 Q 160 160, 240 180 T 380 90 T 520 160 T 680 80 T 840 190" fill="none" stroke="#bcc9c5" stroke-dasharray="3 3" stroke-width="2"></path>
+<!-- Today Revenue Area (Teal Gradient) -->
+<!-- 07h (60,185), 09h (140, 150), 11h (220, 100), 12h-Trưa đỉnh (300, 42), 14h (380, 140), 16h (460, 130), 18h (550, 75), 19h30-Tối đỉnh (650, 35), 21h (760, 110), 22h (840, 195) -->
+<path d="M 60 185 
+                     C 100 170, 180 120, 240 90 
+                     C 270 70, 290 35, 330 40 
+                     C 370 45, 410 145, 470 140 
+                     C 520 135, 570 85, 620 55 
+                     C 660 30, 700 45, 750 90 
+                     C 790 130, 810 175, 840 195 
+                     L 840 210 L 60 210 Z" fill="url(#tealRevenueGradient)"></path>
+<!-- Today Line (Solid Brand Teal #0F9D8A) -->
+<path d="M 60 185 
+                     C 100 170, 180 120, 240 90 
+                     C 270 70, 290 35, 330 40 
+                     C 370 45, 410 145, 470 140 
+                     C 520 135, 570 85, 620 55 
+                     C 660 30, 700 45, 750 90 
+                     C 790 130, 810 175, 840 195" fill="none" stroke="#0F9D8A" stroke-linecap="round" stroke-width="3"></path>
+<!-- Highlight Peak Dots -->
+<!-- Lunch Peak: 12:00 -->
+<circle cx="330" cy="40" fill="#0F9D8A" r="5" stroke="#FFFFFF" stroke-width="2.5"></circle>
+<!-- Dinner Peak: 19:30 -->
+<circle cx="650" cy="35" fill="#0F9D8A" r="5" stroke="#FFFFFF" stroke-width="2.5"></circle>
+<!-- Current time marker at 18:20 (X approx 580) -->
+<line stroke="#0F9D8A" stroke-dasharray="2 2" stroke-width="1.5" x1="580" x2="580" y1="20" y2="210"></line>
+<circle cx="580" cy="70" fill="#0F9D8A" r="6" stroke="#ffffff" stroke-width="2"></circle>
+</svg>
+</div>
+<!-- X-Axis Timestamps (07:00 - 22:00) -->
+<div class="flex justify-between text-xs text-on-surface-variant font-medium px-4 mt-2">
+<span>07:00</span>
+<span>09:00</span>
+<span class="text-primary font-bold">11:30 (Trưa)</span>
+<span>13:00</span>
+<span>15:00</span>
+<span>17:00</span>
+<span class="text-primary font-bold">19:30 (Tối)</span>
+<span>21:00</span>
+<span>22:00</span>
+</div>
+</section>
+<!-- SECTION 3 & 4: DUAL PANEL (Recent Orders & Live QR Preview) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left: Recent Payment Transactions (8 Columns) -->
+<div class="lg:col-span-8 card-monolith p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-4">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Đơn hàng quét mã thanh toán gần nhất</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cập nhật tức thì từ các bàn và quầy thu ngân</p>
+</div>
+<a class="font-label-md text-label-md text-primary hover:underline flex items-center gap-1" href="#">
+                Xem tất cả
+                <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<!-- Transaction List Table/Rows -->
+<div class="divide-y divide-outline-variant/20">
+<!-- Row 1: Bàn 04 (45.000đ, An Nguyễn, 18:20, Thành công) -->
+<div class="py-3.5 flex items-center justify-between hover:bg-surface-container-low/50 px-2 rounded-xl transition-colors">
+<div class="flex items-center gap-3.5">
+<div class="w-11 h-11 rounded-xl bg-primary-container/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 border border-primary/20">
+                    B-04
+                  </div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Bàn số 04</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#E7F9F0] text-[#10B981]">
+                        Thành công
+                      </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Khách: <strong class="text-on-surface font-medium">An Nguyễn</strong> • Ví FinVault</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-currency-body text-currency-body text-[#10B981] font-bold">+ 45.000đ</div>
+<span class="text-xs text-on-surface-variant">18:20 hôm nay</span>
+</div>
+</div>
+<!-- Row 2: Bàn 12 (125.000đ, Lê Hoàng, 18:15, Thành công) -->
+<div class="py-3.5 flex items-center justify-between hover:bg-surface-container-low/50 px-2 rounded-xl transition-colors">
+<div class="flex items-center gap-3.5">
+<div class="w-11 h-11 rounded-xl bg-secondary-container/50 text-secondary flex items-center justify-center font-bold text-sm shrink-0 border border-secondary/20">
+                    B-12
+                  </div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Bàn số 12</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#E7F9F0] text-[#10B981]">
+                        Thành công
+                      </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Khách: <strong class="text-on-surface font-medium">Lê Hoàng</strong> • Ví FinVault</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-currency-body text-currency-body text-[#10B981] font-bold">+ 125.000đ</div>
+<span class="text-xs text-on-surface-variant">18:15 hôm nay</span>
+</div>
+</div>
+<!-- Row 3: Mang đi (68.000đ, Khách vãng lai, 18:02, Thành công) -->
+<div class="py-3.5 flex items-center justify-between hover:bg-surface-container-low/50 px-2 rounded-xl transition-colors">
+<div class="flex items-center gap-3.5">
+<div class="w-11 h-11 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0 border border-outline-variant/30">
+<span class="material-symbols-outlined text-lg" data-icon="takeout_dining">takeout_dining</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Quầy mang đi (Takeaway)</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#E7F9F0] text-[#10B981]">
+                        Thành công
+                      </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Khách: <strong class="text-on-surface font-medium">Khách vãng lai</strong> • VietQR / Napas</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-currency-body text-currency-body text-[#10B981] font-bold">+ 68.000đ</div>
+<span class="text-xs text-on-surface-variant">18:02 hôm nay</span>
+</div>
+</div>
+<!-- Row 4: Bàn 02 (90.000đ, Mai Linh, 17:45, Thành công) -->
+<div class="py-3.5 flex items-center justify-between hover:bg-surface-container-low/50 px-2 rounded-xl transition-colors">
+<div class="flex items-center gap-3.5">
+<div class="w-11 h-11 rounded-xl bg-primary-container/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 border border-primary/20">
+                    B-02
+                  </div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Bàn số 02</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#E7F9F0] text-[#10B981]">
+                        Thành công
+                      </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Khách: <strong class="text-on-surface font-medium">Mai Linh</strong> • Ví FinVault</p>
+</div>
+</div>
+<div class="text-right">
+<div class="font-currency-body text-currency-body text-[#10B981] font-bold">+ 90.000đ</div>
+<span class="text-xs text-on-surface-variant">17:45 hôm nay</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom micro-summary -->
+<div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-xs text-on-surface-variant">
+<span>Tự động đối soát định kỳ mỗi 15 phút qua hệ thống FinVault Settlement</span>
+<span class="text-primary font-semibold flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+              Đang đồng bộ trực tiếp
+            </span>
+</div>
+</div>
+<!-- Right: Table QR Code Live Preview Widget (4 Columns) -->
+<div class="lg:col-span-4 card-monolith p-6 flex flex-col justify-between border-2 border-primary/20 bg-gradient-to-b from-white to-surface-container-lowest">
+<div>
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-lg text-label-lg text-on-surface">Xem trước mã QR tại bàn</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-primary-container text-on-primary">BÀN 04</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+              Mã QR động tích hợp số bàn &amp; định danh tài khoản Highlands Hàm Nghi.
+            </p>
+<!-- Printable QR Standee Card Mockup -->
+<div class="p-5 rounded-2xl bg-white border border-outline-variant/30 shadow-md flex flex-col items-center text-center relative overflow-hidden">
+<!-- Top Highlands Banner Branding -->
+<div class="w-full bg-[#8B1A1A] py-1.5 px-3 rounded-lg text-white mb-4 flex items-center justify-center gap-2">
+<span class="font-bold text-xs tracking-wider">HIGHLANDS COFFEE</span>
+</div>
+<!-- High-Tech QR Representation with Center Brand Badge -->
+<div class="relative p-2 bg-white rounded-xl border border-outline-variant/40 shadow-inner">
+<!-- QR Code Grid Mockup (Clean Vector-Style Blocks) -->
+<svg class="w-44 h-44 text-on-surface" fill="currentColor" viewBox="0 0 160 160">
+<!-- Corner Finder 1 -->
+<rect fill="#081e29" height="40" rx="6" width="40" x="10" y="10"></rect>
+<rect fill="#ffffff" height="24" rx="3" width="24" x="18" y="18"></rect>
+<rect fill="#0F9D8A" height="12" rx="2" width="12" x="24" y="24"></rect>
+<!-- Corner Finder 2 -->
+<rect fill="#081e29" height="40" rx="6" width="40" x="110" y="10"></rect>
+<rect fill="#ffffff" height="24" rx="3" width="24" x="118" y="18"></rect>
+<rect fill="#0F9D8A" height="12" rx="2" width="12" x="124" y="24"></rect>
+<!-- Corner Finder 3 -->
+<rect fill="#081e29" height="40" rx="6" width="40" x="10" y="110"></rect>
+<rect fill="#ffffff" height="24" rx="3" width="24" x="18" y="118"></rect>
+<rect fill="#0F9D8A" height="12" rx="2" width="12" x="24" y="124"></rect>
+<!-- Dense QR Data Blocks -->
+<rect height="8" width="8" x="60" y="12"></rect>
+<rect height="8" width="16" x="76" y="12"></rect>
+<rect height="12" width="12" x="60" y="28"></rect>
+<rect height="8" width="8" x="80" y="28"></rect>
+<rect height="8" width="12" x="68" y="44"></rect>
+<rect height="8" width="16" x="12" y="60"></rect>
+<rect height="12" width="12" x="36" y="60"></rect>
+<rect height="16" width="8" x="12" y="76"></rect>
+<rect height="8" width="16" x="28" y="80"></rect>
+<rect height="8" width="12" x="110" y="60"></rect>
+<rect height="12" width="16" x="130" y="60"></rect>
+<rect height="8" width="20" x="110" y="76"></rect>
+<rect height="16" width="8" x="138" y="80"></rect>
+<rect height="8" width="12" x="60" y="108"></rect>
+<rect height="8" width="18" x="78" y="112"></rect>
+<rect height="16" width="16" x="60" y="124"></rect>
+<rect height="12" width="12" x="84" y="128"></rect>
+<rect height="8" width="16" x="112" y="112"></rect>
+<rect height="12" width="12" x="136" y="112"></rect>
+<rect height="18" width="8" x="112" y="128"></rect>
+<rect height="14" width="18" x="128" y="132"></rect>
+</svg>
+<!-- Center Brand Badge: Highlands Coffee Logo inside QR -->
+<div class="absolute inset-0 m-auto w-11 h-11 rounded-full bg-[#8B1A1A] text-white flex items-center justify-center font-bold text-xs border-2 border-white shadow-md">
+                  HL
+                </div>
+</div>
+<!-- QR Footer Labels -->
+<div class="mt-3">
+<span class="block font-headline-sm text-headline-sm text-on-surface">QUÉT ĐỂ GỌI MÓN &amp; THANH TOÁN</span>
+<span class="block font-label-md text-label-md text-primary mt-0.5">BÀN SỐ 04 • HÀM NGHI Q1</span>
+<span class="inline-block mt-2 text-[10px] text-outline font-semibold uppercase tracking-wider">Hỗ trợ FinVault • VietQR • Mobile Banking</span>
+</div>
+</div>
+</div>
+<!-- Actions on the QR standee -->
+<div class="mt-4 pt-4 border-t border-outline-variant/20 flex gap-2.5"><div class="w-full space-y-2.5">
+  <button class="w-full merchant-teal-btn flex items-center justify-center gap-2 py-3 px-4 shadow-sm font-label-lg text-label-lg cursor-pointer" type="button">
+    <span class="material-symbols-outlined text-xl" data-icon="picture_as_pdf">picture_as_pdf</span>
+    <span class="">Xuất PDF mã QR bàn (Bàn 04)</span>
+  </button>
+  <div class="flex gap-2.5">
+    <button class="flex-1 py-2 px-3 rounded-xl border border-outline-variant/60 hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer" type="button">
+      <span class="material-symbols-outlined text-base" data-icon="print">print</span>
+      <span class="">In mã bàn 04</span>
+    </button>
+    <button class="flex-1 py-2 px-3 rounded-xl bg-surface-container-high hover:bg-surface-container text-primary font-label-md text-label-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer" type="button">
+      <span class="material-symbols-outlined text-base" data-icon="download">download</span>
+      <span class="">Tải file vector</span>
+    </button>
+  </div>
+</div></div>
+</div>
+</section>
+</main>
+<!-- Footer Copyright -->
+<footer class="px-8 py-5 text-center text-xs text-on-surface-variant border-t border-outline-variant/20 bg-surface-container-lowest/50">
+<span>FinVault Merchant Gateway © 2024. Bản quyền thuộc đối tác Highlands Coffee &amp; FinVault Financial Services.</span>
+</footer>
+</div>
+<script>
+    // Lightweight micro-interaction for branch selector
+    const selector = document.getElementById('branch-selector');
+    if (selector) {
+      selector.addEventListener('change', function(e) {
+        const text = e.target.options[e.target.selectedIndex].text;
+        const sub = document.querySelector('header p.text-body-sm');
+        if (sub) {
+          sub.textContent = 'Chi nhánh ' + text.replace('Highlands ', '');
+        }
+      });
+    }
+  </script>
+
+
+</body></html>

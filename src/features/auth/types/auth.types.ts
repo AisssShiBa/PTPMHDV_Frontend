@@ -1,10 +1,14 @@
+export type UserRole = 'USER' | 'ADMIN' | 'MERCHANT'
+
 export interface User {
   id: string
   username: string
-  firstName: string
-  lastName: string
   email: string
-  role: 'USER' | 'ADMIN' | 'MERCHANT'
+  firstName?: string
+  lastName?: string
+  role: UserRole
+  kycTier?: number
+  balance?: string
   createdAt?: string
 }
 
@@ -19,12 +23,9 @@ export interface AuthState {
   loading: boolean
   initialized: boolean
   clearState: () => void
-  signUp: (username: string, password: string, email: string, firstName: string, lastName: string) => Promise<boolean>
+  setSession: (session: AuthSession) => void
   signIn: (username: string, password: string) => Promise<boolean>
   signOut: () => Promise<void>
   initialize: () => Promise<void>
   refresh: () => Promise<boolean>
 }
-
-// Alias tương thích ngược
-export type authState = AuthState

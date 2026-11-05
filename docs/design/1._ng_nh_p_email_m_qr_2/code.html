@@ -1,0 +1,403 @@
+<!DOCTYPE html><html class="light" lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Đăng nhập FinVault - Ví điện tử cá nhân</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#bcc9c5",
+            "on-secondary-fixed": "#001e2c",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed": "#002113",
+            "inverse-surface": "#1f333f",
+            "error": "#ba1a1a",
+            "on-primary-fixed": "#00201b",
+            "surface": "#f5faff",
+            "tertiary": "#006947",
+            "on-surface": "#081e29",
+            "surface-container": "#def0ff",
+            "surface-container-high": "#d6ebfb",
+            "primary-fixed": "#83f6e0",
+            "surface-container-highest": "#d0e5f6",
+            "background": "#f5faff",
+            "surface-container-lowest": "#ffffff",
+            "on-primary-container": "#f4fffb",
+            "surface-tint": "#006b5d",
+            "on-tertiary-container": "#f5fff6",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#eaf5ff",
+            "on-tertiary-fixed-variant": "#005236",
+            "primary": "#00685b",
+            "secondary-fixed-dim": "#adcbde",
+            "outline": "#6d7a76",
+            "on-secondary-fixed-variant": "#2e4a5a",
+            "surface-variant": "#d0e5f6",
+            "on-primary-fixed-variant": "#005046",
+            "primary-fixed-dim": "#65dac4",
+            "on-surface-variant": "#3d4946",
+            "secondary-fixed": "#c9e7fb",
+            "inverse-on-surface": "#e4f3ff",
+            "on-error-container": "#93000a",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface-bright": "#f5faff",
+            "on-secondary-container": "#4a6677",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#65dac4",
+            "secondary-container": "#c6e4f8",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary-container": "#00855b",
+            "on-primary": "#ffffff",
+            "secondary": "#466273",
+            "primary-container": "#008373",
+            "on-error": "#ffffff",
+            "surface-dim": "#c8dded",
+            "on-background": "#081e29"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.25rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline-sm": ["Be Vietnam Pro"],
+            "label-lg": ["Be Vietnam Pro"],
+            "body-lg": ["Be Vietnam Pro"],
+            "label-md": ["Be Vietnam Pro"],
+            "headline-md": ["Be Vietnam Pro"],
+            "body-sm": ["Be Vietnam Pro"],
+            "label-sm": ["Be Vietnam Pro"],
+            "display-lg": ["Be Vietnam Pro"],
+            "body-md": ["Be Vietnam Pro"],
+            "headline-lg": ["Be Vietnam Pro"],
+            "currency-display": ["Be Vietnam Pro"],
+            "currency-body": ["Be Vietnam Pro"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "600" }],
+            "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "600" }],
+            "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "body-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }],
+            "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.02em", fontWeight: "500" }],
+            "display-lg": ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }],
+            "currency-display": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "currency-body": ["16px", { lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "600" }]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#F7F9FC] text-on-surface font-body-md min-h-screen flex flex-col justify-between antialiased selection:bg-primary/20 selection:text-primary">
+<!-- Minimal Decorative Ambient Backdrops -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+<div class="absolute -top-[20%] -left-[10%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl"></div>
+<div class="absolute -bottom-[20%] -right-[10%] w-[500px] h-[500px] rounded-full bg-secondary/5 blur-3xl"></div>
+</div>
+<!-- Top Utilities Header -->
+<header class="relative z-10 w-full max-w-[1200px] mx-auto px-6 py-5 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm shadow-primary/20">
+<span class="material-symbols-outlined text-[24px]">lock</span>
+</div>
+<span class="text-headline-md font-headline-md text-on-surface tracking-tight">FinVault</span>
+</div>
+<div class="flex items-center gap-5">
+<div class="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full border border-outline-variant/30 text-body-sm font-body-sm text-on-surface-variant shadow-sm">
+<span class="inline-block w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span>Hệ thống bảo mật TLS 1.3 &amp; PCI-DSS</span>
+</div>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-secondary hover:text-primary cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[18px]">language</span>
+<span>Tiếng Việt</span>
+</div>
+</div>
+</header>
+<!-- Main Login Card Canvas -->
+<main class="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
+<div class="w-full max-w-[1040px] bg-surface-container-lowest rounded-[20px] border border-outline-variant/30 shadow-[0_12px_40px_-8px_rgba(11,43,58,0.08)] overflow-hidden grid grid-cols-1 md:grid-cols-2">
+<!-- Cột bên trái: Biểu mẫu đăng nhập tiêu chuẩn -->
+<div class="p-8 lg:p-12 flex flex-col justify-between">
+<div>
+<!-- Brand Identity Anchor -->
+<div class="flex items-center gap-3 mb-8">
+<div class="w-11 h-11 rounded-xl bg-[#0F9D8A]/10 border border-[#0F9D8A]/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[26px]">wallet</span>
+</div>
+<div>
+<span class="text-headline-sm font-headline-sm text-on-surface block leading-tight">FinVault</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Ví điện tử cá nhân</span>
+</div>
+</div>
+<!-- Headings -->
+<div class="space-y-2 mb-8">
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Chào mừng trở lại</h1>
+<p class="text-body-md font-body-md text-on-surface-variant">Đăng nhập vào ví điện tử FinVault để tiếp tục quản lý tài chính thông minh</p>
+</div>
+<!-- Form Area -->
+<form class="space-y-5" onsubmit="event.preventDefault();">
+<!-- Email / SĐT Input -->
+<div class="space-y-2">
+<label class="block text-label-lg font-label-lg text-on-surface" for="account-id">Email / Số điện thoại</label>
+<div class="relative">
+<input class="w-full h-[50px] px-4 pl-11 rounded-xl bg-surface-container-lowest border-[1.5px] border-outline-variant/40 focus:border-primary focus:ring-4 focus:ring-primary/10 text-body-md font-body-md text-on-surface placeholder:text-outline outline-none transition-all duration-150" id="account-id" placeholder="Ví dụ: 0912345678 hoặc user@finvault.vn" type="text" value="nguyen.an@finvault.vn">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">person</span>
+</div>
+</div>
+<!-- Password Input with Toggle -->
+<div class="space-y-2">
+<label class="block text-label-lg font-label-lg text-on-surface" for="account-pwd">Mật khẩu</label>
+<div class="relative">
+<input class="w-full h-[50px] px-4 pl-11 pr-11 rounded-xl bg-surface-container-lowest border-[1.5px] border-outline-variant/40 focus:border-primary focus:ring-4 focus:ring-primary/10 text-body-md font-body-md text-on-surface placeholder:text-outline outline-none transition-all duration-150" id="account-pwd" placeholder="Nhập ít nhất 8 ký tự bảo mật" type="password" value="FinVault@2025">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">lock</span>
+<button aria-label="Ẩn hoặc hiện mật khẩu" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface-variant flex items-center justify-center p-1 rounded-lg hover:bg-surface-container-low transition-colors" id="toggle-pwd-btn" onclick="togglePasswordVisibility()" type="button">
+<span class="material-symbols-outlined text-[20px]" id="pwd-icon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember me & Forgot Password -->
+<div class="flex items-center justify-between pt-1">
+<label class="flex items-center gap-2.5 cursor-pointer select-none">
+<input checked="" class="w-4 h-4 rounded text-primary focus:ring-primary/20 border-outline-variant/60 transition-all cursor-pointer" type="checkbox">
+<span class="text-body-md font-body-md text-on-surface-variant">Ghi nhớ đăng nhập</span>
+</label>
+<a class="text-label-lg font-label-lg text-primary hover:text-primary-container hover:underline transition-colors" href="#">
+                Quên mật khẩu?
+              </a>
+</div>
+<!-- Primary Action Button -->
+<button class="w-full h-[48px] rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-sm hover:bg-[#005046] active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 mt-2" type="submit">
+<span>Đăng nhập</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</form>
+</div>
+<!-- Footer Help & Register -->
+<div class="pt-8 border-t border-outline-variant/20 mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-body-sm font-body-sm text-on-surface-variant">
+<span>Chưa có tài khoản FinVault?</span>
+<a class="font-label-lg text-label-lg text-primary hover:underline flex items-center gap-1" href="#">
+<span>Mở ví số ngay</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- Cột bên phải: Đăng nhập QR Code bảo mật mượt mà -->
+<div class="bg-[#EBF8F6] p-8 lg:p-12 border-t md:border-t-0 md:border-l border-[#0F9D8A]/15 flex flex-col justify-between relative overflow-hidden">
+<!-- Subtle Pattern Watermark -->
+<div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-primary/5 pointer-events-none"></div>
+<!-- QR Header Card -->
+<div class="relative z-10 text-center space-y-2">
+<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-sm border border-primary/20 text-primary font-label-md text-label-md shadow-xs">
+<span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+<span>Đăng nhập không cần mật khẩu</span>
+</div>
+<h2 class="text-headline-md font-headline-md text-on-surface">Đăng nhập bằng mã QR</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant max-w-xs mx-auto">
+            Trải nghiệm xác thực an toàn tuyệt đối, không lo lộ lọt mã đăng nhập.
+          </p>
+</div>
+<!-- QR Canvas Container -->
+<div class="relative z-10 flex flex-col items-center my-6">
+<div class="relative p-5 bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_rgba(11,43,58,0.06)] border border-outline-variant/30 flex items-center justify-center group">
+<!-- Dynamic QR Code Representation using clean SVGs for precision -->
+<div class="relative w-[190px] h-[190px] flex items-center justify-center transition-all duration-300" id="qr-wrapper">
+<svg class="w-full h-full text-on-surface" fill="currentColor" viewBox="0 0 100 100">
+<!-- QR Finder Top-Left -->
+<rect fill="none" height="28" rx="4" stroke="currentColor" stroke-width="4" width="28" x="5" y="5"></rect>
+<rect fill="currentColor" height="16" rx="2" width="16" x="11" y="11"></rect>
+<!-- QR Finder Top-Right -->
+<rect fill="none" height="28" rx="4" stroke="currentColor" stroke-width="4" width="28" x="67" y="5"></rect>
+<rect fill="currentColor" height="16" rx="2" width="16" x="73" y="11"></rect>
+<!-- QR Finder Bottom-Left -->
+<rect fill="none" height="28" rx="4" stroke="currentColor" stroke-width="4" width="28" x="5" y="67"></rect>
+<rect fill="currentColor" height="16" rx="2" width="16" x="11" y="73"></rect>
+<!-- Alignment Pattern -->
+<rect fill="none" height="16" rx="2" stroke="currentColor" stroke-width="3" width="16" x="71" y="71"></rect>
+<rect fill="currentColor" height="6" width="6" x="76" y="76"></rect>
+<!-- Micro Databits -->
+<rect height="5" rx="1" width="5" x="38" y="8"></rect>
+<rect height="5" rx="1" width="5" x="47" y="8"></rect>
+<rect height="5" rx="1" width="5" x="56" y="8"></rect>
+<rect height="5" rx="1" width="5" x="38" y="18"></rect>
+<rect height="5" rx="1" width="5" x="56" y="18"></rect>
+<rect height="5" rx="1" width="5" x="38" y="27"></rect>
+<rect height="5" rx="1" width="5" x="47" y="27"></rect>
+<rect height="5" rx="1" width="5" x="56" y="27"></rect>
+<rect height="5" rx="1" width="5" x="8" y="38"></rect>
+<rect height="5" rx="1" width="5" x="18" y="38"></rect>
+<rect height="5" rx="1" width="5" x="27" y="38"></rect>
+<rect height="5" rx="1" width="5" x="67" y="38"></rect>
+<rect height="5" rx="1" width="5" x="77" y="38"></rect>
+<rect height="5" rx="1" width="5" x="87" y="38"></rect>
+<rect height="5" rx="1" width="5" x="8" y="47"></rect>
+<rect height="5" rx="1" width="5" x="27" y="47"></rect>
+<rect height="5" rx="1" width="5" x="67" y="47"></rect>
+<rect height="5" rx="1" width="5" x="87" y="47"></rect>
+<rect height="5" rx="1" width="5" x="8" y="56"></rect>
+<rect height="5" rx="1" width="5" x="18" y="56"></rect>
+<rect height="5" rx="1" width="5" x="27" y="56"></rect>
+<rect height="5" rx="1" width="5" x="77" y="56"></rect>
+<rect height="5" rx="1" width="5" x="38" y="72"></rect>
+<rect height="5" rx="1" width="5" x="47" y="72"></rect>
+<rect height="5" rx="1" width="5" x="38" y="82"></rect>
+<rect height="5" rx="1" width="5" x="47" y="82"></rect>
+<rect height="5" rx="1" width="5" x="56" y="82"></rect>
+</svg>
+<!-- Central FinVault Brand Badge inside QR -->
+<div class="absolute inset-0 m-auto w-12 h-12 bg-surface-container-lowest rounded-xl shadow-md border border-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">verified_user</span>
+</div>
+<!-- Expired QR Overlay (Hidden by Default, toggled via state) -->
+<div class="absolute inset-0 bg-surface-container-lowest/95 backdrop-blur-[2px] rounded-xl flex flex-col items-center justify-center p-3 text-center hidden" id="qr-expired-overlay">
+<span class="material-symbols-outlined text-error text-[32px] mb-1">history</span>
+<span class="text-label-md font-label-md text-on-surface">Mã đã hết hạn</span>
+<button class="mt-2 px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm hover:bg-[#005046] active:scale-95 transition-transform flex items-center gap-1 shadow-sm" onclick="refreshQrCode()">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+<span>Tạo mã mới</span>
+</button>
+</div>
+</div>
+<!-- Subtle Scan Guide Line Animation -->
+<div class="absolute left-6 right-6 top-6 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-80 pointer-events-none animate-[bounce_3s_ease-in-out_infinite]" id="qr-scan-line"></div>
+</div>
+<!-- Countdown Timer -->
+<div class="mt-4 flex items-center gap-2 text-body-sm font-body-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">timer</span>
+<span>Hết hạn sau <strong class="text-primary font-label-lg" id="qr-countdown">00:06</strong></span>
+</div>
+<!-- Instruction Stepper -->
+<div class="mt-4 px-4 py-2.5 rounded-xl bg-surface-container-lowest/60 border border-outline-variant/30 text-center">
+<p class="text-body-sm font-body-sm text-on-surface flex items-center gap-1.5 justify-center flex-wrap">
+<span class="font-label-md text-primary">Mở FinVault trên điện thoại</span>
+<span class="text-outline text-xs">→</span>
+<span class="font-label-md text-primary">Quét mã</span>
+<span class="text-outline text-xs">→</span>
+<span class="font-label-md text-primary">Xác nhận</span>
+</p>
+</div>
+</div>
+<!-- Demo Control Panel / Status Actions -->
+<div class="relative z-10 pt-4 border-t border-[#0F9D8A]/15 flex items-center justify-between text-body-sm font-body-sm">
+<button class="text-secondary hover:text-on-surface flex items-center gap-1.5 transition-colors underline decoration-dotted text-body-sm" onclick="toggleQrExpiredState()" title="Nhấp để mô phỏng trạng thái hết hạn và tạo mã mới" type="button">
+<span class="material-symbols-outlined text-[16px]">settings_backup_restore</span>
+<span id="demo-toggle-label">Demo: Thử báo hết hạn</span>
+</button>
+<button class="text-primary hover:text-primary-container font-label-md text-label-md flex items-center gap-1 transition-colors" onclick="refreshQrCode()" type="button">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>Làm mới mã QR</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Global Footer -->
+<footer class="relative z-10 w-full max-w-[1200px] mx-auto px-6 py-6 text-center text-body-sm font-body-sm text-on-surface-variant flex flex-col sm:flex-row items-center justify-between gap-4">
+<p>© 2025 FinVault Digital Wallet Inc. Đã đăng ký bản quyền bởi Ngân hàng Nhà nước Việt Nam.</p>
+<div class="flex items-center gap-6">
+<a class="hover:text-primary transition-colors" href="#">Điều khoản dịch vụ</a>
+<a class="hover:text-primary transition-colors" href="#">Chính sách bảo mật</a>
+<a class="hover:text-primary transition-colors" href="#">Trung tâm trợ giúp</a>
+</div>
+</footer>
+<!-- Interactive Logic Scripts -->
+<script>
+    // Toggle Password Visibility
+    function togglePasswordVisibility() {
+      const pwdInput = document.getElementById('account-pwd');
+      const icon = document.getElementById('pwd-icon');
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        icon.innerText = 'visibility_off';
+      } else {
+        pwdInput.type = 'password';
+        icon.innerText = 'visibility';
+      }
+    }
+
+    // QR Countdown and State Simulator
+    let timeLeft = 120; // 2 minutes
+    let isExpired = false;
+    let timerInterval = null;
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          setExpiredState(true);
+        } else {
+          timeLeft--;
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const seconds = (timeLeft % 60).toString().padStart(2, '0');
+      const display = document.getElementById('qr-countdown');
+      if (display) {
+        display.innerText = `${minutes}:${seconds}`;
+      }
+    }
+
+    function setExpiredState(expired) {
+      isExpired = expired;
+      const overlay = document.getElementById('qr-expired-overlay');
+      const scanLine = document.getElementById('qr-scan-line');
+      const toggleLabel = document.getElementById('demo-toggle-label');
+
+      if (expired) {
+        overlay.classList.remove('hidden');
+        scanLine.classList.add('hidden');
+        if (toggleLabel) toggleLabel.innerText = 'Demo: Phục hồi mã QR';
+      } else {
+        overlay.classList.add('hidden');
+        scanLine.classList.remove('hidden');
+        if (toggleLabel) toggleLabel.innerText = 'Demo: Thử báo hết hạn';
+      }
+    }
+
+    function toggleQrExpiredState() {
+      if (isExpired) {
+        refreshQrCode();
+      } else {
+        timeLeft = 0;
+        updateTimerDisplay();
+        setExpiredState(true);
+      }
+    }
+
+    function refreshQrCode() {
+      timeLeft = 120;
+      updateTimerDisplay();
+      setExpiredState(false);
+      startTimer();
+      
+      // Visual feedback
+      const wrapper = document.getElementById('qr-wrapper');
+      wrapper.classList.add('scale-95');
+      setTimeout(() => wrapper.classList.remove('scale-95'), 200);
+    }
+
+    // Init
+    startTimer();
+  </script>
+</body></html>
