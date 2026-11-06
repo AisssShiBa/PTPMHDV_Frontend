@@ -134,7 +134,7 @@ export function MainLayout() {
               </div>
               <div>
                 <span className="text-xl font-bold tracking-tight text-primary">FinVault</span>
-                <p className="text-xs text-muted-foreground">Ví điện tử mô phỏng</p>
+                <p className="text-xs text-muted-foreground">Ví điện tử cá nhân</p>
               </div>
             </Link>
 
@@ -211,12 +211,14 @@ export function MainLayout() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative rounded-full text-muted-foreground hover:text-foreground"
+                className="relative rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
                 aria-label="Thông báo"
-                onClick={() => navigate('/app/transactions')}
+                onClick={() => navigate('/app/notifications')}
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold shadow-xs">
+                  3
+                </span>
               </Button>
 
               {/* User Avatar Menu */}
@@ -242,6 +244,10 @@ export function MainLayout() {
                     <UserCheck className="mr-2 h-4 w-4" />
                     <span>Hồ sơ & KYC</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/app/notifications')}>
+                    <Bell className="mr-2 h-4 w-4" />
+                    <span>Thông báo (3 mới)</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/app/transfer')}>
                     <Send className="mr-2 h-4 w-4" />
                     <span>Chuyển tiền nhanh</span>
@@ -261,9 +267,9 @@ export function MainLayout() {
             <Outlet />
           </main>
 
-          {/* Footer Bắt Buộc Theo Prompt 0 */}
+          {/* Clean Commercial Footer */}
           <footer className="border-t border-border py-4 px-6 text-center text-xs text-muted-foreground bg-card/40">
-            <p>FinVault là đồ án học tập mô phỏng ví điện tử, không phải dịch vụ tài chính thật.</p>
+            <p>© 2026 FinVault. Nền tảng thanh toán số & Ví điện tử cá nhân. Tất cả các quyền được bảo lưu.</p>
           </footer>
         </div>
       </div>

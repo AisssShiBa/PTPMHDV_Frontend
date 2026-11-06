@@ -19,6 +19,7 @@ const WithdrawPage = lazy(() => import('@/pages/WithdrawPage'))
 const TransactionsPage = lazy(() => import('@/pages/TransactionsPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const UtilitiesPage = lazy(() => import('@/pages/UtilitiesPage'))
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
 
 const MerchantPortalPage = lazy(() => import('@/pages/MerchantPortalPage'))
 const MerchantRegisterPage = lazy(() => import('@/pages/MerchantRegisterPage'))
@@ -30,7 +31,6 @@ const AdminTopupPage = lazy(() => import('@/pages/AdminTopupPage'))
 
 const ForbiddenPage = lazy(() => import('@/pages/ForbiddenPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
-const DevComponentsPage = lazy(() => import('@/pages/DevComponentsPage'))
 
 function PageFallback() {
   return (
@@ -88,7 +88,8 @@ export const router = createBrowserRouter([
       { path: 'withdraw', element: withSuspense(WithdrawPage) },
       { path: 'transactions', element: withSuspense(TransactionsPage) },
       { path: 'profile', element: withSuspense(ProfilePage) },
-      { path: 'utilities', element: withSuspense(UtilitiesPage) }
+      { path: 'utilities', element: withSuspense(UtilitiesPage) },
+      { path: 'notifications', element: withSuspense(NotificationsPage) }
     ]
   },
 
@@ -124,17 +125,7 @@ export const router = createBrowserRouter([
     ]
   },
 
-  // 6. Trang kiểm thử components UI (Chỉ dùng nội bộ / dev)
-  {
-    path: 'dev/components',
-    element: (
-      <div className="min-h-screen bg-background p-6">
-        {withSuspense(DevComponentsPage)}
-      </div>
-    )
-  },
-
-  // 7. Lỗi quyền và không tìm thấy trang
+  // 6. Lỗi quyền và không tìm thấy trang
   {
     path: '403',
     element: withSuspense(ForbiddenPage)

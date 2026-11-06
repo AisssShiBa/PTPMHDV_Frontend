@@ -19,7 +19,7 @@ export function AuthLayout() {
               </div>
               <div>
                 <span className="text-2xl font-bold tracking-tight">FinVault</span>
-                <span className="block text-xs text-white/70">Hệ thống ví điện tử mô phỏng</span>
+                <span className="block text-xs text-white/80">Ví điện tử cá nhân thông minh</span>
               </div>
             </Link>
           </div>
@@ -28,7 +28,7 @@ export function AuthLayout() {
           <div className="relative z-10 max-w-md my-auto py-12">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-medium mb-6">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Đồ án học tập mô phỏng ví điện tử</span>
+              <span>Nền tảng thanh toán số thế hệ mới</span>
             </div>
 
             <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl leading-tight">
@@ -36,7 +36,7 @@ export function AuthLayout() {
             </h2>
 
             <p className="mt-4 text-base text-white/80 leading-relaxed">
-              Trải nghiệm các giao dịch chuyển tiền P2P, nạp tiền cổng thanh toán, thanh toán hóa đơn và quản lý hạn mức theo cấp độ KYC mô phỏng.
+              Trải nghiệm giao dịch chuyển tiền P2P tức thì, thanh toán hóa đơn tiện lợi và quản lý hạn mức tài khoản với các lớp bảo vệ nghiêm ngặt.
             </p>
 
             <div className="mt-8 space-y-4">
@@ -46,7 +46,7 @@ export function AuthLayout() {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold">Xác thực phân tầng & Mã PIN</h4>
-                  <p className="text-xs text-white/70">Mã hóa xác thực và kiểm soát giao dịch qua mã PIN 6 số</p>
+                  <p className="text-xs text-white/70">Mã hóa xác thực và kiểm soát từng giao dịch qua mã PIN 6 số</p>
                 </div>
               </div>
 
@@ -65,16 +65,16 @@ export function AuthLayout() {
                   <Zap className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold">Kiến trúc Microservices</h4>
-                  <p className="text-xs text-white/70">Giao tiếp duy nhất qua API Gateway tại /api</p>
+                  <h4 className="text-sm font-semibold">Bảo mật đa tầng & Tốc độ cao</h4>
+                  <p className="text-xs text-white/70">Mã hóa đầu cuối và đảm bảo an toàn tuyệt đối tài sản</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Disclaimer at bottom left */}
-          <div className="relative z-10 text-xs text-white/60">
-            <p>© 2026 FinVault. Đồ án học tập - Không phải dịch vụ tài chính thực tế.</p>
+          {/* Clean Commercial Footer */}
+          <div className="relative z-10 text-xs text-white/70">
+            <p>© 2026 FinVault. Nền tảng thanh toán số & Ví điện tử cá nhân.</p>
           </div>
         </div>
 
@@ -88,9 +88,6 @@ export function AuthLayout() {
               </div>
               <span className="text-xl font-bold text-primary">FinVault</span>
             </Link>
-            <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-              Mô phỏng
-            </span>
           </div>
 
           <div className="flex-1 flex items-center justify-center my-auto w-full max-w-md mx-auto">
@@ -98,7 +95,7 @@ export function AuthLayout() {
           </div>
 
           <div className="mt-8 text-center text-xs text-muted-foreground pt-4 border-t border-border/40">
-            <p>FinVault là đồ án học tập mô phỏng ví điện tử, không phải dịch vụ tài chính thật.</p>
+            <p>© 2026 FinVault. Tất cả các quyền được bảo lưu.</p>
           </div>
         </div>
       </div>
