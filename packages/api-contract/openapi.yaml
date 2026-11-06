@@ -1,0 +1,871 @@
+openapi: 3.1.0
+info:
+  title: FinVault API
+  version: 0.1.0
+  description: Shared contract for endpoints currently used by the FinVault web client.
+servers:
+  - url: /api
+tags:
+  - name: Auth
+  - name: Users
+  - name: Merchants
+  - name: Wallets
+  - name: Payments
+  - name: Notifications
+  - name: Admin
+paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Register an account
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/ClientPlatform'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, email, firstName, lastName]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+                email: { type: string, format: email }
+                firstName: { type: string }
+                lastName: { type: string }
+              example: { username: demo, password: password, email: demo@example.test, firstName: Minh, lastName: Nguyen }
+      responses:
+        '200':
+          description: Account created
+          content:
+            application/json:
+              example: { success: true, data: { user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /auth/signin:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/ClientPlatform'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+              example: { username: demo, password: password }
+      responses:
+        '200':
+          description: Signed in; mobile clients may also receive a refresh token
+          content:
+            application/json:
+              example: { success: true, data: { accessToken: mock-access-token, refreshToken: mock-refresh-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } }
+              examples:
+                web: { value: { success: true, data: { accessToken: mock-access-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } } }
+                mobile: { value: { success: true, data: { accessToken: mock-access-token, refreshToken: mock-refresh-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } } }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh the access token
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/ClientPlatform'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken: { type: string }
+            examples:
+              web: { value: {} }
+              mobile: { value: { refreshToken: mock-refresh-token } }
+      responses:
+        '200':
+          description: Refreshed session; mobile clients may also receive a refresh token
+          content:
+            application/json:
+              example: { success: true, data: { accessToken: mock-access-token, refreshToken: mock-refresh-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } }
+              examples:
+                web: { value: { success: true, data: { accessToken: mock-access-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } } }
+                mobile: { value: { success: true, data: { accessToken: mock-access-token, refreshToken: mock-refresh-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } } }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/signout:
+    post:
+      tags: [Auth]
+      summary: Sign out
+      x-needs-confirmation: true
+      responses:
+        '200':
+          description: Signed out
+          content:
+            application/json:
+              example: { success: true, data: { signedOut: true } }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user profile by user ID
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, firstName: Minh, lastName: Nguyen, email: demo@example.test } }
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /users/by-auth/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Users]
+      summary: Get profile by auth user ID
+      x-needs-confirmation: true
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, firstName: Minh, lastName: Nguyen, email: demo@example.test } }
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Users]
+      summary: Update profile
+      x-needs-confirmation: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                phone: { type: string }
+            example: { firstName: Minh, lastName: Nguyen }
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, firstName: Minh, lastName: Nguyen, email: demo@example.test } }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /users/by-auth/{id}/kyc:
+    post:
+      tags: [Users]
+      summary: Submit KYC documents
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [idNumber, document]
+              properties:
+                idNumber: { type: string }
+                document: { type: string, format: binary }
+      responses:
+        '200':
+          description: KYC submitted
+          content:
+            application/json:
+              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, kycStatus: PENDING } }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /users/by-auth/{id}/kyc/document:
+    get:
+      tags: [Users]
+      summary: Get KYC document metadata
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: KYC document
+          content:
+            application/json:
+              example: { success: true, data: { documentUrl: https://example.test/kyc/demo.jpg, contentType: image/jpeg } }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /merchants:
+    get:
+      tags: [Merchants]
+      summary: List merchants
+      x-needs-confirmation: true
+      responses:
+        '200':
+          description: Merchants
+          content:
+            application/json:
+              example: { success: true, data: [{ id: 39c330e0-591f-4fe3-99ac-3544f885ad18, businessName: Demo Merchant, status: APPROVED, active: true }] }
+  /merchants/me:
+    get:
+      tags: [Merchants]
+      summary: Get current user's merchant registration
+      x-needs-confirmation: true
+      responses:
+        '200':
+          description: Merchant registration or explicit null
+          content:
+            application/json:
+              example: { success: true, data: null }
+  /merchants/register:
+    post:
+      tags: [Merchants]
+      summary: Register a merchant
+      x-needs-confirmation: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [businessName]
+              properties:
+                businessName: { type: string }
+                businessType: { type: string }
+                address: { type: string }
+            example: { businessName: Demo Merchant, businessType: retail, address: Hanoi }
+      responses:
+        '201':
+          description: Registration created
+          content:
+            application/json:
+              example: { success: true, data: { id: 39c330e0-591f-4fe3-99ac-3544f885ad18, businessName: Demo Merchant, status: PENDING } }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /merchants/{id}:
+    get:
+      tags: [Merchants]
+      summary: Get merchant
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Merchant
+          content:
+            application/json:
+              example: { success: true, data: { id: 39c330e0-591f-4fe3-99ac-3544f885ad18, businessName: Demo Merchant, status: APPROVED } }
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /merchants/{id}/active:
+    get:
+      tags: [Merchants]
+      summary: Check merchant active status
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Active flag
+          content:
+            application/json:
+              example: { success: true, data: { active: true } }
+
+  /wallets/{userId}/balance:
+    get:
+      tags: [Wallets]
+      summary: Get user wallet balance
+      x-needs-confirmation: true
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: ownerType
+          in: query
+          schema: { type: string, example: USER }
+      responses:
+        '200':
+          description: Balance
+          content:
+            application/json:
+              example: { success: true, data: { balance: "1250000", currency: VND } }
+  /wallets/{userId}/history:
+    get:
+      tags: [Wallets]
+      summary: Get wallet history
+      x-needs-confirmation: true
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Wallet history
+          content:
+            application/json:
+              example: { success: true, data: [{ id: 2f67d342-3cb1-4be2-aecb-2a23a49120b2, amount: "50000", type: CREDIT, createdAt: "2026-01-01T00:00:00Z" }] }
+  /wallets/{userId}/credit:
+    post:
+      tags: [Wallets]
+      summary: Credit a wallet
+      x-needs-confirmation: true
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [amount], properties: { amount: { type: string }, referenceId: { type: string }, transferType: { type: string } } }
+            example: { amount: "50000", referenceId: TOPUP-1, transferType: TOPUP }
+      responses:
+        '200':
+          description: Credited
+          content:
+            application/json:
+              example: { success: true, data: { transactionId: 2f67d342-3cb1-4be2-aecb-2a23a49120b2, balance: "1300000" } }
+  /wallets/{userId}/debit:
+    post:
+      tags: [Wallets]
+      summary: Debit a wallet
+      x-needs-confirmation: true
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [amount], properties: { amount: { type: string }, referenceId: { type: string }, transferType: { type: string } } }
+            example: { amount: "50000", referenceId: DEBIT-1, transferType: PAYMENT }
+      responses:
+        '200':
+          description: Debited
+          content:
+            application/json:
+              example: { success: true, data: { transactionId: 2f67d342-3cb1-4be2-aecb-2a23a49120b2, balance: "1200000" } }
+  /wallets/{userId}/transfer:
+    post:
+      tags: [Wallets]
+      summary: Transfer between users
+      x-needs-confirmation: true
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [toUserId, amount], properties: { toUserId: { type: string }, amount: { type: string }, referenceId: { type: string } } }
+            example: { toUserId: 9d770d17-04ce-4eb3-8542-7346f1476b2a, amount: "25000", referenceId: P2P-1 }
+      responses:
+        '200':
+          description: Transfer completed
+          content:
+            application/json:
+              example: { success: true, data: { transactionId: 2f67d342-3cb1-4be2-aecb-2a23a49120b2, status: COMPLETED } }
+
+  /payments:
+    get:
+      tags: [Payments]
+      summary: List payments
+      x-needs-confirmation: true
+      parameters:
+        - name: userId
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Payment list
+          content:
+            application/json:
+              example: { success: true, data: [{ id: 40cbb85e-7437-4785-934a-b390c51daffe, amount: "25000", status: COMPLETED, type: PAYMENT }] }
+  /payments/checkout:
+    post:
+      tags: [Payments]
+      summary: Create checkout payment
+      x-needs-confirmation: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { merchantId: { type: string }, amount: { type: number }, description: { type: string } } }
+            example: { merchantId: 39c330e0-591f-4fe3-99ac-3544f885ad18, amount: 25000, description: Demo checkout }
+      responses:
+        '201':
+          description: Checkout created
+          content:
+            application/json:
+              example: { success: true, data: { id: 40cbb85e-7437-4785-934a-b390c51daffe, amount: "25000", status: PENDING, checkoutUrl: https://example.test/checkout/demo } }
+  /payments/{id}:
+    get:
+      tags: [Payments]
+      summary: Get payment details
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Payment details
+          content:
+            application/json:
+              example: { success: true, data: { id: 40cbb85e-7437-4785-934a-b390c51daffe, amount: "25000", status: COMPLETED, type: PAYMENT } }
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /payments/{id}/cancel:
+    post:
+      tags: [Payments]
+      summary: Cancel payment
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Payment cancelled
+          content:
+            application/json:
+              example: { success: true, data: { id: 40cbb85e-7437-4785-934a-b390c51daffe, status: CANCELLED } }
+  /payments/topups:
+    get:
+      tags: [Payments]
+      summary: List payment top-ups
+      x-needs-confirmation: true
+      responses:
+        '200':
+          description: Top-up list
+          content:
+            application/json:
+              example: { success: true, data: [{ id: e5156448-bcea-4718-a045-6c748b4184d9, amount: 50000, status: PENDING }] }
+    post:
+      tags: [Payments]
+      summary: Create a top-up
+      x-needs-confirmation: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [amount], properties: { amount: { type: number } } }
+            example: { amount: 50000 }
+      responses:
+        '201':
+          description: Top-up created
+          content:
+            application/json:
+              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, amount: 50000, status: PENDING, qrCode: https://example.test/qr/demo } }
+  /payments/topups/{id}:
+    get:
+      tags: [Payments]
+      summary: Get top-up status
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Top-up status
+          content:
+            application/json:
+              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, amount: 50000, status: PENDING } }
+  /payments/admin/topups:
+    get:
+      tags: [Payments]
+      summary: List top-ups for admin
+      x-needs-confirmation: true
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Admin top-up list
+          content:
+            application/json:
+              example: { success: true, data: [{ id: e5156448-bcea-4718-a045-6c748b4184d9, userId: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, amount: 50000, status: PENDING }] }
+  /payments/admin/topups/{id}/approve:
+    post:
+      tags: [Payments]
+      summary: Approve a top-up
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Top-up approved
+          content:
+            application/json:
+              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, status: APPROVED } }
+  /payments/admin/topups/{id}/reject:
+    post:
+      tags: [Payments]
+      summary: Reject a top-up
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, required: [reason], properties: { reason: { type: string } } }
+            example: { reason: Invalid transfer reference }
+      responses:
+        '200':
+          description: Top-up rejected
+          content:
+            application/json:
+              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, status: REJECTED } }
+
+  /notifications/me:
+    get:
+      tags: [Notifications]
+      summary: List current user's notifications
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Paginated notification inbox
+          content:
+            application/json:
+              example: { success: true, data: { notifications: [{ id: 02165dcc-c6c4-4e20-95e0-7f23e20c44e1, type: PAYMENT_SUCCESS, message: Thanh toán thành công., read: false, createdAt: "2026-01-01T00:00:00Z" }], unreadCount: 1, pagination: { page: 1, limit: 10, total: 1, totalPages: 1 } } }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /notifications/me/read-all:
+    patch:
+      tags: [Notifications]
+      summary: Mark all current user's notifications read
+      responses:
+        '200':
+          description: Updated notification count
+          content:
+            application/json:
+              example: { success: true, data: { updatedCount: 1 } }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark one notification read
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Updated notification
+          content:
+            application/json:
+              example: { success: true, data: { id: 02165dcc-c6c4-4e20-95e0-7f23e20c44e1, type: PAYMENT_SUCCESS, message: Thanh toán thành công., read: true, createdAt: "2026-01-01T00:00:00Z" } }
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /notifications/socket-ticket:
+    get:
+      tags: [Notifications]
+      summary: Get the current user's one-time socket ticket
+      responses:
+        '200':
+          description: Short-lived Gateway Token ticket
+          content:
+            application/json:
+              example: { success: true, data: { ticket: mock-gateway-ticket } }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/dashboard:
+    get:
+      tags: [Admin]
+      summary: Get admin dashboard statistics
+      x-needs-confirmation: true
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              example: { success: true, data: { users: 120, merchants: 8, pendingKyc: 3, pendingTopups: 2 } }
+  /admin/kyc:
+    get:
+      tags: [Admin]
+      summary: List KYC reviews
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: KYC review page
+          content:
+            application/json:
+              example: { success: true, data: { content: [{ userId: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, status: PENDING }], totalElements: 1 } }
+  /admin/kyc/{userId}/review:
+    post:
+      tags: [Admin]
+      summary: Review KYC
+      x-needs-confirmation: true
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [APPROVED, REJECTED] }, detail: { type: string } } }
+            example: { status: APPROVED, detail: Verified }
+      responses:
+        '200':
+          description: KYC decision
+          content:
+            application/json:
+              example: { success: true, data: { userId: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, status: APPROVED } }
+  /admin/merchants:
+    get:
+      tags: [Admin]
+      summary: List merchant reviews
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Merchant review page
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  content:
+                    - { id: 39c330e0-591f-4fe3-99ac-3544f885ad18, businessName: Demo Merchant, status: PENDING }
+                  totalElements: 1
+  /admin/merchants/{merchantId}/review:
+    post:
+      tags: [Admin]
+      summary: Review a merchant
+      x-needs-confirmation: true
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [APPROVED, REJECTED] }, detail: { type: string } } }
+            example: { status: APPROVED, detail: Verified }
+      responses:
+        '200':
+          description: Merchant decision
+          content:
+            application/json:
+              example: { success: true, data: { id: 39c330e0-591f-4fe3-99ac-3544f885ad18, status: APPROVED } }
+  /admin/audit-logs:
+    get:
+      tags: [Admin]
+      summary: List audit logs
+      x-needs-confirmation: true
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Audit log list
+          content:
+            application/json:
+              example: { success: true, data: [{ id: 6efb54f5-50e1-4602-a9c8-b1bcf1c346df, action: KYC_APPROVED, actorId: admin-demo, createdAt: "2026-01-01T00:00:00Z" }] }
+
+  # Prism serves path keys directly and does not prepend the OpenAPI server URL.
+  /api/auth/signin:
+    $ref: '#/paths/~1auth~1signin'
+  /api/auth/signup:
+    $ref: '#/paths/~1auth~1signup'
+  /api/auth/refresh:
+    $ref: '#/paths/~1auth~1refresh'
+  /api/auth/signout:
+    $ref: '#/paths/~1auth~1signout'
+  /api/users/{id}:
+    $ref: '#/paths/~1users~1{id}'
+  /api/users/by-auth/{id}:
+    $ref: '#/paths/~1users~1by-auth~1{id}'
+  /api/users/by-auth/{id}/kyc:
+    $ref: '#/paths/~1users~1by-auth~1{id}~1kyc'
+  /api/users/by-auth/{id}/kyc/document:
+    $ref: '#/paths/~1users~1by-auth~1{id}~1kyc~1document'
+  /api/merchants:
+    $ref: '#/paths/~1merchants'
+  /api/merchants/me:
+    $ref: '#/paths/~1merchants~1me'
+  /api/merchants/register:
+    $ref: '#/paths/~1merchants~1register'
+  /api/merchants/{id}:
+    $ref: '#/paths/~1merchants~1{id}'
+  /api/merchants/{id}/active:
+    $ref: '#/paths/~1merchants~1{id}~1active'
+  /api/wallets/{userId}/balance:
+    $ref: '#/paths/~1wallets~1{userId}~1balance'
+  /api/wallets/{userId}/history:
+    $ref: '#/paths/~1wallets~1{userId}~1history'
+  /api/wallets/{userId}/credit:
+    $ref: '#/paths/~1wallets~1{userId}~1credit'
+  /api/wallets/{userId}/debit:
+    $ref: '#/paths/~1wallets~1{userId}~1debit'
+  /api/wallets/{userId}/transfer:
+    $ref: '#/paths/~1wallets~1{userId}~1transfer'
+  /api/payments:
+    $ref: '#/paths/~1payments'
+  /api/payments/checkout:
+    $ref: '#/paths/~1payments~1checkout'
+  /api/payments/{id}:
+    $ref: '#/paths/~1payments~1{id}'
+  /api/payments/{id}/cancel:
+    $ref: '#/paths/~1payments~1{id}~1cancel'
+  /api/payments/topups:
+    $ref: '#/paths/~1payments~1topups'
+  /api/payments/topups/{id}:
+    $ref: '#/paths/~1payments~1topups~1{id}'
+  /api/payments/admin/topups:
+    $ref: '#/paths/~1payments~1admin~1topups'
+  /api/payments/admin/topups/{id}/approve:
+    $ref: '#/paths/~1payments~1admin~1topups~1{id}~1approve'
+  /api/payments/admin/topups/{id}/reject:
+    $ref: '#/paths/~1payments~1admin~1topups~1{id}~1reject'
+  /api/notifications/me/read-all:
+    $ref: '#/paths/~1notifications~1me~1read-all'
+  /api/notifications/{id}/read:
+    $ref: '#/paths/~1notifications~1{id}~1read'
+  /api/notifications/socket-ticket:
+    $ref: '#/paths/~1notifications~1socket-ticket'
+  /api/admin/dashboard:
+    $ref: '#/paths/~1admin~1dashboard'
+  /api/admin/kyc:
+    $ref: '#/paths/~1admin~1kyc'
+  /api/admin/kyc/{userId}/review:
+    $ref: '#/paths/~1admin~1kyc~1{userId}~1review'
+  /api/admin/merchants:
+    $ref: '#/paths/~1admin~1merchants'
+  /api/admin/merchants/{merchantId}/review:
+    $ref: '#/paths/~1admin~1merchants~1{merchantId}~1review'
+  /api/admin/audit-logs:
+    $ref: '#/paths/~1admin~1audit-logs'
+  /api/notifications/me:
+    $ref: '#/paths/~1notifications~1me'
+
+x-planned-paths:
+  /users/me:
+    get:
+      summary: Planned user profile endpoint
+      x-status: planned
+      responses:
+        '200':
+          description: Planned response
+          content:
+            application/json:
+              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, role: USER } }
+  /wallets/me:
+    get:
+      summary: Planned authenticated wallet endpoint
+      x-status: planned
+      responses:
+        '200':
+          description: Planned response
+          content:
+            application/json:
+              example: { success: true, data: { balance: "1250000", currency: VND } }
+  /auth-txn/pin/setup:
+    post:
+      summary: Planned transaction PIN setup
+      x-status: planned
+      responses:
+        '200':
+          description: Planned response
+          content:
+            application/json:
+              example: { success: true, data: { configured: true } }
+  /auth-txn/pin/verify:
+    post:
+      summary: Planned transaction PIN verification
+      x-status: planned
+      responses:
+        '200':
+          description: Planned response
+          content:
+            application/json:
+              example: { success: true, data: { verified: true } }
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+    ClientPlatform:
+      name: x-client-platform
+      in: header
+      required: false
+      schema: { type: string, enum: [web, mobile] }
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          example: { success: false, error: { code: BAD_REQUEST, message: Request is invalid }, requestId: mock-request-id }
+    Unauthorized:
+      description: Authentication failed
+      content:
+        application/json:
+          example: { success: false, error: { code: INVALID_CREDENTIALS, message: Authentication failed }, requestId: mock-request-id }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          example: { success: false, error: { code: NOT_FOUND, message: Resource not found }, requestId: mock-request-id }
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          example: { success: false, error: { code: DUPLICATE_RESOURCE, message: Resource already exists }, requestId: mock-request-id }
