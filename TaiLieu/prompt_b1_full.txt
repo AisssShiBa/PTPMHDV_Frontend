@@ -1,0 +1,19 @@
+Chạy sau Prompt A, mỗi lần một nhóm trang (B-1 → B-4), mỗi nhóm một nhánh và một lần merge. Luôn dán Prompt 0 trước. Mục tiêu của khung: trang chạy được với dữ liệu giả, đủ trạng thái loading/empty/error, đúng thiết kế, và đã có sẵn hook giả với tên và kiểu trả về cuối cùng để thành viên chỉ thay thân hook.
+Quy tắc khung chung (dán kèm mọi B-x):
+QUY TẮC KHUNG TRANG
+1. Mỗi trang: pages/<Ten>Page.tsx mỏng (không axios, không logic nghiệp vụ), ghép component từ features/<feature>/components.
+2. Dữ liệu chỉ lấy qua hook trong features/<feature>/api/*.queries.ts. Hook hiện dùng useFixtureQuery/useFixtureMutation, có đúng tên và kiểu trả về cuối cùng, mỗi hook có dòng // TODO(api): <METHOD> <path>.
+3. Fixture đặt ở features/<feature>/fixtures, gõ kiểu từ types/. Field chưa chắc chắn ghi // TODO(contract).
+4. Mọi trang có đủ 4 trạng thái: bình thường, loading (skeleton), empty, error (có nút Thử lại). Bật thử bằng ?state=loading|empty|error qua useDevState (chỉ DEV).
+5. Tiền luôn là string, định dạng bằng helper formatVnd; không dùng Number để cộng trừ.
+6. Form dùng React Hook Form + Zod, schema ở features/<feature>/schemas.
+7. Áp dụng bảng Design override trong Prompt 0 (bỏ NHNN/PCI/AES-256/hotline, giữ nhãn "mô phỏng").
+8. Cuối mỗi nhóm: chạy tsc, lint, build; viết docs/handover/<feature>.md gồm: danh sách hook, endpoint dự kiến, field TODO(contract), quy tắc nghiệp vụ cần chú ý.
+9. Không thêm thư viện (trừ qrcode.react). Không import từ src_legacy/.
+B-1: Công khai, đăng nhập, PIN
+Dựng khung các trang: Landing (/), SignIn (/sign-in), SignUp (/sign-up), QrLogin (/qr-login), 403, 404, cộng PinModal dùng chung.
+Thiết kế: docs/design/landing_page_trang_gi_i_thi_u_c_ng_khai_finvault, 1._ng_nh_p_email_m_qr_1 (dùng bản _1, không dùng _2), ng_k_t_i_kho_n_chu_n_finvault.
+Hook giả (feature auth): useLogin, useRegister, useQrSession, useMe. Ẩn "Quên mật khẩu" và "Ghi nhớ đăng nhập".
+RegisterSchema dựa trên DTO đang có trong Postman; nếu chưa rõ thì ghi // TODO(contract).
+PinModal (feature pin): nhập 6 số, trạng thái sai PIN, trạng thái PIN_LOCKED có đếm ngược từ lockedUntil của server; trả về transactionToken qua callback, không lưu vào store/storage. Hook giả: useVerifyPin.
+RedirectIfAuthed cho các trang auth, returnTo sau đăng nhập.

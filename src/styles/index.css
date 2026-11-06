@@ -1,0 +1,198 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource/be-vietnam-pro/400.css";
+@import "@fontsource/be-vietnam-pro/500.css";
+@import "@fontsource/be-vietnam-pro/600.css";
+@import "@fontsource/be-vietnam-pro/700.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+
+  --color-surface: var(--surface);
+  --color-on-surface: var(--on-surface);
+  --color-surface-variant: var(--surface-variant);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-high: var(--surface-container-high);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* FinVault Design System Tokens (Light) */
+  --background: #f5faff;
+  --foreground: #081e29;
+
+  --surface: #f5faff;
+  --on-surface: #081e29;
+  --surface-variant: #d0e5f6;
+  --on-surface-variant: #3d4946;
+  --surface-container-low: #eaf5ff;
+  --surface-container: #def0ff;
+  --surface-container-high: #d6ebfb;
+
+  --card: #ffffff;
+  --card-foreground: #081e29;
+
+  --popover: #ffffff;
+  --popover-foreground: #081e29;
+
+  /* Primary Deep Teal */
+  --primary: #00685b;
+  --primary-foreground: #ffffff;
+  --primary-container: #008373;
+  --on-primary-container: #f4fffb;
+
+  /* Secondary Slate Blue */
+  --secondary: #466273;
+  --secondary-foreground: #ffffff;
+  --secondary-container: #c6e4f8;
+  --on-secondary-container: #4a6677;
+
+  /* Tertiary Pine Green */
+  --tertiary: #006947;
+  --tertiary-foreground: #ffffff;
+
+  --muted: #eaf5ff;
+  --muted-foreground: #466273;
+
+  --accent: #def0ff;
+  --accent-foreground: #00685b;
+
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+
+  --success: #006947;
+  --success-foreground: #ffffff;
+
+  --warning: #b26a00;
+  --warning-foreground: #ffffff;
+
+  --info: #00685b;
+  --info-foreground: #ffffff;
+
+  --border: #bcc9c5;
+  --input: #bcc9c5;
+  --ring: #00685b;
+}
+
+.dark {
+  --background: #081e29;
+  --foreground: #f5faff;
+
+  --surface: #081e29;
+  --on-surface: #f5faff;
+  --surface-variant: #1f333f;
+  --on-surface-variant: #bcc9c5;
+  --surface-container-low: #0f2734;
+  --surface-container: #17303e;
+  --surface-container-high: #1f3948;
+
+  --card: #0d232f;
+  --card-foreground: #f5faff;
+
+  --popover: #0d232f;
+  --popover-foreground: #f5faff;
+
+  --primary: #65dac4;
+  --primary-foreground: #003830;
+  --primary-container: #005046;
+  --on-primary-container: #83f6e0;
+
+  --secondary: #adcbde;
+  --secondary-foreground: #173343;
+  --secondary-container: #2e4a5a;
+  --on-secondary-container: #c9e7fb;
+
+  --tertiary: #4edea3;
+  --tertiary-foreground: #003822;
+
+  --muted: #17303e;
+  --muted-foreground: #adcbde;
+
+  --accent: #1f3948;
+  --accent-foreground: #65dac4;
+
+  --destructive: #ffb4ab;
+  --destructive-foreground: #690005;
+
+  --success: #4edea3;
+  --success-foreground: #003822;
+
+  --warning: #ffb951;
+  --warning-foreground: #452b00;
+
+  --info: #65dac4;
+  --info-foreground: #003830;
+
+  --border: #3d4946;
+  --input: #3d4946;
+  --ring: #65dac4;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

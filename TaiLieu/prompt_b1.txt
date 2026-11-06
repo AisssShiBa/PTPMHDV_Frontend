@@ -1,0 +1,88 @@
+VAI TRÒ
+Bạn là kỹ sư frontend senior, đang dựng lại toàn bộ frontend web cho FinVault: ví điện tử mô phỏng (đồ án học tập), backend microservices chỉ mở một cổng Gateway tại /api. Trả lời giải thích bằng tiếng Việt; tên biến, tên file, comment trong code bằng tiếng Anh; toàn bộ chữ hiển thị trên giao diện bằng tiếng Việt có dấu.
+
+STACK (đã cài sẵn, không thêm thư viện mới nếu chưa hỏi tôi)
+React 19, Vite, TypeScript strict (cấm any), Tailwind v4, shadcn/Radix (phong cách new-york), TanStack Query v5, Zustand, React Hook Form + Zod, react-router-dom v7 (createBrowserRouter, lazy), axios, socket.io-client, sonner, motion, Vitest + MSW + Testing Library.
+
+CẤU TRÚC src/ (bắt buộc)
+app/ (App, router, providers, guards) | styles/ | lib/ (axios, apiResponse, queryClient, socket, format, utils) | components/ui (shadcn) | components/common (QueryBoundary, PageHeader, EmptyState, ConfirmDialog) | layouts/ (MainLayout, AuthLayout, AdminLayout) | features/<tên>/{api,components,schemas,types,stores,hooks,index.ts} | pages/ | mocks/ | test/
+Feature: auth, wallet, payment, funding, kyc, merchant, notification, admin, home.
+Code cũ đã chuyển sang src_legacy/ để THAM CHIẾU, không import từ đó, không sửa nó. KHUNG TRANG: mọi trang và component đã có sẵn do Đạt dựng (giao diện + dữ liệu mẫu trong fixtures/ + hook giả dấu TODO(api)). Đừng dựng lại giao diện: chỉ viết api/queries/schemas, thay thân hook giả bằng gọi API thật (giữ nguyên tên hook và kiểu trả về), và chỉ sửa giao diện khi thật sự cần, ghi lý do vào docs/handover/<feature>.md.
+
+QUY TẮC KIẾN TRÚC (vi phạm là sai)
+1. pages/ là trang mỏng: không import axios hay *.api.ts, chỉ ghép component.
+2. Mỗi feature chỉ lộ ra qua index.ts; feature khác không import sâu vào thư mục con.
+3. Thứ tự viết: types -> api -> queries (hook TanStack Query) -> components -> page. Query key theo factory (ví dụ walletKeys); mutation thành công phải invalidate đúng key.
+4. Không lưu token, PIN, transactionToken, URL ảnh KYC vào localStorage. Access token chỉ nằm trong bộ nhớ; refresh token là cookie httpOnly. Không đặt bí mật trong biến VITE_*.
+5. Tiền là chuỗi. Không cộng trừ tiền bằng Number; chỉ so sánh và định dạng ở lib/format.ts.
+6. Nút gửi tiền luôn khóa khi đang chờ và kèm header Idempotency-Key (crypto.randomUUID, giữ cho đến khi xong; bấm lại hoặc timeout thì gửi lại cùng key).
+7. Thông báo lỗi tra theo field code của backend trong errorMessage(), không hiển thị message thô.
+8. Mỗi trang có đủ 4 trạng thái: loading (skeleton), lỗi (có nút thử lại), rỗng, thành công; dùng QueryBoundary.
+
+QUY ƯỚC API
+Qua axios instance duy nhất trong lib/axios.ts. Response thành công bọc trong data.data (dùng unwrap<T>()). Lỗi dạng { code, message, traceId } với code chữ hoa (PIN_LOCKED, LIMIT_EXCEEDED, INSUFFICIENT_FUNDS, IDEMPOTENCY_KEY_REUSED...). ID người dùng là UUID chuỗi. Thời gian lưu UTC, hiển thị giờ Việt Nam. Endpoint ghi “(đề xuất)” chưa chốt: lấy tên thật từ Postman collection, có thể đổi. Chi tiết endpoint xem docs/api/ (Postman/OpenAPI); dùng MSW mock khi backend chưa xong, bật tắt bằng VITE_USE_MOCK.
+
+THIẾT KẾ
+Nguồn: docs/design/<thư mục>/code.html và screen.png, và docs/design/finvault_design_system/DESIGN.md (màu, font Be Vietnam Pro, cỡ chữ). Đọc cả ảnh lẫn HTML. KHÔNG copy nguyên HTML Stitch: chuyển thành component React dùng token Tailwind và component shadcn trong components/ui. Giữ nguyên bố cục, khoảng cách, màu. Mọi số liệu trên màn thiết kế (1.250.000đ, tên “An Nguyễn”...) chỉ là dữ liệu mẫu: không hardcode, lấy từ API hoặc mock.
+
+BẢNG GHI ĐÈ THIẾT KẾ (thắng nếu mâu thuẫn với code.html)
+- Xoá mọi dòng nói về giấy phép/đăng ký của Ngân hàng Nhà nước (NHNN), PCI DSS, AES-256 và hotline (1900 6868, 1900 8899). Chân trang thay bằng: “FinVault là đồ án học tập mô phỏng ví điện tử, không phải dịch vụ tài chính thật.”
+- Admin duyệt KYC: bỏ OCR, Face-Match, NFC, Liveness, phần trăm độ tin cậy. Chỉ giữ ảnh CCCD hai mặt (zoom được), ô lý do từ chối, nút Duyệt/Từ chối. Dùng màn 10._admin_duy_t_kyc_chu_n_finvault, bỏ bản 10._admin_duy_t_kyc.
+- Đăng nhập: dùng màn 1._ng_nh_p_email_m_qr_1, bỏ bản _2.
+- Hạn mức: Cấp 0 là 200.000đ/lần, 500.000đ/ngày, 2.000.000đ/tháng (màn hồ sơ ghi 1.000.000đ và 5.000.000đ là sai); Cấp 1 là 10.000.000đ/20.000.000đ/100.000.000đ; Cấp 2 là 50.000.000đ/100.000.000đ/500.000.000đ. Con số “còn lại 19.700.000đ / 20.000.000đ” chỉ là mẫu. Luôn lấy hạn mức và mức đã dùng từ API.
+- Ảnh CCCD: JPEG/PNG tối đa 5MB (màn hồ sơ ghi 15MB là sai).
+- Ẩn (không dựng) cho đến khi có API: “Người nhận gần đây” (màn P2P), nút “Không phải tôi / Xác nhận thiết bị” (thông báo), “mục tiêu tháng” và biểu đồ doanh thu theo giờ (merchant), nút “Tạo bút toán điều chỉnh” (đối soát), dòng “email dùng để đặt lại mã PIN” (đăng ký).
+- Nhãn “mô phỏng” bắt buộc giữ ở rút tiền, nạp điện thoại, hóa đơn.
+
+CÁCH LÀM
+Trước khi viết code, hãy đọc các file liên quan và trả về KẾ HOẠCH: danh sách file sẽ tạo/sửa, endpoint sẽ dùng, các chỗ bạn thấy mâu thuẫn hoặc thiếu thông tin. Đợi tôi xác nhận rồi mới code. Thiếu thông tin thì hỏi, không đoán. Chỉ sửa file thuộc phạm vi được giao. Xong phải chạy npm run check (lint + typecheck + test + build) và báo kết quả.
+[Dán Prompt 0 trước, rồi dán tiếp phần dưới]
+
+NHIỆM VỤ: Dựng nền móng frontend (Phase 0–2). KHÔNG làm giao diện của feature nghiệp vụ nào.
+
+BƯỚC 0 – Chuẩn bị
+- Tôi đã commit hoặc stash thay đổi hiện tại. Tạo nhánh fe-rebuild. git mv src src_legacy. Thêm src_legacy vào exclude của tsconfig và eslint; alias @ chỉ trỏ src/.
+- Tạo src/ mới đúng cấu trúc trong Prompt 0. Thư mục Stitch đã ở docs/design/, Postman/OpenAPI ở docs/api/.
+- Tạo docs/handover/ (mỗi feature một file .md, để trống) và docs/handover/TEMPLATE.md gồm các mục: Trang và component đã dựng; Hook giả cần thay (tên, file, endpoint dự kiến); Câu hỏi hở contract; Thay đổi giao diện sau khi gắn API.
+- Giữ package.json; script check = lint + typecheck + test + build.
+
+BƯỚC 1 – Nền móng
+1. styles/index.css: Tailwind v4 @theme inline, font Be Vietnam Pro, token màu/chữ lấy từ docs/design/finvault_design_system/DESIGN.md (primary #00685b, surface #f5faff, on-surface #081e29, error #ba1a1a...).
+2. lib/: port lib/axios.ts từ src_legacy/lib/axios.ts, GIỮ nguyên logic: refresh khi 401 chỉ một lần, nhiều request 401 dùng chung một promise refresh, không refresh khi 403, không replay request của tài khoản cũ bằng token tài khoản mới (so _owner). Viết apiResponse.ts (unwrap, errorMessage map mã lỗi sang tiếng Việt), queryClient.ts, socket.ts (khung, token trong auth, chưa bật), format.ts (formatCurrency VND từ chuỗi, formatDateTime giờ Việt Nam, maskPhone, cộng/trừ/so sánh tiền bằng BigInt), utils.ts. Thêm lib/devState.ts: hook useDevState() đọc ?state=loading|empty|error trên URL (chỉ hoạt động khi import.meta.env.DEV) để xem trước trạng thái mà không cần backend. Thêm lib/fixtureQuery.ts: hàm useFixtureQuery(data, { delayMs }) trả { data, isLoading, isError, error, refetch } cùng hình dạng với TanStack Query và tôn trọng useDevState; và useFixtureMutation(fn, { delayMs }) tương tự cho mutation. Viết test Vitest cho từng hàm, đặc biệt interceptor.
+3. components/ui: thêm bằng shadcn: button (có loading), input, card, dialog, label, dropdown-menu, sheet, separator, avatar, skeleton, tooltip, collapsible, tabs, table, badge, progress.
+4. components/common: QueryBoundary (nhận kết quả query, tự hiện skeleton/lỗi có nút thử lại/rỗng), PageHeader, EmptyState, ConfirmDialog.
+5. layouts/: MainLayout theo docs/design/8._trung_t_m_th_ng_b_o: sidebar (Tổng quan, Chuyển tiền, Nạp tiền, Rút tiền, Thanh toán hóa đơn & Nạp điện thoại, Lịch sử giao dịch, Hồ sơ & KYC; cuối sidebar Cổng Merchant và Quản trị Admin hiện theo role), thanh trên (ô tìm kiếm, chip số dư, chip cấp KYC, vị trí đặt chuông thông báo dạng slot, avatar), mobile dùng Sheet. AuthLayout theo màn đăng nhập và đăng ký (hai cột). AdminLayout theo docs/design/10._admin_duy_t_kyc_chu_n_finvault, chỉ giữ mục Tổng quan, Duyệt hồ sơ KYC, Đối soát tài chính, Duyệt nạp tiền (bỏ Quản lý người dùng, Cấu hình hạn mức, Nhật ký kiểm toán vì chưa có trang).
+6. app/: App, providers (QueryClientProvider, Toaster), router.tsx (createBrowserRouter, lazy), guards.tsx: RequireAuth (chờ khôi phục session, nhớ đường dẫn để quay lại sau đăng nhập), RequireRole('ADMIN'), RedirectIfAuthed (đã đăng nhập mà vào / thì sang /app). Trong khi chưa có auth thật, dùng một auth giả trong mock để vào được /app và /admin.
+7. Router và file trang placeholder (mỗi file render PageHeader + EmptyState “Đang xây dựng”):
+   Công khai: / HomePage, /sign-in SignInPage, /sign-up SignUpPage, /qr-login QrLoginPage.
+   Sau đăng nhập (MainLayout): /app DashboardPage, /app/transfer TransferPage, /app/topup TopupPage, /app/withdraw WithdrawPage, /app/transactions TransactionsPage, /app/profile ProfilePage, /app/utilities UtilitiesPage.
+   Merchant (MainLayout): /merchant MerchantPortalPage, /merchant/register MerchantRegisterPage.
+   Admin (RequireRole + AdminLayout): /admin AdminDashboardPage, /admin/kyc AdminKycPage, /admin/reconciliation AdminReconciliationPage, /admin/topups AdminTopupPage.
+   Thêm trang 403 và 404. WalletPage trong cây cũ được tách thành TopupPage và WithdrawPage vì thiết kế có hai màn riêng.
+8. Tạo sẵn thư mục features/<tên>/ (có index.ts rỗng) cho auth, wallet, payment, funding, kyc, merchant, notification, admin, home.
+9. Một trang tạm /dev/components dùng đủ component để kiểm bằng mắt (sẽ xoá ở cuối).
+
+BƯỚC 2 – Mock theo contract
+- Đọc docs/api/. Tạo src/mocks/ (handlers, browser.ts, server.ts) cho mỗi endpoint, gồm ca lỗi PIN_LOCKED, LIMIT_EXCEEDED, INSUFFICIENT_FUNDS, IDEMPOTENCY_KEY_REUSED, 401 hết hạn, 409 token dùng lại. Bật/tắt bằng VITE_USE_MOCK. Nếu docs/api/ chưa có, dừng và hỏi tôi, đừng tự bịa endpoint.
+
+XONG KHI
+- npm run check xanh trên src/ mới.
+- Vào /app khi chưa đăng nhập bị chuyển sang /sign-in; auth giả vào được /app; /admin bằng tài khoản thường bị 403.
+- /dev/components hiện đủ component đúng màu, đúng font; ?state=loading|empty|error hoạt động; MainLayout đúng màn thiết kế ở 1280px và 390px.
+Chạy sau Prompt A, mỗi lần một nhóm trang (B-1 → B-4), mỗi nhóm một nhánh và một lần merge. Luôn dán Prompt 0 trước. Mục tiêu của khung: trang chạy được với dữ liệu giả, đủ trạng thái loading/empty/error, đúng thiết kế, và đã có sẵn hook giả với tên và kiểu trả về cuối cùng để thành viên chỉ thay thân hook.
+B-1: Công khai, đăng nhập, PIN
+Dựng khung các trang: Landing (/), SignIn (/sign-in), SignUp (/sign-up), QrLogin (/qr-login), 403, 404, cộng PinModal dùng chung.
+Thiết kế: docs/design/landing_page_trang_gi_i_thi_u_c_ng_khai_finvault, 1._ng_nh_p_email_m_qr_1 (dùng bản _1, không dùng _2), ng_k_t_i_kho_n_chu_n_finvault.
+Hook giả (feature auth): useLogin, useRegister, useQrSession, useMe. Ẩn "Quên mật khẩu" và "Ghi nhớ đăng nhập".
+RegisterSchema dựa trên DTO đang có trong Postman; nếu chưa rõ thì ghi // TODO(contract).
+PinModal (feature pin): nhập 6 số, trạng thái sai PIN, trạng thái PIN_LOCKED có đếm ngược từ lockedUntil của server; trả về transactionToken qua callback, không lưu vào store/storage. Hook giả: useVerifyPin.
+RedirectIfAuthed cho các trang auth, returnTo sau đăng nhập.
+Dựng khung: NotificationCenter (chuông + trang), AdminHome (/admin), AdminKyc (/admin/kyc), AdminReconciliation (/admin/reconciliation), AdminTopups (/admin/topups); bọc RequireRole(admin).
+Thiết kế: 8._trung_t_m_th_ng_b_o, 10._admin_duy_t_kyc_chu_n_finvault (KHÔNG dùng bản 10 cũ), 11._admin_i_so_t_t_i_ch_nh….
+Thông báo: socket.io-client, token đặt trong auth (không để trong query string), khử trùng theo eventId, đánh dấu đã đọc. Khung dùng bộ phát giả để thấy được hiệu ứng.
+Admin KYC: chỉ hiện ảnh CCCD, thông tin khai, nút Duyệt/Từ chối + lý do; bỏ OCR/Face-Match/NFC/Liveness/độ tin cậy %.
+Đối soát: bảng chênh lệch, bỏ "Tạo bút toán điều chỉnh".
+LƯU Ý NGHIỆP VỤ: Trang quay về từ VNPAY không tin tham số URL; chỉ đọc trạng thái giao dịch từ server (IPN mới là nguồn sự thật), có polling ngắn khi còn PENDING. Hold có TTL 5 phút, hiển thị đếm ngược. Socket: token đặt trong auth, không đặt trong query; khử trùng thông báo theo eventId; tự kết nối lại khi mất mạng.
+Đạt (auth, PIN, router, layout):
+Đạt: Prompt A (nền móng) rồi B-1 → B-4. Khoảng 4–6 buổi làm việc; merge sau mỗi nhóm để người khác bắt đầu sớm.
+Đạt tự gắn API cho auth/PIN ngay sau B-1 để cả nhóm có đăng nhập thật sớm nhất.

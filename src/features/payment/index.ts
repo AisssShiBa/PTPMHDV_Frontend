@@ -1,0 +1,2 @@
+// Feature: payment
+export {}
