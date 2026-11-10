@@ -3,27 +3,24 @@ import {
   Search,
   Calendar,
   ChevronRight,
-  ChevronLeft,
-  CheckCircle2,
-  Clock,
-  XCircle,
   Copy,
   Printer,
   RotateCcw,
   Receipt,
   ArrowUpRight,
   ArrowDownLeft,
-  Zap,
-  Coffee,
   Building,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react'
 import { formatVnd, formatDateTime } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/common/EmptyState'
 import {
   Dialog,
   DialogContent,
@@ -31,198 +28,142 @@ import {
   DialogTitle,
   DialogDescription
 } from '@/components/ui/dialog'
+import { useInfiniteWalletLedger, type LedgerItem } from '@/features/wallet'
 import { toast } from 'sonner'
 
-export type TransactionType = 'ALL' | 'TRANSFER' | 'TOPUP' | 'WITHDRAW' | 'PAYMENT' | 'UTILITY'
-export type TransactionStatus = 'ALL' | 'SUCCESS' | 'PENDING' | 'FAILED'
-export type DateRangeFilter = '30_DAYS' | '7_DAYS' | 'THIS_MONTH' | 'ALL_TIME'
+export type TransactionDirectionFilter = 'ALL' | 'CREDIT' | 'DEBIT'
+export type TransactionTypeFilter = 'ALL' | 'TRANSFER' | 'TOPUP' | 'WITHDRAW' | 'PAYMENT'
 
-export interface TransactionItem {
+export interface FormattedLedger {
   id: string
   title: string
   description: string
-  type: TransactionType
-  status: 'SUCCESS' | 'PENDING' | 'FAILED'
-  amount: number // Dương nếu nạp/nhận, âm nếu chi/rút
+  type: string
+  direction: 'CREDIT' | 'DEBIT'
+  amount: string
+  balanceAfter: string
   timestamp: string
-  source: string
-  target: string
   refCode: string
-  fee: number
   note?: string
 }
 
-const SAMPLE_TRANSACTIONS: TransactionItem[] = [
-  {
-    id: 'FT231024-884210',
-    title: 'Chuyển tiền cho Trần Văn Bình',
-    description: 'Chuyển tiền ăn trưa',
-    type: 'TRANSFER',
-    status: 'SUCCESS',
-    amount: -60000,
-    timestamp: '2026-10-24T14:30:00Z',
-    source: 'Số dư ví FinVault',
-    target: 'Ví FinVault (Trần Văn Bình - 0912***345)',
-    refCode: 'REF231024982143',
-    fee: 0,
-    note: 'Chuyển tiền ăn trưa nhé'
-  },
-  {
-    id: 'FT231024-091544',
-    title: 'Nạp tiền ví VNPAY',
-    description: 'Thẻ ATM nội địa MB Bank (*4589)',
-    type: 'TOPUP',
-    status: 'SUCCESS',
-    amount: 100000,
-    timestamp: '2026-10-24T09:15:00Z',
-    source: 'Thẻ ATM MB Bank (*4589)',
-    target: 'Số dư ví FinVault',
-    refCode: 'VNP-20261024-984210',
-    fee: 0,
-    note: 'Nạp tiền vào ví FinVault'
-  },
-  {
-    id: 'FT231023-772911',
-    title: 'Thanh toán Highlands Coffee',
-    description: 'Cửa hàng Hàm Nghi Quận 1',
-    type: 'PAYMENT',
-    status: 'SUCCESS',
-    amount: -45000,
-    timestamp: '2026-10-23T18:20:00Z',
-    source: 'Số dư ví FinVault',
-    target: 'Cổng Merchant Highlands Coffee',
-    refCode: 'HL-20261023-0091',
-    fee: 0,
-    note: 'Hóa đơn 01 Cà phê sữa đá size L'
-  },
-  {
-    id: 'FT231023-551029',
-    title: 'Nạp ĐT Viettel',
-    description: 'Số thuê bao: 0984.***.889',
-    type: 'UTILITY',
-    status: 'SUCCESS',
-    amount: -50000,
-    timestamp: '2026-10-23T11:05:00Z',
-    source: 'Số dư ví FinVault',
-    target: 'Viettel Telecom',
-    refCode: 'VT-20261023-5510',
-    fee: 0,
-    note: 'Nạp thẻ trực tiếp thuê bao trả trước'
-  },
-  {
-    id: 'FT231020-119488',
-    title: 'Tiền điện EVN tháng 10',
-    description: 'Mã khách hàng: PE02001928340',
-    type: 'UTILITY',
-    status: 'SUCCESS',
-    amount: -420000,
-    timestamp: '2026-10-20T08:00:00Z',
-    source: 'Số dư ví FinVault',
-    target: 'Tổng công ty Điện lực TP.HCM',
-    refCode: 'EVN-202610-8812',
-    fee: 0,
-    note: 'Thanh toán hóa đơn điện kỳ 10/2026'
-  },
-  {
-    id: 'FT231019-338291',
-    title: 'Rút tiền về Vietcombank',
-    description: 'STK: 007100099**** - VCB',
-    type: 'WITHDRAW',
-    status: 'PENDING',
-    amount: -500000,
-    timestamp: '2026-10-19T09:00:00Z',
-    source: 'Số dư ví FinVault',
-    target: 'Vietcombank (STK: 007100099****)',
-    refCode: 'NPS-20261019-3382',
-    fee: 0,
-    note: 'Rút tiền về tài khoản ngân hàng liên kết'
-  },
-  {
-    id: 'FT231018-120934',
-    title: 'Nhận tiền từ Lê Hoàng Khoa',
-    description: 'Tiền ăn tối nhóm',
-    type: 'TRANSFER',
-    status: 'SUCCESS',
-    amount: 200000,
-    timestamp: '2026-10-18T21:40:00Z',
-    source: 'Ví FinVault (Lê Hoàng Khoa - 0987***321)',
-    target: 'Số dư ví FinVault',
-    refCode: 'P2P-20261018-1209',
-    fee: 0,
-    note: 'Gửi cậu tiền lẩu hôm qua nha'
-  },
-  {
-    id: 'FT231015-449102',
-    title: 'Rút tiền về Techcombank',
-    description: 'Ngân hàng bảo trì định kỳ',
-    type: 'WITHDRAW',
-    status: 'FAILED',
-    amount: -200000,
-    timestamp: '2026-10-15T15:20:00Z',
-    source: 'Số dư ví FinVault',
-    target: 'Techcombank (*5501)',
-    refCode: 'NPS-20261015-4491',
-    fee: 0,
-    note: 'Hệ thống đối tác gián đoạn, tiền đã hoàn đủ về ví'
+function mapLedgerItem(item: LedgerItem): FormattedLedger {
+  const isCredit = item.direction === 'CREDIT' || item.direction === 'IN'
+  const direction: 'CREDIT' | 'DEBIT' = isCredit ? 'CREDIT' : 'DEBIT'
+
+  let title = isCredit ? 'Ghi có vào ví' : 'Ghi nợ ví'
+  const tType = (item.transferType || '').toUpperCase()
+
+  if (isCredit) {
+    if (tType === 'TOPUP') {
+      title = 'Nạp tiền vào ví'
+    } else if (tType === 'TRANSFER' || tType === 'P2P_TRANSFER') {
+      title = item.counterpartyMasked ? `Nhận tiền từ ${item.counterpartyMasked}` : 'Nhận tiền từ người dùng'
+    } else if (tType === 'REFUND') {
+      title = 'Hoàn tiền giao dịch'
+    }
+  } else {
+    if (tType === 'TRANSFER' || tType === 'P2P_TRANSFER') {
+      title = item.counterpartyMasked ? `Chuyển cho ${item.counterpartyMasked}` : 'Chuyển tiền cho người dùng'
+    } else if (tType === 'WITHDRAW') {
+      title = 'Rút tiền về tài khoản'
+    } else if (tType === 'PAYMENT') {
+      title = 'Thanh toán dịch vụ'
+    }
   }
-]
+
+  const description =
+    item.note ||
+    item.description ||
+    (item.referenceId ? `Mã tham chiếu: ${item.referenceId.slice(0, 16)}` : 'Bút toán sổ cái ví')
+
+  return {
+    id: item.id,
+    title,
+    description,
+    type: tType || (isCredit ? 'CREDIT' : 'DEBIT'),
+    direction,
+    amount: item.amount,
+    balanceAfter: item.balanceAfter,
+    timestamp: item.createdAt,
+    refCode: item.referenceId || item.id,
+    note: item.note || item.description
+  }
+}
 
 export function TransactionsPage() {
   // Bộ lọc
   const [searchTerm, setSearchTerm] = useState('')
-  const [typeFilter, setTypeFilter] = useState<TransactionType>('ALL')
-  const [statusFilter, setStatusFilter] = useState<TransactionStatus>('ALL')
-  const [dateRange, setDateRange] = useState<DateRangeFilter>('30_DAYS')
+  const [directionFilter, setDirectionFilter] = useState<TransactionDirectionFilter>('ALL')
+  const [typeFilter, setTypeFilter] = useState<TransactionTypeFilter>('ALL')
 
   // Giao dịch được chọn xem chi tiết biên lai
-  const [selectedTxn, setSelectedTxn] = useState<TransactionItem | null>(null)
+  const [selectedTxn, setSelectedTxn] = useState<FormattedLedger | null>(null)
   const [copiedId, setCopiedId] = useState(false)
 
-  // Phân trang
-  const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 6
+  // Gọi API GET /api/wallets/me/ledger phân trang cursor
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch
+  } = useInfiniteWalletLedger(20)
 
-  // Lọc danh sách giao dịch
+  // Tập hợp các trang dữ liệu cursor thành danh sách phẳng
+  const allEntries = useMemo(() => {
+    if (!data?.pages) return []
+    const rawItems: LedgerItem[] = []
+    const seenIds = new Set<string>()
+
+    for (const page of data.pages) {
+      if (Array.isArray(page?.items)) {
+        for (const item of page.items) {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id)
+            rawItems.push(item)
+          }
+        }
+      }
+    }
+
+    return rawItems.map(mapLedgerItem)
+  }, [data])
+
+  // Lọc giao dịch trên bộ nhớ client
   const filteredTransactions = useMemo(() => {
-    return SAMPLE_TRANSACTIONS.filter((item) => {
+    return allEntries.filter((item) => {
       // Lọc từ khóa
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase()
         const matchesTitle = item.title.toLowerCase().includes(query)
         const matchesDesc = item.description.toLowerCase().includes(query)
         const matchesId = item.id.toLowerCase().includes(query)
-        if (!matchesTitle && !matchesDesc && !matchesId) return false
+        const matchesRef = item.refCode.toLowerCase().includes(query)
+        if (!matchesTitle && !matchesDesc && !matchesId && !matchesRef) return false
       }
 
-      // Lọc theo loại GD
-      if (typeFilter !== 'ALL' && item.type !== typeFilter) {
+      // Lọc hướng dòng tiền
+      if (directionFilter !== 'ALL' && item.direction !== directionFilter) {
         return false
       }
 
-      // Lọc theo trạng thái
-      if (statusFilter !== 'ALL' && item.status !== statusFilter) {
+      // Lọc loại giao dịch
+      if (typeFilter !== 'ALL' && !item.type.includes(typeFilter)) {
         return false
       }
 
       return true
     })
-  }, [searchTerm, typeFilter, statusFilter])
-
-  // Dữ liệu trang hiện tại
-  const totalItems = filteredTransactions.length
-  const totalPages = Math.ceil(totalItems / pageSize) || 1
-  const paginatedTransactions = filteredTransactions.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
+  }, [allEntries, searchTerm, directionFilter, typeFilter])
 
   // Reset bộ lọc
   const handleResetFilters = () => {
     setSearchTerm('')
+    setDirectionFilter('ALL')
     setTypeFilter('ALL')
-    setStatusFilter('ALL')
-    setDateRange('30_DAYS')
-    setCurrentPage(1)
     toast.info('Đã đặt lại toàn bộ điều kiện lọc')
   }
 
@@ -234,77 +175,29 @@ export function TransactionsPage() {
     setTimeout(() => setCopiedId(false), 2000)
   }
 
-  // Icon hiển thị theo loại giao dịch
-  const renderTxnIcon = (txn: TransactionItem) => {
-    switch (txn.type) {
-      case 'TRANSFER':
-        return txn.amount < 0 ? (
-          <div className="w-10 h-10 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
-            <ArrowUpRight className="h-5 w-5" />
-          </div>
-        ) : (
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <ArrowDownLeft className="h-5 w-5" />
-          </div>
-        )
-      case 'TOPUP':
-        return (
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <ArrowDownLeft className="h-5 w-5" />
-          </div>
-        )
-      case 'WITHDRAW':
-        return (
-          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Building className="h-5 w-5" />
-          </div>
-        )
-      case 'PAYMENT':
-        return (
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <Coffee className="h-5 w-5" />
-          </div>
-        )
-      case 'UTILITY':
-        return (
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <Zap className="h-5 w-5" />
-          </div>
-        )
-      default:
-        return (
-          <div className="w-10 h-10 rounded-xl bg-muted text-foreground flex items-center justify-center shrink-0">
-            <Receipt className="h-5 w-5" />
-          </div>
-        )
+  // Icon hiển thị theo hướng và loại
+  const renderTxnIcon = (txn: FormattedLedger) => {
+    if (txn.direction === 'CREDIT') {
+      return (
+        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+          <ArrowDownLeft className="h-5 w-5" />
+        </div>
+      )
     }
-  }
 
-  // Huy hiệu trạng thái
-  const renderStatusBadge = (status: TransactionItem['status']) => {
-    switch (status) {
-      case 'SUCCESS':
-        return (
-          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-none text-xs gap-1 font-semibold">
-            <Check className="h-3 w-3" />
-            Thành công
-          </Badge>
-        )
-      case 'PENDING':
-        return (
-          <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-none text-xs gap-1 font-semibold">
-            <Clock className="h-3 w-3 animate-spin" />
-            Đang xử lý
-          </Badge>
-        )
-      case 'FAILED':
-        return (
-          <Badge className="bg-destructive/15 text-destructive border-none text-xs gap-1 font-semibold">
-            <XCircle className="h-3 w-3" />
-            Thất bại
-          </Badge>
-        )
+    if (txn.type === 'WITHDRAW') {
+      return (
+        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Building className="h-5 w-5" />
+        </div>
+      )
     }
+
+    return (
+      <div className="w-10 h-10 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+        <ArrowUpRight className="h-5 w-5" />
+      </div>
+    )
   }
 
   return (
@@ -343,19 +236,19 @@ export function TransactionsPage() {
       {/* ======================================================== */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4 space-y-3.5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Lọc khoảng thời gian */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Lọc dòng tiền (Thu/Chi) */}
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value as DateRangeFilter)}
+                aria-label="Lọc dòng tiền"
+                value={directionFilter}
+                onChange={(e) => setDirectionFilter(e.target.value as TransactionDirectionFilter)}
                 className="w-full h-11 pl-9 pr-3 rounded-xl border border-input bg-background text-xs sm:text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
               >
-                <option value="30_DAYS">30 ngày qua (Gần nhất)</option>
-                <option value="7_DAYS">7 ngày gần nhất</option>
-                <option value="THIS_MONTH">Tháng này</option>
-                <option value="ALL_TIME">Toàn bộ thời gian</option>
+                <option value="ALL">Tất cả dòng tiền (Thu & Chi)</option>
+                <option value="CREDIT">Tiền vào (Cộng tiền)</option>
+                <option value="DEBIT">Tiền ra (Trừ tiền)</option>
               </select>
             </div>
 
@@ -363,37 +256,16 @@ export function TransactionsPage() {
             <div className="relative">
               <Receipt className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <select
+                aria-label="Lọc loại giao dịch"
                 value={typeFilter}
-                onChange={(e) => {
-                  setTypeFilter(e.target.value as TransactionType)
-                  setCurrentPage(1)
-                }}
+                onChange={(e) => setTypeFilter(e.target.value as TransactionTypeFilter)}
                 className="w-full h-11 pl-9 pr-3 rounded-xl border border-input bg-background text-xs sm:text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
               >
-                <option value="ALL">Tất cả loại giao dịch</option>
+                <option value="ALL">Tất cả danh mục giao dịch</option>
                 <option value="TRANSFER">Chuyển tiền P2P</option>
-                <option value="TOPUP">Nạp tiền VNPAY</option>
+                <option value="TOPUP">Nạp tiền vào ví</option>
                 <option value="WITHDRAW">Rút tiền về ngân hàng</option>
                 <option value="PAYMENT">Thanh toán dịch vụ</option>
-                <option value="UTILITY">Hóa đơn điện, nước, ĐT</option>
-              </select>
-            </div>
-
-            {/* Lọc trạng thái */}
-            <div className="relative">
-              <CheckCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value as TransactionStatus)
-                  setCurrentPage(1)
-                }}
-                className="w-full h-11 pl-9 pr-3 rounded-xl border border-input bg-background text-xs sm:text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
-              >
-                <option value="ALL">Tất cả trạng thái</option>
-                <option value="SUCCESS">Thành công</option>
-                <option value="PENDING">Đang xử lý</option>
-                <option value="FAILED">Thất bại</option>
               </select>
             </div>
 
@@ -402,11 +274,8 @@ export function TransactionsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value)
-                  setCurrentPage(1)
-                }}
-                placeholder="Tìm người nhận, mã GD..."
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm nội dung, mã bút toán..."
                 className="pl-9 h-11 text-xs sm:text-sm"
               />
             </div>
@@ -416,20 +285,17 @@ export function TransactionsPage() {
           <div className="pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
               <span>Đang áp dụng:</span>
-              <Badge variant="outline" className="text-[11px] font-normal">
-                {dateRange === '30_DAYS' ? '30 ngày qua' : 'Khoảng chọn'}
-              </Badge>
+              {directionFilter !== 'ALL' && (
+                <Badge variant="outline" className="text-[11px] font-normal">
+                  Dòng tiền: {directionFilter === 'CREDIT' ? 'Tiền vào' : 'Tiền ra'}
+                </Badge>
+              )}
               {typeFilter !== 'ALL' && (
                 <Badge variant="outline" className="text-[11px] font-normal">
                   Loại: {typeFilter}
                 </Badge>
               )}
-              {statusFilter !== 'ALL' && (
-                <Badge variant="outline" className="text-[11px] font-normal">
-                  Trạng thái: {statusFilter}
-                </Badge>
-              )}
-              {(searchTerm || typeFilter !== 'ALL' || statusFilter !== 'ALL') && (
+              {(searchTerm || directionFilter !== 'ALL' || typeFilter !== 'ALL') && (
                 <button
                   type="button"
                   onClick={handleResetFilters}
@@ -442,45 +308,108 @@ export function TransactionsPage() {
             </div>
 
             <div>
-              Tìm thấy <strong className="text-foreground">{totalItems}</strong> giao dịch
+              Hiển thị <strong className="text-foreground">{filteredTransactions.length}</strong> biến động
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* ======================================================== */}
-      {/* BẢNG DANH SÁCH GIAO DỊCH SAO KÊ                          */}
+      {/* 4 TRẠNG THÁI: LOADING, ERROR, EMPTY, SUCCESS             */}
       {/* ======================================================== */}
-      {filteredTransactions.length > 0 ? (
+      {isLoading ? (
+        /* Trạng thái 1: Đang tải dữ liệu ban đầu (Skeleton) */
+        <Card className="border-border shadow-sm p-6 space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between py-3 border-b border-border/40 last:border-0 animate-pulse">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-muted" />
+                <div className="space-y-2">
+                  <div className="h-4 w-48 bg-muted rounded" />
+                  <div className="h-3 w-32 bg-muted/60 rounded" />
+                </div>
+              </div>
+              <div className="space-y-2 text-right">
+                <div className="h-4 w-28 bg-muted rounded ml-auto" />
+                <div className="h-3 w-20 bg-muted/60 rounded ml-auto" />
+              </div>
+            </div>
+          ))}
+        </Card>
+      ) : isError ? (
+        /* Trạng thái 2: Lỗi tải dữ liệu */
+        <Card className="border-destructive/30 bg-destructive/5 p-8 text-center space-y-3">
+          <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <h3 className="font-bold text-foreground">Không thể tải lịch sử giao dịch</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            Đã có sự cố khi kết nối tới máy chủ sổ cái. Vui lòng thử lại.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="cursor-pointer gap-1.5"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Thử lại</span>
+          </Button>
+        </Card>
+      ) : allEntries.length === 0 ? (
+        /* Trạng thái 3: Ví hoàn toàn rỗng */
+        <EmptyState
+          title="Chưa có biến động số dư nào"
+          description="Mọi giao dịch nạp tiền, chuyển tiền, thanh toán và rút tiền sẽ được ghi nhận minh bạch và bảo mật tại đây."
+        />
+      ) : filteredTransactions.length === 0 ? (
+        /* Rỗng do bộ lọc không khớp */
+        <Card className="border-border shadow-sm p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center text-muted-foreground mb-4">
+            <Receipt className="h-8 w-8" />
+          </div>
+          <h3 className="text-lg font-bold text-foreground mb-1">
+            Không tìm thấy biến động phù hợp
+          </h3>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto mb-5">
+            Không có giao dịch nào khớp với điều kiện lọc hiện tại.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResetFilters}
+            className="h-10 text-xs font-semibold gap-2 cursor-pointer"
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span>Đặt lại bộ lọc</span>
+          </Button>
+        </Card>
+      ) : (
+        /* Trạng thái 4: Danh sách dữ liệu sổ cái */
         <Card className="border-border shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-muted/40 border-b border-border text-muted-foreground text-xs font-semibold uppercase tracking-wider">
-                  <th className="py-3.5 px-6 w-44">Thời gian</th>
+                  <th className="py-3.5 px-6 w-48">Thời gian (GMT+7)</th>
                   <th className="py-3.5 px-6">Nội dung giao dịch</th>
-                  <th className="py-3.5 px-6 text-center w-36">Trạng thái</th>
+                  <th className="py-3.5 px-6 text-center w-36">Loại bút toán</th>
                   <th className="py-3.5 px-6 text-right w-44">Số tiền</th>
                   <th className="py-3.5 px-4 text-center w-12"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 text-sm">
-                {paginatedTransactions.map((txn) => (
+                {filteredTransactions.map((txn) => (
                   <tr
                     key={txn.id}
                     onClick={() => setSelectedTxn(txn)}
                     className="h-16 hover:bg-muted/30 transition-colors cursor-pointer group"
                   >
-                    {/* Cột 1: Thời gian */}
+                    {/* Cột 1: Thời gian GMT+7 */}
                     <td className="py-4 px-6 whitespace-nowrap">
                       <div className="font-semibold text-foreground text-xs sm:text-sm">
-                        {new Date(txn.timestamp).toLocaleTimeString('vi-VN', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {new Date(txn.timestamp).toLocaleDateString('vi-VN')}
+                        {formatDateTime(txn.timestamp)}
                       </div>
                     </td>
 
@@ -499,22 +428,29 @@ export function TransactionsPage() {
                       </div>
                     </td>
 
-                    {/* Cột 3: Trạng thái */}
+                    {/* Cột 3: Loại bút toán */}
                     <td className="py-4 px-6 text-center whitespace-nowrap">
-                      {renderStatusBadge(txn.status)}
+                      <Badge variant="outline" className="text-xs font-medium">
+                        {txn.direction === 'CREDIT' ? 'Tiền vào' : 'Tiền ra'}
+                      </Badge>
                     </td>
 
-                    {/* Cột 4: Số tiền */}
+                    {/* Cột 4: Số tiền (BigInt formatted) */}
                     <td className="py-4 px-6 text-right whitespace-nowrap">
                       <span
                         className={`font-bold font-mono text-sm sm:text-base ${
-                          txn.amount > 0
+                          txn.direction === 'CREDIT'
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-foreground'
                         }`}
                       >
-                        {txn.amount > 0 ? `+ ${formatVnd(txn.amount)}` : `- ${formatVnd(Math.abs(txn.amount))}`}
+                        {txn.direction === 'CREDIT'
+                          ? `+ ${formatVnd(txn.amount)}`
+                          : `- ${formatVnd(txn.amount)}`}
                       </span>
+                      <div className="text-[11px] text-muted-foreground font-mono">
+                        Số dư sau: {formatVnd(txn.balanceAfter)}
+                      </div>
                     </td>
 
                     {/* Cột 5: Nút xem */}
@@ -527,76 +463,38 @@ export function TransactionsPage() {
             </table>
           </div>
 
-          {/* Phân trang */}
+          {/* Phân trang Cursor: Tải thêm */}
           <div className="px-6 py-4 bg-card border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
             <div className="text-muted-foreground">
-              Hiển thị <span className="font-semibold text-foreground">{(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalItems)}</span> trên{' '}
-              <span className="font-semibold text-foreground">{totalItems}</span> giao dịch
+              Đang hiển thị <span className="font-semibold text-foreground">{filteredTransactions.length}</span> giao dịch
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className="h-8 px-2.5 text-xs gap-1 cursor-pointer"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-                <span>Trước</span>
-              </Button>
-
-              {Array.from({ length: totalPages }).map((_, idx) => (
-                <button
-                  key={idx + 1}
+            <div className="flex items-center gap-2">
+              {hasNextPage ? (
+                <Button
                   type="button"
-                  onClick={() => setCurrentPage(idx + 1)}
-                  className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                    currentPage === idx + 1
-                      ? 'bg-primary text-primary-foreground shadow-xs'
-                      : 'border border-border hover:bg-muted text-muted-foreground'
-                  }`}
+                  variant="outline"
+                  size="sm"
+                  disabled={isFetchingNextPage}
+                  onClick={() => fetchNextPage()}
+                  className="h-9 px-4 text-xs font-semibold gap-2 cursor-pointer shadow-xs"
                 >
-                  {idx + 1}
-                </button>
-              ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="h-8 px-2.5 text-xs gap-1 cursor-pointer"
-              >
-                <span>Sau</span>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
+                  {isFetchingNextPage ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>Đang tải thêm...</span>
+                    </>
+                  ) : (
+                    <span>Tải thêm giao dịch</span>
+                  )}
+                </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground font-medium">
+                  Đã hiển thị toàn bộ lịch sử biến động số dư
+                </span>
+              )}
             </div>
           </div>
-        </Card>
-      ) : (
-        /* Trạng thái rỗng khi không khớp bộ lọc */
-        <Card className="border-border shadow-sm p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center text-muted-foreground mb-4">
-            <Receipt className="h-8 w-8" />
-          </div>
-          <h3 className="text-lg font-bold text-foreground mb-1">
-            Chưa có giao dịch trong khoảng lọc này
-          </h3>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto mb-5">
-            Không tìm thấy giao dịch nào khớp với điều kiện tìm kiếm. Bạn có thể thử nới rộng khoảng thời gian hoặc từ khóa.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleResetFilters}
-            className="h-10 text-xs font-semibold gap-2 cursor-pointer"
-          >
-            <RotateCcw className="h-4 w-4" />
-            <span>Đặt lại bộ lọc</span>
-          </Button>
         </Card>
       )}
 
@@ -609,10 +507,10 @@ export function TransactionsPage() {
             <DialogHeader className="text-left pb-2 border-b border-border">
               <div className="flex items-center gap-2 text-primary font-bold">
                 <Receipt className="h-5 w-5" />
-                <DialogTitle className="text-base sm:text-lg">Chi tiết biên lai giao dịch</DialogTitle>
+                <DialogTitle className="text-base sm:text-lg">Chi tiết biến động số dư</DialogTitle>
               </div>
               <DialogDescription className="text-xs text-muted-foreground">
-                Chứng từ giao dịch điện tử được bảo mật và xác thực bởi FinVault
+                Chứng từ bút toán sổ cái được bảo mật và xác thực bởi FinVault
               </DialogDescription>
             </DialogHeader>
 
@@ -622,24 +520,26 @@ export function TransactionsPage() {
                 <p className="text-xs text-muted-foreground mb-1 font-medium">{selectedTxn.title}</p>
                 <p
                   className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
-                    selectedTxn.amount > 0
+                    selectedTxn.direction === 'CREDIT'
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-foreground'
                   }`}
                 >
-                  {selectedTxn.amount > 0
+                  {selectedTxn.direction === 'CREDIT'
                     ? `+ ${formatVnd(selectedTxn.amount)}`
-                    : `- ${formatVnd(Math.abs(selectedTxn.amount))}`}
+                    : `- ${formatVnd(selectedTxn.amount)}`}
                 </p>
-                <div className="mt-2.5 inline-block">{renderStatusBadge(selectedTxn.status)}</div>
+                <div className="mt-2 text-xs font-medium text-muted-foreground">
+                  Số dư sau GD: <strong className="text-foreground">{formatVnd(selectedTxn.balanceAfter)}</strong>
+                </div>
               </div>
 
               {/* Bảng chi tiết */}
               <div className="rounded-xl border border-border p-3.5 bg-card text-xs sm:text-sm space-y-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Mã giao dịch</span>
+                  <span className="text-muted-foreground">Mã bút toán</span>
                   <div className="flex items-center gap-1 font-mono font-bold text-foreground">
-                    <span>{selectedTxn.id}</span>
+                    <span>{selectedTxn.id.slice(0, 18)}</span>
                     <button
                       type="button"
                       aria-label="Sao chép mã giao dịch"
@@ -652,35 +552,25 @@ export function TransactionsPage() {
                 </div>
 
                 <div className="border-t border-border/60 pt-2 flex justify-between items-center">
-                  <span className="text-muted-foreground">Thời gian</span>
+                  <span className="text-muted-foreground">Thời gian ghi nhận</span>
                   <span className="font-medium text-foreground">{formatDateTime(selectedTxn.timestamp)}</span>
                 </div>
 
                 <div className="border-t border-border/60 pt-2 flex justify-between items-center">
-                  <span className="text-muted-foreground">Nguồn tiền</span>
-                  <span className="font-medium text-foreground">{selectedTxn.source}</span>
-                </div>
-
-                <div className="border-t border-border/60 pt-2 flex justify-between items-center">
-                  <span className="text-muted-foreground">Bên nhận / Dịch vụ</span>
-                  <span className="font-medium text-foreground text-right truncate max-w-[200px]">
-                    {selectedTxn.target}
+                  <span className="text-muted-foreground">Dòng tiền</span>
+                  <span className="font-semibold text-foreground">
+                    {selectedTxn.direction === 'CREDIT' ? 'Tiền vào ví (Credit)' : 'Tiền trừ ví (Debit)'}
                   </span>
                 </div>
 
                 <div className="border-t border-border/60 pt-2 flex justify-between items-center">
-                  <span className="text-muted-foreground">Mã đối tác</span>
-                  <span className="font-mono text-muted-foreground">{selectedTxn.refCode}</span>
-                </div>
-
-                <div className="border-t border-border/60 pt-2 flex justify-between items-center">
-                  <span className="text-muted-foreground">Phí giao dịch</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 ₫ (Miễn phí)</span>
+                  <span className="text-muted-foreground">Mã tham chiếu</span>
+                  <span className="font-mono text-muted-foreground truncate max-w-[180px]">{selectedTxn.refCode}</span>
                 </div>
 
                 {selectedTxn.note && (
                   <div className="border-t border-border/60 pt-2 flex justify-between items-start gap-4">
-                    <span className="text-muted-foreground shrink-0">Lời nhắn</span>
+                    <span className="text-muted-foreground shrink-0">Nội dung</span>
                     <span className="font-medium text-foreground text-right">{selectedTxn.note}</span>
                   </div>
                 )}
@@ -689,7 +579,7 @@ export function TransactionsPage() {
               {/* Dải thông báo bảo mật */}
               <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-start gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <span>Giao dịch đã được ghi nhận vào sổ cái FinVault với chữ ký số bảo mật.</span>
+                <span>Bút toán bất biến đã được ghi nhận trên sổ cái FinVault với chữ ký số bảo mật.</span>
               </div>
 
               {/* Các nút hành động */}

@@ -41,6 +41,7 @@ export interface LedgerItem {
   counterpartyName?: string
   counterpartyMasked?: string
   description?: string
+  note?: string
   createdAt: string
 }
 
