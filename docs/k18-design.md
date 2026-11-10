@@ -137,3 +137,4 @@ stateDiagram-v2
     - `useP2pQuote()`: Hook tính toán báo giá chuyển tiền `POST /api/payments/p2p/quote`.
     - `useP2pTransfer()`: Hook quản lý toàn bộ cỗ máy trạng thái chuyển tiền, quản lý `Idempotency-Key`, timeout polling.
 - Mobile (React Native ở `apps/mobile`) có thể import trực tiếp các client và hook này mà không bị lỗi môi trường trình duyệt.
+

@@ -1,2 +1,3 @@
 // Feature: payment
-export {}
+export * from './types/payment.types'
+export * from './api/payment.api'

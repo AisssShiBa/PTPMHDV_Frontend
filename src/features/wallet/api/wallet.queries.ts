@@ -52,3 +52,4 @@ export function useInfiniteWalletLedger(limit = 20, options?: { enabled?: boolea
     enabled: options?.enabled !== false
   })
 }
+

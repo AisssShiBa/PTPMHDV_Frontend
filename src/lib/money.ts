@@ -194,3 +194,4 @@ export function validateTransferAmount(
 
   return { valid: true }
 }
+
