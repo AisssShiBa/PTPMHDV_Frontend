@@ -146,16 +146,45 @@ export const handlers = [
     })
   }),
 
-  // 4. Wallet Balance
-  http.get('*/api/wallets/:userId/balance', ({ params }) => {
+  // 4. Wallet Me & Ledger (K18 chuẩn gateway)
+  http.get('*/api/wallets/me', () => {
     return HttpResponse.json({
       success: true,
       data: {
-        userId: params.userId,
+        id: 'wallet-mock-me-1',
+        userId: '00000000-0000-0000-0000-000000000001',
         balance: '1250000',
+        availableBalance: '1250000',
+        heldBalance: '0',
         currency: 'VND',
+        status: 'ACTIVE',
         dailyLimit: '20000000',
-        dailyUsed: '300000'
+        dailyUsed: '300000',
+        monthlyLimit: '100000000',
+        monthlyUsed: '1500000'
+      }
+    })
+  }),
+
+  http.get('*/api/wallets/me/ledger', () => {
+    return HttpResponse.json({
+      success: true,
+      data: {
+        items: [
+          {
+            id: 'ledg-mock-1',
+            walletId: 'wallet-mock-me-1',
+            amount: '50000',
+            balanceAfter: '1250000',
+            direction: 'CREDIT',
+            type: 'TOPUP',
+            referenceId: 'REF-TOPUP-001',
+            note: 'Nạp tiền vào ví',
+            createdAt: '2026-03-30T10:00:00Z',
+            updatedAt: '2026-03-30T10:00:00Z'
+          }
+        ],
+        nextCursor: null
       }
     })
   }),

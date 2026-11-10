@@ -28,7 +28,7 @@ describe('TransactionsPage - Cursor Pagination & Ledger [K18-6]', () => {
 
   it('phân trang cursor: tải 2 trang, ghép đúng thứ tự, không trùng lặp, hết trang nút tải thêm biến mất', async () => {
     let callCount = 0
-    let requestedCursors: (string | null)[] = []
+    const requestedCursors: (string | null)[] = []
 
     server.use(
       http.get('*/api/wallets/me/ledger', ({ request }) => {

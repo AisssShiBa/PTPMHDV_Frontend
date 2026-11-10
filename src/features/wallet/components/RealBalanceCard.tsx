@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react'
-import { walletService } from '../services/walletService'
-import type { WalletBalance } from '../types/wallet.types'
+import { walletApi } from '../api/wallet.api'
+import type { WalletMe } from '../types/wallet.types'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { TrendingUp, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { formatVnd, parseVndToBigInt } from '@/lib/format'
 
 interface Props {
   className?: string
   refreshTrigger?: number
-  onBalanceLoaded?: (balance: WalletBalance) => void
+  onBalanceLoaded?: (wallet: WalletMe) => void
 }
 
 export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigger = 0, onBalanceLoaded }) => {
   const user = useAuthStore((state) => state.user)
-  const [balance, setBalance] = useState<WalletBalance | null>(null)
+  const [wallet, setWallet] = useState<WalletMe | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showBalance, setShowBalance] = useState(true)
@@ -22,11 +23,11 @@ export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigge
     try {
       setLoading(true)
       setError(null)
-      const data = await walletService.getBalance(String(user.id))
-      setBalance(data)
+      const data = await walletApi.getWalletMe()
+      setWallet(data)
       onBalanceLoaded?.(data)
-    } catch (err: any) {
-      setError(err?.response?.data?.error?.message || 'Chưa khởi tạo ví hoặc lỗi kết nối')
+    } catch {
+      setError('Chưa khởi tạo ví hoặc lỗi kết nối')
     } finally {
       setLoading(false)
     }
@@ -36,9 +37,16 @@ export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigge
     fetchBalance()
   }, [user?.id, refreshTrigger])
 
-  const formattedBalance = balance
-    ? Number(balance.availableBalance || balance.balance || 0).toLocaleString('vi-VN')
-    : '0'
+  const formattedBalance = wallet ? formatVnd(wallet.balance) : '0 đ'
+
+  let hasHeld = false
+  if (wallet?.heldBalance) {
+    try {
+      hasHeld = parseVndToBigInt(wallet.heldBalance) > 0n
+    } catch {
+      hasHeld = false
+    }
+  }
 
   return (
     <div className={`rounded-2xl bg-linear-to-br from-violet-600 via-primary to-purple-800 p-6 text-white shadow-xl shadow-primary/20 flex flex-col justify-between ${className}`}>
@@ -71,11 +79,11 @@ export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigge
             <AlertCircle className="size-3.5" />
             <span>{error}</span>
           </div>
-        ) : loading && !balance ? (
+        ) : loading && !wallet ? (
           <div className="mt-2 h-10 w-48 bg-white/20 rounded-md animate-pulse"></div>
         ) : (
           <h2 className="text-2xl sm:text-4xl font-black tracking-tight mt-1">
-            {showBalance ? `₫ ${formattedBalance}` : '•••••• VND'}
+            {showBalance ? formattedBalance : '•••••• VND'}
           </h2>
         )}
       </div>
@@ -86,10 +94,10 @@ export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigge
             <TrendingUp className="size-3" />
             VND
           </span>
-          <span>{balance?.status === 'ACTIVE' ? 'Ví đang hoạt động' : 'Ví chưa kích hoạt'}</span>
+          <span>{wallet?.status === 'ACTIVE' ? 'Ví đang hoạt động' : 'Ví chưa kích hoạt'}</span>
         </div>
-        {balance && Number(balance.heldBalance) > 0 && (
-          <span className="text-amber-300">Đang giữ: ₫ {Number(balance.heldBalance).toLocaleString('vi-VN')}</span>
+        {hasHeld && wallet && (
+          <span className="text-amber-300">Đang giữ: {formatVnd(wallet.heldBalance)}</span>
         )}
       </div>
     </div>

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { once } from 'node:events'
 import http from 'node:http'
 import test from 'node:test'
-import { ApiError, createApiClient } from '../src/index.ts'
+import { ApiError, createApiClient, unwrap } from '../src/index.ts'
 
 async function listen(handler) {
   const server = http.createServer(handler)

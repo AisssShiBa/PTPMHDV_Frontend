@@ -79,8 +79,8 @@ export function DashboardPage() {
     const bigLimit = parseVndToBigInt(dailyLimitStr)
     const bigUsed = parseVndToBigInt(dailyUsedStr)
     if (bigLimit > 0n) {
-      percentUsed = Number((bigUsed * 100n) / bigLimit)
-      if (percentUsed > 100) percentUsed = 100
+      const pct = (bigUsed * 100n) / bigLimit
+      percentUsed = pct > 100n ? 100 : Math.min(100, Math.max(0, +pct.toString()))
     }
   } catch {
     percentUsed = 0
