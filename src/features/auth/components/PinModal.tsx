@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import axios from 'axios'
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, Lock, AlertTriangle, Eye, EyeOff, Delete } from 'lucide-react'
 import { formatVnd } from '@/lib/format'
+import { authApi } from '../api/auth.api'
+import { errorMessage } from '@/lib/apiResponse'
 
 export interface PinModalProps {
   open: boolean
@@ -26,6 +29,7 @@ export function PinModal({
   onOpenChange,
   title = 'Xác thực mã PIN giao dịch',
   description = 'Vui lòng nhập mã PIN bảo mật 6 số để tiếp tục giao dịch.',
+  paymentId,
   amount,
   onSuccess,
   onCancel
@@ -34,7 +38,7 @@ export function PinModal({
   const [showPin, setShowPin] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [attemptsRemaining, setAttemptsRemaining] = useState(5)
+  const [, setAttemptsRemaining] = useState(5)
   const [isLocked, setIsLocked] = useState(false)
   const [lockCountdown, setLockCountdown] = useState(300)
 
@@ -152,35 +156,69 @@ export function PinModal({
     }
   }
 
-  // Hàm xác thực mã PIN
+  // Hàm xác thực mã PIN qua backend API
   const verifyPin = async (inputPin: string) => {
     setIsLoading(true)
     setErrorMsg(null)
 
     try {
-      // Giả lập độ trễ xác thực bảo mật 400ms
-      await new Promise((resolve) => setTimeout(resolve, 400))
+      const res = await authApi.verifyPin({
+        pin: inputPin,
+        paymentId: paymentId || 'default',
+        amount: amount || '0'
+      })
 
-      // Kịch bản demo: Mã PIN '000000' sẽ cố tình báo sai để kiểm thử trạng thái lỗi
-      if (inputPin === '000000') {
-        const newAttempts = attemptsRemaining - 1
-        setAttemptsRemaining(newAttempts)
-
-        if (newAttempts <= 0) {
-          setIsLocked(true)
-          setErrorMsg('Tài khoản bị tạm khóa giao dịch do nhập sai mã PIN quá 5 lần.')
-        } else {
-          setErrorMsg(`Mã PIN không chính xác. Bạn còn ${newAttempts} lần thử.`)
-        }
-        setPin(Array(6).fill(''))
-        inputRefs.current[0]?.focus()
-        return
-      }
-
-      // Nhập đúng mã PIN (hoặc các mã hợp lệ): sinh transactionToken dùng 1 lần
-      const singleUseToken = 'txn_token_' + Math.random().toString(36).substring(2, 15)
-      onSuccess(singleUseToken)
+      // Xóa mã PIN khỏi state ngay sau khi gửi thành công
+      setPin(Array(6).fill(''))
+      onSuccess(res.transactionToken)
       onOpenChange?.(false)
+    } catch (err: unknown) {
+      // Xóa mã PIN khỏi state ngay lập tức vì lý do bảo mật
+      setPin(Array(6).fill(''))
+
+      if (axios.isAxiosError(err)) {
+        const errorData = err.response?.data?.error || err.response?.data
+        const code = errorData?.code
+        const details = errorData?.details || errorData
+
+        if (code === 'PIN_LOCKED') {
+          setIsLocked(true)
+          const remainingSec =
+            details?.remainingSeconds ||
+            (details?.lockedUntil
+              ? Math.max(1, Math.round((new Date(details.lockedUntil).getTime() - Date.now()) / 1000))
+              : 300)
+          setLockCountdown(remainingSec)
+          setErrorMsg(errorData?.message || 'Tài khoản bị tạm khóa giao dịch do nhập sai mã PIN quá 5 lần.')
+          return
+        }
+
+        if (code === 'INVALID_PIN' || code === 'PIN_INVALID') {
+          const remaining = details?.remainingAttempts ?? details?.attemptsRemaining ?? details?.attemptsLeft
+          if (typeof remaining === 'number') {
+            setAttemptsRemaining(remaining)
+            setErrorMsg(`Mã PIN không chính xác. Bạn còn ${remaining} lần thử.`)
+          } else {
+            setErrorMsg(errorData?.message || 'Mã PIN không chính xác.')
+          }
+          setTimeout(() => {
+            inputRefs.current[0]?.focus()
+          }, 50)
+          return
+        }
+
+        if (code === 'PIN_NOT_SETUP' || code === 'PIN_NOT_SET') {
+          setErrorMsg('Bạn chưa thiết lập mã PIN giao dịch. Vui lòng cài đặt mã PIN trong Cài đặt.')
+          return
+        }
+
+        setErrorMsg(errorData?.message || errorMessage(code) || 'Xác thực mã PIN thất bại. Vui lòng thử lại.')
+      } else {
+        setErrorMsg('Không thể kết nối đến máy chủ. Vui lòng thử lại.')
+      }
+      setTimeout(() => {
+        inputRefs.current[0]?.focus()
+      }, 50)
     } finally {
       setIsLoading(false)
     }

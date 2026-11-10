@@ -47,8 +47,9 @@ export interface P2pCheckoutDto {
 
 export interface P2pCheckoutResult {
   paymentId: string
+  id?: string
   status: PaymentStatus
-  holdExpiresAt: string
+  holdExpiresAt?: string
   replayed?: boolean
 }
 
