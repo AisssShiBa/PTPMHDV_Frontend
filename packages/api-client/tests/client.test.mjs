@@ -341,3 +341,135 @@ test('web auth uses cookies and never sends refresh token in the body', async t 
   assert.equal(api.http.defaults.withCredentials, true)
   assert.equal(refreshBody, '{}')
 })
+
+test('wallet, payment and pin endpoints format headers and pass payload properly', async t => {
+  const requests = []
+  const server = await listen(async (request, response) => {
+    const chunks = []
+    for await (const chunk of request) chunks.push(chunk)
+    const bodyStr = Buffer.concat(chunks).toString()
+    requests.push({
+      url: request.url,
+      method: request.method,
+      headers: request.headers,
+      body: bodyStr ? JSON.parse(bodyStr) : undefined
+    })
+
+    if (request.url === '/api/wallets/me') {
+      return json(response, 200, {
+        success: true,
+        data: {
+          walletId: 'w-1',
+          userId: 'u-1',
+          balance: '1000000',
+          availableBalance: '950000',
+          heldBalance: '50000',
+          status: 'ACTIVE'
+        }
+      })
+    }
+    if (request.url === '/api/payments/p2p/quote') {
+      return json(response, 200, {
+        success: true,
+        data: { amount: '50000', fee: '0', expiresAt: '2026-11-10T12:00:00Z' }
+      })
+    }
+    if (request.url === '/api/payments/p2p/checkout') {
+      return json(response, 201, {
+        success: true,
+        data: { paymentId: 'pay-123', status: 'PENDING', holdExpiresAt: '2026-11-10T12:05:00Z' }
+      })
+    }
+    if (request.url === '/api/payments/pay-123/confirm') {
+      return json(response, 200, {
+        success: true,
+        data: { status: 'SUCCESS' }
+      })
+    }
+    if (request.url.startsWith('/api/users/lookup')) {
+      return json(response, 200, {
+        success: true,
+        data: { authUserId: 'target-uuid', maskedName: 'N*** A' }
+      })
+    }
+    return json(response, 404, { success: false, error: { code: 'NOT_FOUND', message: 'Not found' } })
+  })
+  t.after(server.close)
+
+  const tokenStore = store({ accessToken: 'test-token', userId: 'u-1' })
+  const api = createApiClient({ baseURL: server.baseURL, platform: 'web', tokenStore })
+
+  // 1. wallet.getMe
+  const wallet = await api.wallet.getMe()
+  assert.equal(wallet.balance, '1000000')
+
+  // 2. users.lookup
+  const user = await api.users.lookup('0912345678')
+  assert.equal(user.authUserId, 'target-uuid')
+
+  // 3. payments.p2pQuote
+  const quote = await api.payments.p2pQuote({ destinationUserId: 'target-uuid', amount: '50000' })
+  assert.equal(quote.fee, '0')
+
+  // 4. payments.p2pCheckout
+  const checkout = await api.payments.p2pCheckout(
+    { destinationUserId: 'target-uuid', amount: '50000', note: 'Tra tien ca phe' },
+    'idempotency-key-uuid-123'
+  )
+  assert.equal(checkout.paymentId, 'pay-123')
+  const checkoutReq = requests.find(r => r.url === '/api/payments/p2p/checkout')
+  assert.equal(checkoutReq.headers['idempotency-key'], 'idempotency-key-uuid-123')
+
+  // 5. payments.confirm
+  const confirm = await api.payments.confirm('pay-123', 'txn-token-jwt-secret')
+  assert.equal(confirm.status, 'SUCCESS')
+  const confirmReq = requests.find(r => r.url === '/api/payments/pay-123/confirm')
+  assert.equal(confirmReq.headers['x-transaction-token'], 'txn-token-jwt-secret')
+})
+
+test('error classification captures LIMIT_EXCEEDED details, timeout and network', async t => {
+  const server = await listen((request, response) => {
+    if (request.url === '/api/limit-error') {
+      return json(response, 422, {
+        success: false,
+        error: {
+          code: 'LIMIT_EXCEEDED',
+          message: 'Vượt hạn mức',
+          details: { limitType: 'PER_TXN', limit: '200000', used: '0', remaining: '200000', kycTier: 0 }
+        }
+      })
+    }
+    if (request.url === '/api/slow') {
+      // do not answer to cause client timeout
+      return
+    }
+  })
+  t.after(server.close)
+
+  const tokenStore = store({ accessToken: 'test-token', userId: 'u-1' })
+  const api = createApiClient({ baseURL: server.baseURL, platform: 'web', tokenStore, timeoutMs: 50 })
+
+  // 1. LIMIT_EXCEEDED
+  await assert.rejects(
+    () => api.http.get('/limit-error').then(r => unwrap(r.data)),
+    (err) => {
+      assert.equal(err instanceof ApiError, true)
+      assert.equal(err.code, 'LIMIT_EXCEEDED')
+      assert.equal(err.status, 422)
+      assert.equal(err.details?.limitType, 'PER_TXN')
+      assert.equal(err.details?.limit, '200000')
+      return true
+    }
+  )
+
+  // 2. TIMEOUT
+  await assert.rejects(
+    () => api.http.get('/slow'),
+    (err) => {
+      assert.equal(err instanceof ApiError, true)
+      assert.equal(err.isTimeout, true)
+      assert.equal(err.code, 'TIMEOUT')
+      return true
+    }
+  )
+})
