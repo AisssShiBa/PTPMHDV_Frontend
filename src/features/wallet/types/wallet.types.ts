@@ -7,10 +7,46 @@ export interface WalletBalance {
   balance: string
   heldBalance: string
   availableBalance: string
-  currency: string
-  status: 'ACTIVE' | 'LOCKED'
+  currency?: string
+  status?: 'ACTIVE' | 'LOCKED'
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface WalletMe {
+  id?: string
+  walletId?: string
+  userId: string
+  balance: string
+  availableBalance: string
+  heldBalance: string
+  status?: string
+  dailyLimit?: string
+  dailyUsed?: string
+  monthlyLimit?: string
+  monthlyUsed?: string
+  kycTier?: number
+}
+
+export interface LedgerItem {
+  id: string
+  transactionId?: string
+  direction: 'CREDIT' | 'DEBIT' | 'IN' | 'OUT'
+  amount: string
+  balanceAfter: string
+  referenceId?: string
+  transferType?: 'TOPUP' | 'PAYMENT' | 'REFUND' | 'P2P_TRANSFER' | 'ADJUSTMENT' | string
+  counterpartyWalletId?: string
+  counterpartyUserId?: string
+  counterpartyName?: string
+  counterpartyMasked?: string
+  description?: string
   createdAt: string
-  updatedAt: string
+}
+
+export interface LedgerPage {
+  items: LedgerItem[]
+  nextCursor: string | null
 }
 
 export interface WalletHistoryItem {
