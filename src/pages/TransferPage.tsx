@@ -86,6 +86,29 @@ export function TransferPage() {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
 
+  // Trạng thái timeout / mạng
+  const [processingState, setProcessingState] = useState<
+    | null
+    | {
+        phase: 'checkout'
+        message: string
+      }
+    | {
+        phase: 'confirm'
+        paymentId: string
+        pollAttempts: number
+        isPolling: boolean
+        message: string
+      }
+  >(null)
+
+  // Giao dịch thất bại
+  const [failedTxn, setFailedTxn] = useState<{
+    id: string
+    status: string
+    reason: string
+  } | null>(null)
+
   // Quote state & 60s countdown
   const [quote, setQuote] = useState<P2pQuoteResult | null>(null)
   const [quoteCountdown, setQuoteCountdown] = useState<number>(60)
@@ -224,6 +247,113 @@ export function TransferPage() {
     }
   }
 
+  // Kiểm tra lỗi timeout hoặc sự cố mạng
+  const isNetworkOrTimeout = (err: unknown): boolean => {
+    if (axios.isAxiosError(err)) {
+      if (err.code === 'ECONNABORTED' || err.message?.toLowerCase().includes('timeout')) return true
+      if (!err.response) return true
+      const status = err.response.status
+      if (status === 504 || status === 502 || status === 503 || status === 408) return true
+      const code = err.response.data?.error?.code || err.response.data?.code
+      if (code === 'PAYMENT_PROCESSING' || code === 'GATEWAY_TIMEOUT') return true
+    }
+    return false
+  }
+
+  // Polling tra cứu trạng thái giao dịch khi confirm bị timeout (backoff 1s, 2s, 4s, tối đa 30s)
+  const pollPaymentStatus = async (
+    targetPaymentId: string,
+    attempt = 0,
+    startTime = Date.now()
+  ) => {
+    const elapsed = Date.now() - startTime
+    // Nếu quá trần 30 giây mà trạng thái vẫn PENDING: giữ "Đang xử lý", hiển thị nút "Kiểm tra lại" và link sang Lịch sử
+    if (elapsed >= 30000) {
+      setProcessingState({
+        phase: 'confirm',
+        paymentId: targetPaymentId,
+        pollAttempts: attempt,
+        isPolling: false,
+        message:
+          'Giao dịch đang được tiếp tục xử lý. Bạn có thể bấm "Kiểm tra lại" hoặc theo dõi trạng thái giao dịch tại trang Lịch sử giao dịch.'
+      })
+      setIsConfirming(false)
+      return
+    }
+
+    setProcessingState({
+      phase: 'confirm',
+      paymentId: targetPaymentId,
+      pollAttempts: attempt,
+      isPolling: true,
+      message: 'Hệ thống đang kiểm tra trạng thái giao dịch...'
+    })
+
+    // Backoff: 1s, 2s, 4s (tối đa 4s mỗi bước)
+    const delayMs = attempt === 0 ? 500 : Math.min(1000 * Math.pow(2, attempt - 1), 4000)
+    await new Promise((resolve) => setTimeout(resolve, delayMs))
+
+    try {
+      const record = await paymentApi.getPaymentById(targetPaymentId)
+      const st = record.status
+
+      if (st === 'SUCCESS') {
+        queryClient.invalidateQueries({ queryKey: walletKeys.all })
+        setCompletedTxn({
+          id: targetPaymentId,
+          timestamp: record.createdAt || new Date().toISOString(),
+          recipientName: recipient?.maskedName || 'Người nhận',
+          recipientPhone: recipientQuery,
+          amount: quote?.amount || amount,
+          fee: quote?.fee || '0',
+          message: message.trim() || 'Chuyển tiền FinVault',
+          token: ''
+        })
+        setProcessingState(null)
+        setIsConfirming(false)
+        setCurrentStep(3)
+        toast.success('Chuyển tiền thành công!', {
+          description: `Đã gửi ${formatVnd(amount)} tới ${recipient?.maskedName}.`
+        })
+        return
+      }
+
+      if (st === 'FAILED' || st === 'EXPIRED' || st === 'CANCELLED') {
+        setFailedTxn({
+          id: targetPaymentId,
+          status: st,
+          reason:
+            st === 'EXPIRED'
+              ? 'Giao dịch đã hết thời gian hiệu lực.'
+              : st === 'CANCELLED'
+                ? 'Giao dịch đã bị hủy bỏ.'
+                : 'Giao dịch không thành công hoặc bị từ chối từ hệ thống.'
+        })
+        setProcessingState(null)
+        setIsConfirming(false)
+        setCurrentStep(3)
+        return
+      }
+
+      // Vẫn PENDING -> tiếp tục nhịp sau
+      await pollPaymentStatus(targetPaymentId, attempt + 1, startTime)
+    } catch {
+      if (Date.now() - startTime < 30000) {
+        await pollPaymentStatus(targetPaymentId, attempt + 1, startTime)
+      } else {
+        setProcessingState({
+          phase: 'confirm',
+          paymentId: targetPaymentId,
+          pollAttempts: attempt,
+          isPolling: false,
+          message:
+            'Giao dịch đang được tiếp tục xử lý. Bạn có thể bấm "Kiểm tra lại" hoặc theo dõi trạng thái giao dịch tại trang Lịch sử giao dịch.'
+        })
+        setIsConfirming(false)
+      }
+    }
+  }
+
   // Bấm "Xác nhận chuyển tiền" tại Bước 2: gọi POST /api/payments/p2p/checkout kèm Idempotency-Key
   const handleStartCheckout = async () => {
     if (quoteCountdown <= 0) {
@@ -243,6 +373,7 @@ export function TransferPage() {
     }
 
     setIsCheckingOut(true)
+    setProcessingState(null)
     try {
       const checkoutRes = await paymentApi.p2pCheckout(
         {
@@ -257,6 +388,15 @@ export function TransferPage() {
       setPaymentId(pId)
       setPinModalOpen(true)
     } catch (err: unknown) {
+      if (isNetworkOrTimeout(err)) {
+        setProcessingState({
+          phase: 'checkout',
+          message:
+            'Yêu cầu chuyển tiền đang được xử lý hoặc gặp sự cố đường truyền mạng. Vui lòng bấm Thử lại để kiểm tra kết quả với cùng khóa giao dịch.'
+        })
+        return
+      }
+
       if (axios.isAxiosError(err)) {
         const errorData = err.response?.data?.error || err.response?.data
         const code = errorData?.code
@@ -304,6 +444,7 @@ export function TransferPage() {
 
     setIsConfirming(true)
     setPinModalOpen(false)
+    setProcessingState(null)
 
     try {
       await paymentApi.confirmPayment(paymentId, transactionToken)
@@ -327,6 +468,13 @@ export function TransferPage() {
         description: `Đã gửi ${formatVnd(amount)} tới ${recipient?.maskedName}.`
       })
     } catch (err: unknown) {
+      if (isNetworkOrTimeout(err)) {
+        // Confirm timeout/mạng: KHÔNG gọi confirm lại bằng token cũ
+        // Chuyển sang poll GET /payments/:id
+        await pollPaymentStatus(paymentId, 0, Date.now())
+        return
+      }
+
       if (axios.isAxiosError(err)) {
         const errorData = err.response?.data?.error || err.response?.data
         const code = errorData?.code
@@ -385,7 +533,9 @@ export function TransferPage() {
     setAmount('50000')
     setMessage('Chuyển tiền FinVault')
     setCompletedTxn(null)
+    setFailedTxn(null)
     setPaymentId(null)
+    setProcessingState(null)
     setIdempotencyKey(crypto.randomUUID())
   }
 
@@ -819,6 +969,67 @@ export function TransferPage() {
                 </div>
               )}
 
+              {/* Trạng thái đang xử lý do timeout hoặc mạng */}
+              {processingState && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 space-y-3 animate-in fade-in-50 duration-200">
+                  <div className="flex items-start gap-2.5">
+                    {processingState.phase === 'confirm' && processingState.isPolling ? (
+                      <RefreshCw className="h-5 w-5 text-amber-600 animate-spin shrink-0 mt-0.5" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p className="font-bold text-sm">
+                        {processingState.phase === 'checkout'
+                          ? 'Đang xử lý, vui lòng không thực hiện lại'
+                          : processingState.isPolling
+                            ? 'Đang kiểm tra kết quả giao dịch...'
+                            : 'Giao dịch đang xử lý'}
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                        {processingState.message}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    {processingState.phase === 'checkout' && (
+                      <Button
+                        size="sm"
+                        onClick={handleStartCheckout}
+                        disabled={isCheckingOut}
+                        className="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>{isCheckingOut ? 'Đang thử lại...' : 'Thử lại'}</span>
+                      </Button>
+                    )}
+
+                    {processingState.phase === 'confirm' && !processingState.isPolling && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => pollPaymentStatus(processingState.paymentId, 0, Date.now())}
+                          disabled={isConfirming}
+                          className="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          <span>Kiểm tra lại</span>
+                        </Button>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs font-semibold border-amber-300 hover:bg-amber-100"
+                        >
+                          <Link to="/app/transactions">Xem Lịch sử giao dịch</Link>
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Nhóm nút hành động */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <Button
@@ -962,6 +1173,61 @@ export function TransferPage() {
                     <span>Về trang chủ</span>
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* BƯỚC 3: MÀN HÌNH GIAO DỊCH THẤT BẠI                      */}
+      {/* ======================================================== */}
+      {currentStep === 3 && failedTxn && (
+        <div className="max-w-xl mx-auto space-y-6 animate-in zoom-in-95 duration-200">
+          <Card className="border-rose-500/30 shadow-lg relative overflow-hidden bg-card">
+            <div className="h-2 w-full bg-rose-500" />
+            <CardHeader className="text-center pb-4 pt-6">
+              <div className="mx-auto h-16 w-16 rounded-full bg-rose-500/10 text-rose-600 flex items-center justify-center mb-3">
+                <AlertTriangle className="h-8 w-8" />
+              </div>
+              <Badge variant="destructive" className="mx-auto text-xs px-3 py-1 font-semibold">
+                Giao dịch không thành công
+              </Badge>
+              <CardTitle className="text-xl font-bold mt-2 text-foreground">
+                Thanh toán thất bại
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                {failedTxn.reason}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 px-6 sm:px-8 pb-8">
+              <div className="rounded-xl border border-border p-4 bg-muted/20 space-y-3 text-xs sm:text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Mã giao dịch</span>
+                  <span className="font-mono font-semibold text-foreground">{failedTxn.id}</span>
+                </div>
+                <div className="border-t border-border/60 pt-2 flex justify-between items-center">
+                  <span className="text-muted-foreground">Trạng thái</span>
+                  <span className="font-semibold text-rose-600">{failedTxn.status}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <Button
+                  type="button"
+                  onClick={handleResetNewTransfer}
+                  className="h-10 text-xs font-semibold gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Chuyển tiền mới</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/app/transactions')}
+                  className="h-10 text-xs font-semibold gap-1.5 cursor-pointer"
+                >
+                  <span>Xem lịch sử ví</span>
+                </Button>
               </div>
             </CardContent>
           </Card>
