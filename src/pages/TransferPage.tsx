@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,50 +14,30 @@ import {
   Search,
   ShieldCheck,
   UserCheck,
-  Wallet
+  Wallet,
+  AlertTriangle,
+  Clock,
+  RefreshCw
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { PinModal } from '@/features/auth/components/PinModal'
-import { formatVnd, formatDateTime } from '@/lib/format'
+import { useWalletMe } from '@/features/wallet'
+import { paymentApi, type P2pQuoteResult, type LimitExceededDetails } from '@/features/payment'
+import { useRecipientLookup } from '@/features/user/hooks/useRecipientLookup'
+import {
+  formatVnd,
+  formatDateTime,
+  isValidMoneyInput,
+  validateTransferAmount
+} from '@/lib/format'
+import { errorDetails } from '@/lib/apiResponse'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-
-// Danh bạ mẫu chuẩn để người dùng trải nghiệm tức thì không cần gõ phím
-interface RecipientPreset {
-  name: string
-  identifier: string
-  tier: string
-  accountType: string
-  verified: boolean
-}
-
-const PRESET_RECIPIENTS: RecipientPreset[] = [
-  {
-    name: 'Trần Văn Bình',
-    identifier: '0912345345',
-    tier: 'Cấp 1 (Đã xác minh CMND/CCCD)',
-    accountType: 'Ví cá nhân',
-    verified: true
-  },
-  {
-    name: 'Lê Hoàng Khoa',
-    identifier: '0987654321',
-    tier: 'Cấp 2 (Xác thực sinh trắc học)',
-    accountType: 'Ví cá nhân',
-    verified: true
-  },
-  {
-    name: 'Highlands Coffee',
-    identifier: '0933889900',
-    tier: 'Doanh nghiệp đối tác',
-    accountType: 'Cổng Merchant',
-    verified: true
-  }
-]
+import axios from 'axios'
 
 const QUICK_AMOUNTS = [
   { label: '50.000 ₫', value: '50000' },
@@ -67,26 +47,45 @@ const QUICK_AMOUNTS = [
   { label: '1.000.000 ₫', value: '1000000' }
 ]
 
-const DAILY_LIMIT_TOTAL = 20000000
-const DAILY_LIMIT_USED = 300000
-
 export function TransferPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const authUserId = user?.id || ''
 
-  // Số dư khả dụng thực tế của tài khoản hiện tại
-  const availableBalance = Number(user?.balance || '1250000')
-  const remainingDailyLimit = DAILY_LIMIT_TOTAL - DAILY_LIMIT_USED
+  // Số dư ví thực tế từ GET /api/wallets/me
+  const { data: wallet } = useWalletMe()
+  const availableBalance = wallet?.availableBalance ?? wallet?.balance ?? user?.balance ?? '0'
 
-  // Step: 1 = Nhập dữ liệu, 2 = Xác nhận chi tiết, 3 = Biên lai thành công
+  // Hook tra cứu người nhận chuẩn bảo mật (404 / 429 cooldown)
+  const {
+    query: recipientQuery,
+    changeQuery: setRecipientQuery,
+    recipient,
+    error: recipientError,
+    loading: isLookingUp,
+    remaining: cooldownRemaining,
+    lookup: triggerLookup
+  } = useRecipientLookup(authUserId)
+
+  // Step: 1 = Nhập dữ liệu & Báo giá, 2 = Xác nhận báo giá (60s), 3 = Biên lai hoàn tất
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
 
   // Form states
-  const [recipientInput, setRecipientInput] = useState('0912345345')
-  const [amount, setAmount] = useState('60000')
+  const [amount, setAmount] = useState('50000')
   const [message, setMessage] = useState('Chuyển tiền FinVault')
+  const [isQuoting, setIsQuoting] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [copiedTxn, setCopiedTxn] = useState(false)
+
+  // Quote state & 60s countdown
+  const [quote, setQuote] = useState<P2pQuoteResult | null>(null)
+  const [quoteCountdown, setQuoteCountdown] = useState<number>(60)
+  const [limitExceededError, setLimitExceededError] = useState<{
+    message: string
+    limitType?: string
+    limit?: string
+    remaining?: string
+  } | null>(null)
 
   // PIN Modal state
   const [pinModalOpen, setPinModalOpen] = useState(false)
@@ -98,80 +97,135 @@ export function TransferPage() {
     recipientName: string
     recipientPhone: string
     amount: string
-    fee: number
+    fee: string
     message: string
     token: string
   } | null>(null)
 
-  // Tự động nhận diện thông tin người nhận theo thời gian thực (Prompt 0)
-  const resolveRecipient = (input: string): RecipientPreset => {
-    const trimmed = input.trim()
-    const found = PRESET_RECIPIENTS.find(
-      (r) => r.identifier === trimmed || r.name.toLowerCase() === trimmed.toLowerCase()
-    )
-    if (found) return found
+  // Đồng hồ đếm ngược 60s cho báo giá tại Bước 2
+  useEffect(() => {
+    if (currentStep !== 2 || !quote) return
 
-    if (trimmed.length >= 9) {
-      return {
-        name: `Khách hàng FinVault (${trimmed.slice(0, 3)}***${trimmed.slice(-3)})`,
-        identifier: trimmed,
-        tier: 'Cấp 1 (Đã xác minh)',
-        accountType: 'Ví cá nhân',
-        verified: true
-      }
-    }
+    setQuoteCountdown(60)
+    const timer = setInterval(() => {
+      setQuoteCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
 
-    return {
-      name: '',
-      identifier: trimmed,
-      tier: '',
-      accountType: '',
-      verified: false
-    }
+    return () => clearInterval(timer)
+  }, [currentStep, quote])
+
+  // Xử lý thay đổi số tiền chỉ nhận số nguyên
+  const handleAmountChange = (val: string) => {
+    const cleanDigits = val.replace(/\D/g, '')
+    setAmount(cleanDigits)
+    setLimitExceededError(null)
   }
 
-  const activeRecipient = resolveRecipient(recipientInput)
-  const numericAmount = Number(amount) || 0
-  const isAmountValid = numericAmount > 0 && numericAmount <= availableBalance && numericAmount <= remainingDailyLimit
-
-  // Xử lý chuyển sang Bước 2: Xem lại & Xác nhận
-  const handleProceedToConfirm = (e: React.FormEvent) => {
+  // Bước 1 -> Gọi Quote: POST /api/payments/p2p/quote
+  const handleRequestQuote = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLimitExceededError(null)
 
-    if (!activeRecipient.verified) {
-      toast.error('Vui lòng nhập số điện thoại hoặc mã ví người nhận hợp lệ.')
+    if (!recipient) {
+      toast.error('Vui lòng kiểm tra và xác nhận người nhận tiền hợp lệ.')
       return
     }
 
-    if (numericAmount <= 0) {
-      toast.error('Vui lòng nhập số tiền hợp lệ lớn hơn 0 ₫.')
+    if (!isValidMoneyInput(amount)) {
+      toast.error('Vui lòng nhập số tiền hợp lệ.')
       return
     }
 
-    if (numericAmount > availableBalance) {
-      toast.error(`Số dư khả dụng không đủ (${formatVnd(availableBalance)}).`)
+    const valResult = validateTransferAmount(amount, availableBalance)
+    if (!valResult.valid) {
+      toast.error(valResult.error || 'Số tiền không hợp lệ.')
       return
     }
 
-    if (numericAmount > remainingDailyLimit) {
-      toast.error(`Vượt quá hạn mức chuyển trong ngày (${formatVnd(remainingDailyLimit)}).`)
-      return
-    }
+    setIsQuoting(true)
+    try {
+      const quoteRes = await paymentApi.p2pQuote({
+        destinationUserId: recipient.authUserId,
+        amount
+      })
+      setQuote(quoteRes)
+      setCurrentStep(2)
+      toast.success('Báo giá giao dịch thành công (có hiệu lực trong 60 giây).')
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 422) {
+        const details = errorDetails<LimitExceededDetails>(err)
+        if (details?.limitType) {
+          let limitMsg = ''
+          const limitFormatted = formatVnd(details.limit || '0')
+          const remainingFormatted = formatVnd(details.remaining || '0')
 
-    setCurrentStep(2)
+          if (details.limitType === 'PER_TXN') {
+            limitMsg = `Vượt quá hạn mức tối đa cho mỗi lần chuyển (${limitFormatted}). Bạn còn được chuyển tối đa ${remainingFormatted} trong lần này.`
+          } else if (details.limitType === 'PER_DAY') {
+            limitMsg = `Vượt quá hạn mức giao dịch trong ngày (${limitFormatted}). Hôm nay bạn chỉ còn được chuyển thêm ${remainingFormatted}.`
+          } else if (details.limitType === 'PER_MONTH') {
+            limitMsg = `Vượt quá hạn mức giao dịch trong tháng (${limitFormatted}). Trong tháng này bạn chỉ còn lại ${remainingFormatted}.`
+          } else {
+            limitMsg = `Giao dịch vượt quá hạn mức quy định (${limitFormatted}).`
+          }
+
+          setLimitExceededError({
+            message: limitMsg,
+            limitType: details.limitType,
+            limit: details.limit,
+            remaining: details.remaining
+          })
+          toast.error(limitMsg)
+          return
+        }
+      }
+      toast.error(err instanceof Error ? err.message : 'Không thể lấy báo giá giao dịch. Vui lòng thử lại.')
+    } finally {
+      setIsQuoting(false)
+    }
   }
 
-  // Mở modal nhập mã PIN (Bước 3)
+  // Làm mới lại báo giá khi hết hạn 60s
+  const handleRefreshQuote = async () => {
+    if (!recipient) return
+    setIsQuoting(true)
+    try {
+      const quoteRes = await paymentApi.p2pQuote({
+        destinationUserId: recipient.authUserId,
+        amount
+      })
+      setQuote(quoteRes)
+      setQuoteCountdown(60)
+      toast.success('Đã cập nhật báo giá giao dịch mới (60 giây).')
+    } catch {
+      toast.error('Không thể làm mới báo giá. Vui lòng quay lại Bước 1.')
+      setCurrentStep(1)
+    } finally {
+      setIsQuoting(false)
+    }
+  }
+
+  // Mở modal nhập mã PIN (Bước 2 -> Bước 3)
   const handleOpenPinModal = () => {
+    if (quoteCountdown <= 0) {
+      toast.error('Báo giá đã hết hạn. Vui lòng lấy lại báo giá mới.')
+      return
+    }
     setPinModalOpen(true)
   }
 
-  // Khi nhập mã PIN thành công và nhận single-use token
+  // Khi nhập mã PIN thành công và nhận transactionToken
   const handlePinSuccess = (transactionToken: string) => {
     setIsSubmitting(true)
     setPinModalOpen(false)
 
-    // Tạo mã giao dịch chuẩn FinVault
+    // Tạo mã giao dịch mẫu hoặc hoàn tất
     const generatedTxnId = `FV${Date.now().toString().slice(-8)}${Math.floor(1000 + Math.random() * 9000)}`
     const nowIso = new Date().toISOString()
 
@@ -179,17 +233,17 @@ export function TransferPage() {
       setCompletedTxn({
         id: generatedTxnId,
         timestamp: nowIso,
-        recipientName: activeRecipient.name,
-        recipientPhone: activeRecipient.identifier,
-        amount: amount,
-        fee: 0,
+        recipientName: recipient?.maskedName || 'Người nhận',
+        recipientPhone: recipientQuery,
+        amount: quote?.amount || amount,
+        fee: quote?.fee || '0',
         message: message.trim() || 'Chuyển tiền FinVault',
         token: transactionToken
       })
       setIsSubmitting(false)
       setCurrentStep(3)
       toast.success('Chuyển tiền thành công!', {
-        description: `Đã gửi ${formatVnd(numericAmount)} tới ${activeRecipient.name}.`
+        description: `Đã gửi ${formatVnd(amount)} tới ${recipient?.maskedName}.`
       })
     }, 600)
   }
@@ -205,7 +259,9 @@ export function TransferPage() {
   // Reset form để làm giao dịch mới
   const handleResetNewTransfer = () => {
     setCurrentStep(1)
-    setAmount('60000')
+    setQuote(null)
+    setLimitExceededError(null)
+    setAmount('50000')
     setMessage('Chuyển tiền FinVault')
     setCompletedTxn(null)
   }
@@ -270,7 +326,7 @@ export function TransferPage() {
                 1. Thông tin chuyển
               </span>
               <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                Người nhận & Số tiền
+                Người nhận & Báo giá
               </span>
             </div>
 
@@ -288,10 +344,10 @@ export function TransferPage() {
                 {currentStep > 2 ? <Check className="h-5 w-5" /> : '2'}
               </div>
               <span className="mt-2 text-xs sm:text-sm font-semibold text-foreground">
-                2. Xác nhận
+                2. Xác nhận báo giá
               </span>
               <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                Kiểm tra thông tin
+                Đếm ngược 60s
               </span>
             </div>
 
@@ -318,10 +374,10 @@ export function TransferPage() {
       </Card>
 
       {/* ======================================================== */}
-      {/* BƯỚC 1: NHẬP THÔNG TIN NGƯỜI NHẬN & SỐ TIỀN             */}
+      {/* BƯỚC 1: NHẬP THÔNG TIN NGƯỜI NHẬN, SỐ TIỀN & LẤY QUOTE   */}
       {/* ======================================================== */}
       {currentStep === 1 && (
-        <form onSubmit={handleProceedToConfirm} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <form onSubmit={handleRequestQuote} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Cột trái: Form nhập chi tiết */}
           <div className="lg:col-span-8 space-y-6">
             {/* Khung 1: Người nhận */}
@@ -337,51 +393,57 @@ export function TransferPage() {
                   </Badge>
                 </div>
                 <CardDescription className="text-xs">
-                  Nhập số điện thoại, email hoặc số tài khoản ví FinVault của người nhận
+                  Nhập số điện thoại hoặc email của người nhận trong hệ thống FinVault
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Input tìm kiếm người nhận */}
                 <div className="space-y-1.5">
                   <Label htmlFor="recipient" className="text-xs font-semibold text-foreground">
-                    Số điện thoại / Mã ví FinVault
+                    Số điện thoại / Email người nhận
                   </Label>
-                  <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="recipient"
-                      value={recipientInput}
-                      onChange={(e) => setRecipientInput(e.target.value)}
-                      placeholder="Ví dụ: 0912345345 hoặc mã ví"
-                      className="pl-10 h-11 text-base sm:text-sm font-medium"
-                      autoComplete="off"
-                    />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="recipient"
+                        value={recipientQuery}
+                        onChange={(e) => setRecipientQuery(e.target.value)}
+                        placeholder="Ví dụ: 0912345678 hoặc email@domain.com"
+                        className="pl-10 h-11 text-base sm:text-sm font-medium"
+                        autoComplete="off"
+                        disabled={cooldownRemaining > 0}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={triggerLookup}
+                      disabled={isLookingUp || cooldownRemaining > 0 || !recipientQuery.trim()}
+                      className="h-11 px-4 text-xs font-semibold"
+                    >
+                      {isLookingUp ? 'Đang tìm...' : 'Kiểm tra'}
+                    </Button>
                   </div>
                 </div>
 
-                {/* Các người nhận mẫu để bấm nhanh trải nghiệm (Prompt 0) */}
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-medium text-muted-foreground">Chọn nhanh người nhận mẫu:</div>
-                  <div className="flex flex-wrap gap-2">
-                    {PRESET_RECIPIENTS.map((item) => (
-                      <button
-                        key={item.identifier}
-                        type="button"
-                        onClick={() => setRecipientInput(item.identifier)}
-                        className={`text-xs px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                          recipientInput === item.identifier
-                            ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs'
-                            : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {item.name} ({item.identifier})
-                      </button>
-                    ))}
+                {/* Thông báo lỗi tra cứu (404 hoặc 429) */}
+                {cooldownRemaining > 0 && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 flex items-center gap-2">
+                    <Clock className="h-4 w-4 shrink-0" />
+                    <span>Bạn đang thao tác quá nhanh. Vui lòng chờ {cooldownRemaining}s trước khi thử lại.</span>
                   </div>
-                </div>
+                )}
 
-                {/* Thẻ xem trước định danh người nhận tự động (Realtime Preview) */}
-                {activeRecipient.verified ? (
+                {recipientError && cooldownRemaining === 0 && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-600 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <span>{recipientError}</span>
+                  </div>
+                )}
+
+                {/* Thẻ hiển thị người nhận hợp lệ */}
+                {recipient && (
                   <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between animate-in fade-in-50 duration-200">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
@@ -389,24 +451,19 @@ export function TransferPage() {
                       </div>
                       <div>
                         <div className="text-sm font-bold text-foreground">
-                          {activeRecipient.name}
+                          {recipient.maskedName}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {activeRecipient.accountType} • {activeRecipient.tier}
+                        <div className="text-xs text-muted-foreground font-mono">
+                          {recipientQuery}
                         </div>
                       </div>
                     </div>
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1 text-xs">
+                    <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 gap-1 text-xs">
                       <Check className="h-3.5 w-3.5" />
                       Hợp lệ
                     </Badge>
                   </div>
-                ) : recipientInput.length > 0 ? (
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
-                    <Info className="h-4 w-4 shrink-0" />
-                    <span>Đang tìm kiếm... Vui lòng nhập tối thiểu 9 số để tra cứu thông tin người nhận.</span>
-                  </div>
-                ) : null}
+                )}
               </CardContent>
             </Card>
 
@@ -419,29 +476,36 @@ export function TransferPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-5">
-                {/* Ô hiển thị số tiền lớn tương tự Stitch */}
+                {/* Ô hiển thị số tiền lớn */}
                 <div className="p-5 rounded-2xl bg-muted/40 border border-border/80 text-center">
                   <span className="text-xs text-muted-foreground block mb-2 font-medium">
                     Số tiền chuyển (VND)
                   </span>
                   <div className="flex items-center justify-center gap-2">
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
+                      onChange={(e) => handleAmountChange(e.target.value)}
                       placeholder="0"
                       className="text-center font-bold text-2xl sm:text-3xl text-primary border-none shadow-none bg-transparent focus-visible:ring-0 max-w-[280px] h-12"
                     />
                     <span className="text-xl sm:text-2xl font-bold text-primary">₫</span>
                   </div>
 
-                  {/* Nút chọn nhanh số tiền (Quick Amount Pills) */}
+                  {amount && isValidMoneyInput(amount) && (
+                    <p className="text-xs font-semibold text-primary/80 mt-1">
+                      {formatVnd(amount)}
+                    </p>
+                  )}
+
+                  {/* Nút chọn nhanh số tiền */}
                   <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
                     {QUICK_AMOUNTS.map((item) => (
                       <button
                         key={item.value}
                         type="button"
-                        onClick={() => setAmount(item.value)}
+                        onClick={() => handleAmountChange(item.value)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                           amount === item.value
                             ? 'bg-primary text-primary-foreground shadow-xs'
@@ -453,13 +517,32 @@ export function TransferPage() {
                     ))}
                   </div>
 
-                  {/* Cảnh báo hạn mức ngày */}
+                  {/* Cảnh báo lỗi LIMIT_EXCEEDED nếu có */}
+                  {limitExceededError && (
+                    <div className="mt-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-left text-xs text-rose-700 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
+                        <div>
+                          <p className="font-semibold">{limitExceededError.message}</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Để tăng hạn mức giao dịch, bạn có thể hoàn tất nâng cấp định danh tài khoản.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="pt-1">
+                        <Button asChild size="sm" variant="outline" className="h-7 text-xs text-rose-700 border-rose-300 hover:bg-rose-100">
+                          <Link to="/app/profile">Nâng cấp gói KYC ngay</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Thông tin số dư khả dụng */}
                   <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                     <Info className="h-3.5 w-3.5 text-primary shrink-0" />
                     <span>
-                      Hạn mức ngày còn lại:{' '}
-                      <strong className="text-foreground">{formatVnd(remainingDailyLimit)}</strong> /{' '}
-                      {formatVnd(DAILY_LIMIT_TOTAL)}
+                      Số dư khả dụng trong ví:{' '}
+                      <strong className="text-foreground">{formatVnd(availableBalance)}</strong>
                     </span>
                   </div>
                 </div>
@@ -499,20 +582,20 @@ export function TransferPage() {
                   <div className="flex justify-between items-center py-1">
                     <span className="text-muted-foreground">Người nhận</span>
                     <span className="font-semibold text-foreground text-right truncate max-w-[180px]">
-                      {activeRecipient.verified ? activeRecipient.name : '—'}
+                      {recipient ? recipient.maskedName : 'Chưa chọn'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-muted-foreground">Số tiền</span>
-                    <span className="font-bold text-foreground">{formatVnd(numericAmount)}</span>
+                    <span className="font-bold text-foreground">{formatVnd(amount)}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-muted-foreground">Phí giao dịch</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 ₫ (Miễn phí)</span>
+                    <span className="font-semibold text-emerald-600">0 ₫ (Miễn phí)</span>
                   </div>
                   <div className="flex justify-between items-center pt-3">
                     <span className="font-semibold text-foreground">Tổng tiền trừ ví</span>
-                    <span className="text-base sm:text-lg font-bold text-primary">{formatVnd(numericAmount)}</span>
+                    <span className="text-base sm:text-lg font-bold text-primary">{formatVnd(amount)}</span>
                   </div>
                 </div>
 
@@ -520,10 +603,10 @@ export function TransferPage() {
                 <Button
                   type="submit"
                   size="lg"
-                  disabled={!activeRecipient.verified || !isAmountValid}
+                  disabled={!recipient || !amount || !isValidMoneyInput(amount) || isQuoting}
                   className="w-full h-11 text-sm font-semibold gap-2 shadow-sm cursor-pointer"
                 >
-                  <span>Tiếp tục kiểm tra</span>
+                  <span>{isQuoting ? 'Đang lấy báo giá...' : 'Tiếp tục kiểm tra'}</span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
 
@@ -537,27 +620,43 @@ export function TransferPage() {
       )}
 
       {/* ======================================================== */}
-      {/* BƯỚC 2: XÁC NHẬN GIAO DỊCH & BẤM NHẬP PIN                */}
+      {/* BƯỚC 2: XÁC NHẬN BÁO GIÁ (60S) & CHUẨN BỊ NHẬP PIN       */}
       {/* ======================================================== */}
-      {currentStep === 2 && (
+      {currentStep === 2 && quote && (
         <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in-50 duration-200">
           <Card className="border-border shadow-md">
             <CardHeader className="text-center pb-4 border-b border-border">
               <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
                 <Receipt className="h-6 w-6" />
               </div>
-              <CardTitle className="text-xl font-bold">Xác nhận chuyển tiền</CardTitle>
+              <CardTitle className="text-xl font-bold">Xác nhận báo giá chuyển tiền</CardTitle>
               <CardDescription className="text-xs">
-                Vui lòng kiểm tra kỹ thông tin người nhận và số tiền trước khi nhập mã PIN bảo mật
+                Vui lòng kiểm tra kỹ thông tin người nhận và số tiền trước khi thực hiện bước xác thực
               </CardDescription>
+
+              {/* Đồng hồ đếm ngược 60s */}
+              <div className="pt-3 flex items-center justify-center">
+                {quoteCountdown > 0 ? (
+                  <Badge variant="outline" className="px-3 py-1 gap-1.5 text-xs font-semibold border-amber-500/30 text-amber-600 bg-amber-500/10">
+                    <Clock className="h-3.5 w-3.5 text-amber-500 animate-spin" />
+                    <span>Báo giá có hiệu lực trong: {quoteCountdown} giây</span>
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="px-3 py-1 gap-1.5 text-xs font-semibold">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    <span>Báo giá đã hết hạn</span>
+                  </Badge>
+                )}
+              </div>
             </CardHeader>
+
             <CardContent className="pt-6 space-y-6">
               {/* Thẻ thông tin số tiền */}
               <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 text-center">
                 <span className="text-xs text-muted-foreground">Số tiền chuyển</span>
-                <div className="text-3xl font-extrabold text-primary mt-1">{formatVnd(numericAmount)}</div>
+                <div className="text-3xl font-extrabold text-primary mt-1">{formatVnd(quote.amount)}</div>
                 <Badge variant="outline" className="mt-2 text-xs text-emerald-600 border-emerald-500/30">
-                  Miễn phí giao dịch trọn đời
+                  Phí giao dịch: {formatVnd(quote.fee)} (Miễn phí)
                 </Badge>
               </div>
 
@@ -566,14 +665,9 @@ export function TransferPage() {
                 <div className="flex justify-between items-center text-xs sm:text-sm">
                   <span className="text-muted-foreground">Người nhận</span>
                   <div className="text-right">
-                    <span className="font-bold text-foreground block">{activeRecipient.name}</span>
-                    <span className="text-xs text-muted-foreground font-mono">{activeRecipient.identifier}</span>
+                    <span className="font-bold text-foreground block">{recipient?.maskedName}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{recipientQuery}</span>
                   </div>
-                </div>
-
-                <div className="border-t border-border/60 pt-2.5 flex justify-between items-center text-xs sm:text-sm">
-                  <span className="text-muted-foreground">Loại tài khoản</span>
-                  <span className="font-medium text-foreground">{activeRecipient.accountType}</span>
                 </div>
 
                 <div className="border-t border-border/60 pt-2.5 flex justify-between items-center text-xs sm:text-sm">
@@ -588,9 +682,19 @@ export function TransferPage() {
 
                 <div className="border-t border-border/60 pt-2.5 flex justify-between items-center text-xs sm:text-sm">
                   <span className="font-semibold text-foreground">Tổng trừ ví</span>
-                  <span className="text-base font-bold text-primary">{formatVnd(numericAmount)}</span>
+                  <span className="text-base font-bold text-primary">{formatVnd(quote.amount)}</span>
                 </div>
               </div>
+
+              {/* Cảnh báo khi báo giá đã hết hạn */}
+              {quoteCountdown <= 0 && (
+                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 flex items-center justify-between">
+                  <span>Báo giá 60 giây đã hết hạn. Vui lòng lấy lại báo giá mới để tiếp tục.</span>
+                  <Button size="sm" onClick={handleRefreshQuote} disabled={isQuoting} className="h-7 text-xs font-semibold ml-2">
+                    <RefreshCw className="h-3 w-3 mr-1" /> Lấy báo giá mới
+                  </Button>
+                </div>
+              )}
 
               {/* Nhóm nút hành động */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
@@ -606,11 +710,11 @@ export function TransferPage() {
                 <Button
                   type="button"
                   onClick={handleOpenPinModal}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || quoteCountdown <= 0}
                   className="h-11 font-semibold gap-2 shadow-sm cursor-pointer"
                 >
                   <Lock className="h-4 w-4" />
-                  <span>Nhập mã PIN để chuyển</span>
+                  <span>Xác nhận chuyển tiền</span>
                 </Button>
               </div>
             </CardContent>
@@ -628,8 +732,8 @@ export function TransferPage() {
             <div className="h-2 w-full bg-emerald-500" />
 
             <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
-              {/* Biểu tượng dấu tích xanh tròn lớn chuẩn Stitch */}
-              <div className="mx-auto h-16 w-16 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner">
+              {/* Biểu tượng dấu tích xanh tròn lớn */}
+              <div className="mx-auto h-16 w-16 rounded-full bg-emerald-500/15 text-emerald-600 flex items-center justify-center shadow-inner">
                 <CheckCircle2 className="h-10 w-10" />
               </div>
 
@@ -692,7 +796,7 @@ export function TransferPage() {
 
                 <div className="border-t border-border/60 pt-2.5 flex justify-between items-center">
                   <span className="text-muted-foreground">Phí dịch vụ</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 ₫ (Miễn phí)</span>
+                  <span className="font-semibold text-emerald-600">0 ₫ (Miễn phí)</span>
                 </div>
               </div>
 
@@ -740,7 +844,7 @@ export function TransferPage() {
         open={pinModalOpen}
         onOpenChange={setPinModalOpen}
         title="Xác thực mã PIN giao dịch"
-        description={`Xác nhận chuyển ${formatVnd(numericAmount)} tới ${activeRecipient.name}.`}
+        description={`Xác nhận chuyển ${formatVnd(amount)} tới ${recipient?.maskedName || 'người nhận'}.`}
         amount={amount}
         onSuccess={handlePinSuccess}
         onCancel={() => setPinModalOpen(false)}
