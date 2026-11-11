@@ -20,7 +20,7 @@ function renderWithProviders(ui: React.ReactElement) {
   )
 }
 
-describe('TransferPage Bước 2 - Checkout, PIN, Confirm [K18-4]', () => {
+describe('TransferPage Bước 2 - Checkout, PIN, Confirm [K19-2]', () => {
   const senderUserId = '11111111-1111-4111-8111-111111111111'
   const receiverUserId = '22222222-2222-4222-8222-222222222222'
 
@@ -44,8 +44,8 @@ describe('TransferPage Bước 2 - Checkout, PIN, Confirm [K18-4]', () => {
 
   it('luồng chuyển tiền thành công trọn vẹn: quote -> checkout (Idempotency-Key) -> PIN -> confirm (X-Transaction-Token) -> biên lai', async () => {
     let capturedIdempotencyKey: string | null = null
-    let capturedCheckoutBody: unknown = null
-    let capturedPinBody: unknown = null
+    let capturedCheckoutBody: any = null
+    let capturedPinBody: any = null
     let capturedConfirmToken: string | null = null
     let capturedConfirmPaymentId: string | null = null
 

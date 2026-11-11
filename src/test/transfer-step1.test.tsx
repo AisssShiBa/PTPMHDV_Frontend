@@ -20,7 +20,7 @@ function renderWithProviders(ui: React.ReactElement) {
   )
 }
 
-describe('TransferPage Bước 1 - K18-3', () => {
+describe('TransferPage Bước 1 - K19-1', () => {
   beforeEach(() => {
     server.resetHandlers()
   })

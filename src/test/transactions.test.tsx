@@ -21,14 +21,14 @@ function renderWithProviders(ui: React.ReactElement) {
   )
 }
 
-describe('TransactionsPage - Cursor Pagination & Ledger [K18-6]', () => {
+describe('TransactionsPage - Cursor Pagination & Ledger [K22-1]', () => {
   beforeEach(() => {
     server.resetHandlers()
   })
 
   it('phân trang cursor: tải 2 trang, ghép đúng thứ tự, không trùng lặp, hết trang nút tải thêm biến mất', async () => {
     let callCount = 0
-    const requestedCursors: (string | null)[] = []
+    let requestedCursors: (string | null)[] = []
 
     server.use(
       http.get('*/api/wallets/me/ledger', ({ request }) => {

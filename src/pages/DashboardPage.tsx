@@ -56,7 +56,12 @@ export function DashboardPage() {
   // Số dư ví: ưu tiên availableBalance, fallback balance
   const rawBalance = wallet?.availableBalance ?? wallet?.balance ?? user?.balance ?? '0'
   const heldBalance = wallet?.heldBalance ?? '0'
-  const hasHeldBalance = compareMoney(heldBalance, '0') > 0
+  let hasHeldBalance = false
+  try {
+    hasHeldBalance = compareMoney(heldBalance, '0') > 0
+  } catch {
+    hasHeldBalance = false
+  }
   const walletDisplayId = wallet?.walletId || wallet?.id || user?.id || 'FV-PRIMARY'
 
   const handleCopyWalletId = () => {

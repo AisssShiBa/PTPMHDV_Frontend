@@ -49,7 +49,7 @@ export interface P2pCheckoutResult {
   paymentId: string
   id?: string
   status: PaymentStatus
-  holdExpiresAt?: string
+  holdExpiresAt: string
   replayed?: boolean
 }
 

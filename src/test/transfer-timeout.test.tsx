@@ -20,7 +20,7 @@ function renderWithProviders(ui: React.ReactElement) {
   )
 }
 
-describe('TransferPage Timeout & Safe Retry - K18-5', () => {
+describe('TransferPage Timeout & Safe Retry - K19-3', () => {
   const senderUserId = '11111111-2222-4333-8444-555555555555'
   const receiverUserId = '66666666-7777-4888-8999-000000000000'
 

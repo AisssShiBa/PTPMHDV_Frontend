@@ -30,6 +30,7 @@ export interface WalletMe {
 
 export interface LedgerItem {
   id: string
+  walletId?: string
   transactionId?: string
   direction: 'CREDIT' | 'DEBIT' | 'IN' | 'OUT'
   amount: string
@@ -43,6 +44,12 @@ export interface LedgerItem {
   description?: string
   note?: string
   createdAt: string
+}
+
+export interface LedgerFilterParams {
+  startDate?: string
+  endDate?: string
+  type?: string
 }
 
 export interface LedgerPage {

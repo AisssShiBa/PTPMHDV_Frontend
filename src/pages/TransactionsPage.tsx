@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/common/EmptyState'
+import { QueryBoundary } from '@/components/common/QueryBoundary'
 import {
   Dialog,
   DialogContent,
@@ -96,21 +97,28 @@ export function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [directionFilter, setDirectionFilter] = useState<TransactionDirectionFilter>('ALL')
   const [typeFilter, setTypeFilter] = useState<TransactionTypeFilter>('ALL')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   // Giao dịch được chọn xem chi tiết biên lai
   const [selectedTxn, setSelectedTxn] = useState<FormattedLedger | null>(null)
   const [copiedId, setCopiedId] = useState(false)
 
+  // Cờ gắn nhãn BLOCKED-BACKEND:
+  // API GET /api/wallets/me/ledger chỉ nhận cursor và limit.
+  // Các tiêu chí ngày (startDate, endDate) và loại giao dịch (typeFilter) chưa được máy chủ hỗ trợ.
+  // Theo Quy tắc 10, hệ thống tuyệt đối không tự lọc cục bộ trên tập dữ liệu cursor chưa tải hết.
+  const hasBackendBlockedFilter = Boolean(startDate || endDate || typeFilter !== 'ALL')
+
   // Gọi API GET /api/wallets/me/ledger phân trang cursor
+  const ledgerQuery = useInfiniteWalletLedger(20)
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
-    isError,
     refetch
-  } = useInfiniteWalletLedger(20)
+  } = ledgerQuery
 
   // Tập hợp các trang dữ liệu cursor thành danh sách phẳng
   const allEntries = useMemo(() => {
@@ -123,8 +131,8 @@ export function TransactionsPage() {
         for (const item of page.items) {
           if (!seenIds.has(item.id)) {
             seenIds.add(item.id)
-            rawItems.push(item)
           }
+          rawItems.push(item)
         }
       }
     }
@@ -132,7 +140,8 @@ export function TransactionsPage() {
     return rawItems.map(mapLedgerItem)
   }, [data])
 
-  // Lọc giao dịch trên bộ nhớ client
+  // Lọc giao dịch trên bộ nhớ client (từ khóa và hướng dòng tiền)
+  // Không bù đắp logic lọc ngày / loại của backend để đảm bảo Quy tắc 10
   const filteredTransactions = useMemo(() => {
     return allEntries.filter((item) => {
       // Lọc từ khóa
@@ -150,20 +159,17 @@ export function TransactionsPage() {
         return false
       }
 
-      // Lọc loại giao dịch
-      if (typeFilter !== 'ALL' && !item.type.includes(typeFilter)) {
-        return false
-      }
-
       return true
     })
-  }, [allEntries, searchTerm, directionFilter, typeFilter])
+  }, [allEntries, searchTerm, directionFilter])
 
   // Reset bộ lọc
   const handleResetFilters = () => {
     setSearchTerm('')
     setDirectionFilter('ALL')
     setTypeFilter('ALL')
+    setStartDate('')
+    setEndDate('')
     toast.info('Đã đặt lại toàn bộ điều kiện lọc')
   }
 
@@ -236,7 +242,7 @@ export function TransactionsPage() {
       {/* ======================================================== */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4 space-y-3.5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Lọc dòng tiền (Thu/Chi) */}
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -269,21 +275,65 @@ export function TransactionsPage() {
               </select>
             </div>
 
-            {/* Ô tìm kiếm từ khóa */}
+            {/* Bộ lọc ngày: Từ ngày */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm nội dung, mã bút toán..."
-                className="pl-9 h-11 text-xs sm:text-sm"
+                type="date"
+                aria-label="Từ ngày"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-11 text-xs sm:text-sm"
+              />
+            </div>
+
+            {/* Bộ lọc ngày: Đến ngày */}
+            <div className="relative">
+              <Input
+                type="date"
+                aria-label="Đến ngày"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-11 text-xs sm:text-sm"
               />
             </div>
           </div>
 
+          {/* Ô tìm kiếm từ khóa */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Tìm nội dung, mã bút toán..."
+              className="pl-9 h-11 text-xs sm:text-sm"
+            />
+          </div>
+
+          {/* Cảnh báo BLOCKED-BACKEND theo Quy tắc 10 */}
+          {hasBackendBlockedFilter && (
+            <div
+              role="region"
+              aria-label="Thông báo giới hạn hệ thống"
+              className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1.5"
+            >
+              <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-100">
+                <Badge variant="outline" className="border-amber-600 bg-amber-500/20 text-amber-900 dark:text-amber-100 font-mono text-[11px] font-bold">
+                  BLOCKED-BACKEND
+                </Badge>
+                <span>Bộ lọc theo ngày và loại giao dịch chưa được API máy chủ hỗ trợ</span>
+              </div>
+              <p className="leading-relaxed">
+                API hiện tại (<code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded">GET /api/wallets/me/ledger</code>) chỉ hỗ trợ phân trang cursor (<code className="font-mono">limit</code>, <code className="font-mono">cursor</code>), chưa hỗ trợ tham số truy vấn <code className="font-mono">startDate</code>, <code className="font-mono">endDate</code> hay <code className="font-mono">type</code>.
+              </p>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                Theo <strong>Quy tắc 10</strong>, FinVault Web không tự lọc cục bộ trên tập dữ liệu chưa tải hết để tránh sai lệch báo cáo sao kê số dư. Đề xuất: Bổ sung các query params này vào backend <code>wallet-service</code>.
+              </p>
+            </div>
+          )}
+
           {/* Dải thông tin bộ lọc & nút reset */}
           <div className="pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span>Đang áp dụng:</span>
               {directionFilter !== 'ALL' && (
                 <Badge variant="outline" className="text-[11px] font-normal">
@@ -291,11 +341,21 @@ export function TransactionsPage() {
                 </Badge>
               )}
               {typeFilter !== 'ALL' && (
-                <Badge variant="outline" className="text-[11px] font-normal">
-                  Loại: {typeFilter}
+                <Badge variant="outline" className="text-[11px] font-normal border-amber-500/40 text-amber-700 dark:text-amber-300">
+                  Loại: {typeFilter} (BLOCKED-BACKEND)
                 </Badge>
               )}
-              {(searchTerm || directionFilter !== 'ALL' || typeFilter !== 'ALL') && (
+              {startDate && (
+                <Badge variant="outline" className="text-[11px] font-normal border-amber-500/40 text-amber-700 dark:text-amber-300">
+                  Từ: {startDate} (BLOCKED-BACKEND)
+                </Badge>
+              )}
+              {endDate && (
+                <Badge variant="outline" className="text-[11px] font-normal border-amber-500/40 text-amber-700 dark:text-amber-300">
+                  Đến: {endDate} (BLOCKED-BACKEND)
+                </Badge>
+              )}
+              {(searchTerm || directionFilter !== 'ALL' || typeFilter !== 'ALL' || startDate || endDate) && (
                 <button
                   type="button"
                   onClick={handleResetFilters}
@@ -315,188 +375,193 @@ export function TransactionsPage() {
       </Card>
 
       {/* ======================================================== */}
-      {/* 4 TRẠNG THÁI: LOADING, ERROR, EMPTY, SUCCESS             */}
+      {/* 4 TRẠNG THÁI: LOADING, ERROR, EMPTY, SUCCESS QUA QUERYBOUNDARY */}
       {/* ======================================================== */}
-      {isLoading ? (
-        /* Trạng thái 1: Đang tải dữ liệu ban đầu (Skeleton) */
-        <Card className="border-border shadow-sm p-6 space-y-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between py-3 border-b border-border/40 last:border-0 animate-pulse">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-muted" />
-                <div className="space-y-2">
-                  <div className="h-4 w-48 bg-muted rounded" />
-                  <div className="h-3 w-32 bg-muted/60 rounded" />
+      <QueryBoundary
+        query={ledgerQuery}
+        skeleton={
+          <Card className="border-border shadow-sm p-6 space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-3 border-b border-border/40 last:border-0 animate-pulse">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-muted" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-48 bg-muted rounded" />
+                    <div className="h-3 w-32 bg-muted/60 rounded" />
+                  </div>
+                </div>
+                <div className="space-y-2 text-right">
+                  <div className="h-4 w-28 bg-muted rounded ml-auto" />
+                  <div className="h-3 w-20 bg-muted/60 rounded ml-auto" />
                 </div>
               </div>
-              <div className="space-y-2 text-right">
-                <div className="h-4 w-28 bg-muted rounded ml-auto" />
-                <div className="h-3 w-20 bg-muted/60 rounded ml-auto" />
-              </div>
+            ))}
+          </Card>
+        }
+        errorFallback={
+          <Card className="border-destructive/30 bg-destructive/5 p-8 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+              <AlertTriangle className="h-6 w-6" />
             </div>
-          ))}
-        </Card>
-      ) : isError ? (
-        /* Trạng thái 2: Lỗi tải dữ liệu */
-        <Card className="border-destructive/30 bg-destructive/5 p-8 text-center space-y-3">
-          <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
-            <AlertTriangle className="h-6 w-6" />
-          </div>
-          <h3 className="font-bold text-foreground">Không thể tải lịch sử giao dịch</h3>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Đã có sự cố khi kết nối tới máy chủ sổ cái. Vui lòng thử lại.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="cursor-pointer gap-1.5"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>Thử lại</span>
-          </Button>
-        </Card>
-      ) : allEntries.length === 0 ? (
-        /* Trạng thái 3: Ví hoàn toàn rỗng */
-        <EmptyState
-          title="Chưa có biến động số dư nào"
-          description="Mọi giao dịch nạp tiền, chuyển tiền, thanh toán và rút tiền sẽ được ghi nhận minh bạch và bảo mật tại đây."
-        />
-      ) : filteredTransactions.length === 0 ? (
-        /* Rỗng do bộ lọc không khớp */
-        <Card className="border-border shadow-sm p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center text-muted-foreground mb-4">
-            <Receipt className="h-8 w-8" />
-          </div>
-          <h3 className="text-lg font-bold text-foreground mb-1">
-            Không tìm thấy biến động phù hợp
-          </h3>
-          <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto mb-5">
-            Không có giao dịch nào khớp với điều kiện lọc hiện tại.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleResetFilters}
-            className="h-10 text-xs font-semibold gap-2 cursor-pointer"
-          >
-            <RotateCcw className="h-4 w-4" />
-            <span>Đặt lại bộ lọc</span>
-          </Button>
-        </Card>
-      ) : (
-        /* Trạng thái 4: Danh sách dữ liệu sổ cái */
-        <Card className="border-border shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-muted/40 border-b border-border text-muted-foreground text-xs font-semibold uppercase tracking-wider">
-                  <th className="py-3.5 px-6 w-48">Thời gian (GMT+7)</th>
-                  <th className="py-3.5 px-6">Nội dung giao dịch</th>
-                  <th className="py-3.5 px-6 text-center w-36">Loại bút toán</th>
-                  <th className="py-3.5 px-6 text-right w-44">Số tiền</th>
-                  <th className="py-3.5 px-4 text-center w-12"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60 text-sm">
-                {filteredTransactions.map((txn) => (
-                  <tr
-                    key={txn.id}
-                    onClick={() => setSelectedTxn(txn)}
-                    className="h-16 hover:bg-muted/30 transition-colors cursor-pointer group"
-                  >
-                    {/* Cột 1: Thời gian GMT+7 */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      <div className="font-semibold text-foreground text-xs sm:text-sm">
-                        {formatDateTime(txn.timestamp)}
-                      </div>
-                    </td>
+            <h3 className="font-bold text-foreground">Không thể tải lịch sử giao dịch</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              Đã có sự cố khi kết nối tới máy chủ sổ cái. Vui lòng thử lại.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="cursor-pointer gap-1.5"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Thử lại</span>
+            </Button>
+          </Card>
+        }
+        isEmpty={() => allEntries.length === 0}
+        emptyFallback={
+          <EmptyState
+            title="Chưa có biến động số dư nào"
+            description="Mọi giao dịch nạp tiền, chuyển tiền, thanh toán và rút tiền sẽ được ghi nhận minh bạch và bảo mật tại đây."
+          />
+        }
+      >
+        {filteredTransactions.length === 0 ? (
+          /* Rỗng do bộ lọc không khớp */
+          <Card className="border-border shadow-sm p-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center text-muted-foreground mb-4">
+              <Receipt className="h-8 w-8" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-1">
+              Không tìm thấy biến động phù hợp
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto mb-5">
+              Không có giao dịch nào khớp với điều kiện lọc hiện tại.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResetFilters}
+              className="h-10 text-xs font-semibold gap-2 cursor-pointer"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span>Đặt lại bộ lọc</span>
+            </Button>
+          </Card>
+        ) : (
+          /* Trạng thái 4: Danh sách dữ liệu sổ cái */
+          <Card className="border-border shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-muted/40 border-b border-border text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+                    <th className="py-3.5 px-6 w-48">Thời gian (GMT+7)</th>
+                    <th className="py-3.5 px-6">Nội dung giao dịch</th>
+                    <th className="py-3.5 px-6 text-center w-36">Loại bút toán</th>
+                    <th className="py-3.5 px-6 text-right w-44">Số tiền</th>
+                    <th className="py-3.5 px-4 text-center w-12"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 text-sm">
+                  {filteredTransactions.map((txn) => (
+                    <tr
+                      key={txn.id}
+                      onClick={() => setSelectedTxn(txn)}
+                      className="h-16 hover:bg-muted/30 transition-colors cursor-pointer group"
+                    >
+                      {/* Cột 1: Thời gian GMT+7 */}
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <div className="font-semibold text-foreground text-xs sm:text-sm">
+                          {formatDateTime(txn.timestamp)}
+                        </div>
+                      </td>
 
-                    {/* Cột 2: Nội dung */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3.5">
-                        {renderTxnIcon(txn)}
-                        <div>
-                          <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                            {txn.title}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate max-w-md">
-                            {txn.description}
+                      {/* Cột 2: Nội dung */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3.5">
+                          {renderTxnIcon(txn)}
+                          <div>
+                            <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                              {txn.title}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate max-w-md">
+                              {txn.description}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Cột 3: Loại bút toán */}
-                    <td className="py-4 px-6 text-center whitespace-nowrap">
-                      <Badge variant="outline" className="text-xs font-medium">
-                        {txn.direction === 'CREDIT' ? 'Tiền vào' : 'Tiền ra'}
-                      </Badge>
-                    </td>
+                      {/* Cột 3: Loại bút toán */}
+                      <td className="py-4 px-6 text-center whitespace-nowrap">
+                        <Badge variant="outline" className="text-xs font-medium">
+                          {txn.direction === 'CREDIT' ? 'Tiền vào' : 'Tiền ra'}
+                        </Badge>
+                      </td>
 
-                    {/* Cột 4: Số tiền (BigInt formatted) */}
-                    <td className="py-4 px-6 text-right whitespace-nowrap">
-                      <span
-                        className={`font-bold font-mono text-sm sm:text-base ${
-                          txn.direction === 'CREDIT'
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-foreground'
-                        }`}
-                      >
-                        {txn.direction === 'CREDIT'
-                          ? `+ ${formatVnd(txn.amount)}`
-                          : `- ${formatVnd(txn.amount)}`}
-                      </span>
-                      <div className="text-[11px] text-muted-foreground font-mono">
-                        Số dư sau: {formatVnd(txn.balanceAfter)}
-                      </div>
-                    </td>
+                      {/* Cột 4: Số tiền (BigInt formatted) */}
+                      <td className="py-4 px-6 text-right whitespace-nowrap">
+                        <span
+                          className={`font-bold font-mono text-sm sm:text-base ${
+                            txn.direction === 'CREDIT'
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-foreground'
+                          }`}
+                        >
+                          {txn.direction === 'CREDIT'
+                            ? `+ ${formatVnd(txn.amount)}`
+                            : `- ${formatVnd(txn.amount)}`}
+                        </span>
+                        <div className="text-[11px] text-muted-foreground font-mono">
+                          Số dư sau: {formatVnd(txn.balanceAfter)}
+                        </div>
+                      </td>
 
-                    {/* Cột 5: Nút xem */}
-                    <td className="py-4 px-4 text-center text-muted-foreground group-hover:text-primary transition-colors">
-                      <ChevronRight className="h-4 w-4" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Phân trang Cursor: Tải thêm */}
-          <div className="px-6 py-4 bg-card border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
-            <div className="text-muted-foreground">
-              Đang hiển thị <span className="font-semibold text-foreground">{filteredTransactions.length}</span> giao dịch
+                      {/* Cột 5: Nút xem */}
+                      <td className="py-4 px-4 text-center text-muted-foreground group-hover:text-primary transition-colors">
+                        <ChevronRight className="h-4 w-4" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <div className="flex items-center gap-2">
-              {hasNextPage ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isFetchingNextPage}
-                  onClick={() => fetchNextPage()}
-                  className="h-9 px-4 text-xs font-semibold gap-2 cursor-pointer shadow-xs"
-                >
-                  {isFetchingNextPage ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      <span>Đang tải thêm...</span>
-                    </>
-                  ) : (
-                    <span>Tải thêm giao dịch</span>
-                  )}
-                </Button>
-              ) : (
-                <span className="text-xs text-muted-foreground font-medium">
-                  Đã hiển thị toàn bộ lịch sử biến động số dư
-                </span>
-              )}
+            {/* Phân trang Cursor: Tải thêm */}
+            <div className="px-6 py-4 bg-card border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
+              <div className="text-muted-foreground">
+                Đang hiển thị <span className="font-semibold text-foreground">{filteredTransactions.length}</span> giao dịch
+              </div>
+
+              <div className="flex items-center gap-2">
+                {hasNextPage ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isFetchingNextPage}
+                    onClick={() => fetchNextPage()}
+                    className="h-9 px-4 text-xs font-semibold gap-2 cursor-pointer shadow-xs"
+                  >
+                    {isFetchingNextPage ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                        <span>Đang tải thêm...</span>
+                      </>
+                    ) : (
+                      <span>Tải thêm giao dịch</span>
+                    )}
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Đã hiển thị toàn bộ lịch sử biến động số dư
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
+      </QueryBoundary>
 
       {/* ======================================================== */}
       {/* DIALOG CHI TIẾT BIÊN LAI ĐIỆN TỬ (RECEIPT MODAL)         */}
