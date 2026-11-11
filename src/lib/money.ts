@@ -52,10 +52,11 @@ export function parseVndToBigInt(value: string | bigint | null | undefined): big
   }
 
   // Cho phép phần thập phân bằng 0 (ví dụ từ Database / API: "200000.00", "0.00", "100.0")
-  trimmed = trimmed.replace(/[.,]00?$/g, '')
+  trimmed = trimmed.replace(/[.,]00?$/, '')
+  if (!trimmed) return 0n
 
   // Chặn số thập phân rõ ràng có phần lẻ khác 0 (ví dụ: 100.50 hoặc 100,5)
-  if (/\.\d{1,2}$/g.test(trimmed) || /,\d{1,2}$/g.test(trimmed)) {
+  if (/\.\d{1,2}$/.test(trimmed) || /,\d{1,2}$/.test(trimmed)) {
     // Nếu có 1-2 chữ số sau dấu chấm/phẩy -> đây là số thập phân, tiền VND không có xu/hào lẻ
     throw new Error('Tiền VND không chấp nhận số thập phân')
   }
