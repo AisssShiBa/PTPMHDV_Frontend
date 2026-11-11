@@ -42,7 +42,7 @@ export function parseVndToBigInt(value: string | bigint | null | undefined): big
     throw new Error('Giá trị tiền phải là kiểu chuỗi hoặc BigInt')
   }
 
-  const trimmed = value.trim()
+  let trimmed = value.trim()
   if (!trimmed) return 0n
 
   // Nếu chuỗi chứa dấu phân cách hàng nghìn dạng '1.000.000' hoặc '1,000,000' thì cho phép nếu là định dạng hiển thị
@@ -51,7 +51,10 @@ export function parseVndToBigInt(value: string | bigint | null | undefined): big
     throw new Error('Số tiền không thể là số âm')
   }
 
-  // Chặn số thập phân rõ ràng (ví dụ: 100.50 hoặc 100,5)
+  // Cho phép phần thập phân bằng 0 (ví dụ từ Database / API: "200000.00", "0.00", "100.0")
+  trimmed = trimmed.replace(/[.,]00?$/g, '')
+
+  // Chặn số thập phân rõ ràng có phần lẻ khác 0 (ví dụ: 100.50 hoặc 100,5)
   if (/\.\d{1,2}$/g.test(trimmed) || /,\d{1,2}$/g.test(trimmed)) {
     // Nếu có 1-2 chữ số sau dấu chấm/phẩy -> đây là số thập phân, tiền VND không có xu/hào lẻ
     throw new Error('Tiền VND không chấp nhận số thập phân')
