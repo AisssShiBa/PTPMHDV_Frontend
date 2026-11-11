@@ -97,10 +97,18 @@ export function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [directionFilter, setDirectionFilter] = useState<TransactionDirectionFilter>('ALL')
   const [typeFilter, setTypeFilter] = useState<TransactionTypeFilter>('ALL')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   // Giao dịch được chọn xem chi tiết biên lai
   const [selectedTxn, setSelectedTxn] = useState<FormattedLedger | null>(null)
   const [copiedId, setCopiedId] = useState(false)
+
+  // Cờ gắn nhãn BLOCKED-BACKEND:
+  // API GET /api/wallets/me/ledger chỉ nhận cursor và limit.
+  // Các tiêu chí ngày (startDate, endDate) và loại giao dịch (typeFilter) chưa được máy chủ hỗ trợ.
+  // Theo Quy tắc 10, hệ thống tuyệt đối không tự lọc cục bộ trên tập dữ liệu cursor chưa tải hết.
+  const hasBackendBlockedFilter = Boolean(startDate || endDate || typeFilter !== 'ALL')
 
   // Gọi API GET /api/wallets/me/ledger phân trang cursor
   const ledgerQuery = useInfiniteWalletLedger(20)
@@ -123,8 +131,8 @@ export function TransactionsPage() {
         for (const item of page.items) {
           if (!seenIds.has(item.id)) {
             seenIds.add(item.id)
-            rawItems.push(item)
           }
+          rawItems.push(item)
         }
       }
     }
@@ -132,7 +140,8 @@ export function TransactionsPage() {
     return rawItems.map(mapLedgerItem)
   }, [data])
 
-  // Lọc giao dịch trên bộ nhớ client
+  // Lọc giao dịch trên bộ nhớ client (từ khóa và hướng dòng tiền)
+  // Không bù đắp logic lọc ngày / loại của backend để đảm bảo Quy tắc 10
   const filteredTransactions = useMemo(() => {
     return allEntries.filter((item) => {
       // Lọc từ khóa
@@ -150,20 +159,17 @@ export function TransactionsPage() {
         return false
       }
 
-      // Lọc loại giao dịch
-      if (typeFilter !== 'ALL' && !item.type.includes(typeFilter)) {
-        return false
-      }
-
       return true
     })
-  }, [allEntries, searchTerm, directionFilter, typeFilter])
+  }, [allEntries, searchTerm, directionFilter])
 
   // Reset bộ lọc
   const handleResetFilters = () => {
     setSearchTerm('')
     setDirectionFilter('ALL')
     setTypeFilter('ALL')
+    setStartDate('')
+    setEndDate('')
     toast.info('Đã đặt lại toàn bộ điều kiện lọc')
   }
 
@@ -236,7 +242,7 @@ export function TransactionsPage() {
       {/* ======================================================== */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-4 space-y-3.5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Lọc dòng tiền (Thu/Chi) */}
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -269,21 +275,65 @@ export function TransactionsPage() {
               </select>
             </div>
 
-            {/* Ô tìm kiếm từ khóa */}
+            {/* Bộ lọc ngày: Từ ngày */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm nội dung, mã bút toán..."
-                className="pl-9 h-11 text-xs sm:text-sm"
+                type="date"
+                aria-label="Từ ngày"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-11 text-xs sm:text-sm"
+              />
+            </div>
+
+            {/* Bộ lọc ngày: Đến ngày */}
+            <div className="relative">
+              <Input
+                type="date"
+                aria-label="Đến ngày"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-11 text-xs sm:text-sm"
               />
             </div>
           </div>
 
+          {/* Ô tìm kiếm từ khóa */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Tìm nội dung, mã bút toán..."
+              className="pl-9 h-11 text-xs sm:text-sm"
+            />
+          </div>
+
+          {/* Cảnh báo BLOCKED-BACKEND theo Quy tắc 10 */}
+          {hasBackendBlockedFilter && (
+            <div
+              role="region"
+              aria-label="Thông báo giới hạn hệ thống"
+              className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1.5"
+            >
+              <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-100">
+                <Badge variant="outline" className="border-amber-600 bg-amber-500/20 text-amber-900 dark:text-amber-100 font-mono text-[11px] font-bold">
+                  BLOCKED-BACKEND
+                </Badge>
+                <span>Bộ lọc theo ngày và loại giao dịch chưa được API máy chủ hỗ trợ</span>
+              </div>
+              <p className="leading-relaxed">
+                API hiện tại (<code className="font-mono bg-amber-500/20 px-1 py-0.5 rounded">GET /api/wallets/me/ledger</code>) chỉ hỗ trợ phân trang cursor (<code className="font-mono">limit</code>, <code className="font-mono">cursor</code>), chưa hỗ trợ tham số truy vấn <code className="font-mono">startDate</code>, <code className="font-mono">endDate</code> hay <code className="font-mono">type</code>.
+              </p>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                Theo <strong>Quy tắc 10</strong>, FinVault Web không tự lọc cục bộ trên tập dữ liệu chưa tải hết để tránh sai lệch báo cáo sao kê số dư. Đề xuất: Bổ sung các query params này vào backend <code>wallet-service</code>.
+              </p>
+            </div>
+          )}
+
           {/* Dải thông tin bộ lọc & nút reset */}
           <div className="pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span>Đang áp dụng:</span>
               {directionFilter !== 'ALL' && (
                 <Badge variant="outline" className="text-[11px] font-normal">
@@ -291,11 +341,21 @@ export function TransactionsPage() {
                 </Badge>
               )}
               {typeFilter !== 'ALL' && (
-                <Badge variant="outline" className="text-[11px] font-normal">
-                  Loại: {typeFilter}
+                <Badge variant="outline" className="text-[11px] font-normal border-amber-500/40 text-amber-700 dark:text-amber-300">
+                  Loại: {typeFilter} (BLOCKED-BACKEND)
                 </Badge>
               )}
-              {(searchTerm || directionFilter !== 'ALL' || typeFilter !== 'ALL') && (
+              {startDate && (
+                <Badge variant="outline" className="text-[11px] font-normal border-amber-500/40 text-amber-700 dark:text-amber-300">
+                  Từ: {startDate} (BLOCKED-BACKEND)
+                </Badge>
+              )}
+              {endDate && (
+                <Badge variant="outline" className="text-[11px] font-normal border-amber-500/40 text-amber-700 dark:text-amber-300">
+                  Đến: {endDate} (BLOCKED-BACKEND)
+                </Badge>
+              )}
+              {(searchTerm || directionFilter !== 'ALL' || typeFilter !== 'ALL' || startDate || endDate) && (
                 <button
                   type="button"
                   onClick={handleResetFilters}
