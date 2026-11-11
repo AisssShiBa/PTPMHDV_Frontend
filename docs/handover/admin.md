@@ -53,8 +53,28 @@
 - `AdminTopupPage`: nối danh sách/duyệt/từ chối thật, thêm banner giải thích chế độ VNPAY IPN.
 - Lý do: các thành phần cũ hiển thị dữ liệu không có nguồn từ API.
 
-## 5. Kiểm thử đã chạy (N17)
+## 5. Đối soát Admin (N18)
+
+- **Route**: `/app/admin/reconciliation` → `AdminReconciliationPage` (7 dòng) → `features/admin/reconciliation/components/AdminReconciliation`.
+- **API** (`features/admin/reconciliation/api.ts`), đúng contract admin-service N13:
+  | Hàm | Endpoint | Ghi chú |
+  | :--- | :--- | :--- |
+  | `reconciliationApi.run` | `POST /api/admin/reconciliation/run?mode=quick\|full` | Trả report; nút khóa khi đang chạy |
+  | `reconciliationApi.listReports` | `GET /api/admin/reconciliation/reports?page&limit` | Trả `{items,page,limit,total}` |
+  | `reconciliationApi.getReport` | `GET /api/admin/reconciliation/reports/:id` | Chi tiết report |
+  | `reconciliationApi.adjustAnomaly` | `POST /api/admin/reconciliation/anomalies/:id/adjust` | Body `{direction, amount(string), reason}` |
+- **`reconciliationKeys`**: `['admin','reconciliation', ...]`; chi tiết tách key `...reports.detail.<id>`; mutation điều chỉnh invalidate toàn bộ nhánh.
+- **UI**: 4 thẻ KPI (ví đã kiểm tra, bất thường, lần chạy gần nhất, chênh lệch `expected - actual` bằng BigInt), lịch sử báo cáo có phân trang, panel chi tiết với đủ 4 loại anomaly + nhãn mặc định cho loại lạ, nút Điều chỉnh mở dialog.
+- **Dialog điều chỉnh**: số tiền là **chuỗi** kiểm bằng `adjustAmountSchema` (regex nguyên dương + `BigInt` ≤ 18 chữ số); lý do 5–500 ký tự; nút khóa khi pending (double-click chỉ 1 request).
+- **Xử lý lỗi** (`reconciliation/messages.ts`): `409 ALREADY_ADJUSTED` → báo đã điều chỉnh + tự làm mới dữ liệu; `503 ADJUST_OUTCOME_UNKNOWN` / `409 ADJUSTMENT_OUTCOME_UNKNOWN` → báo "chưa rõ kết quả", chỉ hiện nút **Tải lại báo cáo**, KHÔNG tự gửi lại; `ADJUSTMENT_IN_PROGRESS`, `RECONCILIATION_IN_PROGRESS`, `WALLET_TIMEOUT`, `WALLET_UNAVAILABLE` đều có câu tiếng Việt; còn lại qua `errorMessage()`.
+- **Deviation có chủ đích**: kế hoạch ghi "mỗi lần mở hộp thoại sinh Idempotency-Key", nhưng route backend **không** nhận header này — backend tự sinh `referenceId = adjust-anomaly-<anomalyId>` cố định và wallet-service dedupe theo đó. FE không gửi header ngoài contract; an toàn double-submit bằng khóa nút + `referenceId` phía server.
+- **Mâu thuẫn AGENTS.md §6.6**: tài liệu cũ yêu cầu ẩn nút "Tạo bút toán điều chỉnh"; kế hoạch Tuần 4 (N18/RC1) yêu cầu làm. Đã theo kế hoạch Tuần 4; **cần Đạt xác nhận sửa AGENTS.md**.
+- **Rủi ro tích hợp**: comment trong `walletReconciliationClient.ts` ghi W2–W4 (list/detail/adjust) mới là contract thoả thuận, main của wallet-service có thể chưa có; khi chưa có, API trả `502 WALLET_UNAVAILABLE`/`504 WALLET_TIMEOUT` và UI hiển thị thông báo tiếng Việt tương ứng. RC1/A8 thật cần Compose + seed N20 + Đ17 → NOT_RUN.
+
+## 6. Kiểm thử đã chạy (N17 + N18)
 
 - `tests/admin.test.ts`: 5 test node:test — đúng route/body/params của dashboard, KYC list, review (kèm `detail`), tier, documents, topups list/approve/reject.
 - `src/test/admin.test.tsx`: 12 test Vitest — schema từ chối thiếu lý do, đổi cấp, topup reject; 403/409 trả tiếng Việt; 4 trạng thái KYC/topup/dashboard; chặn submit thiếu lý do + gửi đúng body; viewer không ghi storage; invalidate đúng key; `NOT_ALLOWED` hiển thị tiếng Việt.
-- Xem log đầy đủ tại `docs/evidence/N17/result.log`.
+- N18: `tests/reconciliation.test.ts` (5 test node:test) — route/mode run, list/detail, body điều chỉnh + không có Idempotency-Key, biên amount (0/âm/thập phân/khoa học/vượt 18 chữ số) và reason 4/5/500/501.
+- N18: `src/test/reconciliation.test.tsx` (10 test Vitest) — 4 trạng thái danh sách; đủ 4 loại anomaly + loại lạ; isBalanced true/false; mode quick/full; body điều chỉnh; chặn amount sai; 409 làm mới dữ liệu; 503 không tự retry; double-click 1 request; thông báo lỗi tiếng Việt.
+- Xem log đầy đủ tại `docs/evidence/N17/result.log` và `docs/evidence/N18/result.log`.
