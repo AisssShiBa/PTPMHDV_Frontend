@@ -22,4 +22,6 @@ The mock examples are representative and must be confirmed against the owning ba
 
 ## Frontend follow-up
 
-- Notification backend contract uses `/notifications/me`, `/me/read-all`, `/{id}/read`, and `/socket-ticket`. The existing FE service still calls legacy user-ID routes; migrate it in N6c.
+- Notification backend contract uses `/notifications/me`, `/me/read-all`, `/{id}/read`, and `/socket-ticket`. The FE notification feature now calls exactly these routes (N15) and authenticates Socket.IO with `auth: { ticket }`; the legacy user-ID routes are no longer used.
+- Notification `GET /notifications/me` returns `{ notifications, unreadCount, pagination }`, but the backend has no `type` or `unread` query filter. The Web page filters the loaded pages in the browser; ask the notification-service owner whether server-side filtering is planned.
+- Device registration (`/notifications/devices`) exists on the backend but has no Web design yet; the Web app does not call it.
