@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,7 +22,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { PinModal } from '@/features/auth/components/PinModal'
-import { useWalletMe } from '@/features/wallet'
+import { useWalletMe, walletKeys } from '@/features/wallet'
 import { paymentApi, type P2pQuoteResult, type LimitExceededDetails } from '@/features/payment'
 import { useRecipientLookup } from '@/features/user/hooks/useRecipientLookup'
 import {
@@ -70,12 +71,20 @@ export function TransferPage() {
   // Step: 1 = Nhập dữ liệu & Báo giá, 2 = Xác nhận báo giá (60s), 3 = Biên lai hoàn tất
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
 
+  // Query Client để cập nhật tức thì số dư và lịch sử giao dịch
+  const queryClient = useQueryClient()
+
   // Form states
   const [amount, setAmount] = useState('50000')
   const [message, setMessage] = useState('Chuyển tiền FinVault')
   const [isQuoting, setIsQuoting] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [copiedTxn, setCopiedTxn] = useState(false)
+
+  // Idempotency-Key được sinh mỗi khi khởi tạo ý định chuyển mới, giữ nguyên khi thử lại
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => crypto.randomUUID())
+  const [paymentId, setPaymentId] = useState<string | null>(null)
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [isConfirming, setIsConfirming] = useState(false)
 
   // Quote state & 60s countdown
   const [quote, setQuote] = useState<P2pQuoteResult | null>(null)
@@ -125,6 +134,9 @@ export function TransferPage() {
     const cleanDigits = val.replace(/\D/g, '')
     setAmount(cleanDigits)
     setLimitExceededError(null)
+    setQuote(null)
+    setPaymentId(null)
+    setIdempotencyKey(crypto.randomUUID())
   }
 
   // Bước 1 -> Gọi Quote: POST /api/payments/p2p/quote
@@ -202,6 +214,7 @@ export function TransferPage() {
       })
       setQuote(quoteRes)
       setQuoteCountdown(60)
+      setPaymentId(null)
       toast.success('Đã cập nhật báo giá giao dịch mới (60 giây).')
     } catch {
       toast.error('Không thể làm mới báo giá. Vui lòng quay lại Bước 1.')
@@ -211,28 +224,96 @@ export function TransferPage() {
     }
   }
 
-  // Mở modal nhập mã PIN (Bước 2 -> Bước 3)
-  const handleOpenPinModal = () => {
+  // Bấm "Xác nhận chuyển tiền" tại Bước 2: gọi POST /api/payments/p2p/checkout kèm Idempotency-Key
+  const handleStartCheckout = async () => {
     if (quoteCountdown <= 0) {
       toast.error('Báo giá đã hết hạn. Vui lòng lấy lại báo giá mới.')
       return
     }
-    setPinModalOpen(true)
+
+    if (!recipient) {
+      toast.error('Vui lòng chọn người nhận hợp lệ.')
+      return
+    }
+
+    // Nếu đã checkout thành công trước đó (có paymentId) thì mở lại PinModal ngay
+    if (paymentId) {
+      setPinModalOpen(true)
+      return
+    }
+
+    setIsCheckingOut(true)
+    try {
+      const checkoutRes = await paymentApi.p2pCheckout(
+        {
+          destinationUserId: recipient.authUserId,
+          amount,
+          note: message.trim() || undefined
+        },
+        idempotencyKey
+      )
+
+      const pId = checkoutRes.paymentId || checkoutRes.id || ''
+      setPaymentId(pId)
+      setPinModalOpen(true)
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const errorData = err.response?.data?.error || err.response?.data
+        const code = errorData?.code
+        const details = (errorDetails(err) || errorData?.details) as LimitExceededDetails | undefined
+
+        if (code === 'LIMIT_EXCEEDED' && details) {
+          const limitTypeLabel =
+            details.limitType === 'PER_TXN'
+              ? 'mỗi lần'
+              : details.limitType === 'PER_DAY'
+                ? 'mỗi ngày'
+                : 'mỗi tháng'
+          toast.error(
+            `Vượt hạn mức ${limitTypeLabel}. Bạn còn được chuyển tối đa ${formatVnd(details.remaining)}.`
+          )
+          return
+        }
+
+        if (code === 'INSUFFICIENT_FUNDS') {
+          toast.error('Số dư khả dụng trong ví không đủ để thực hiện giao dịch.')
+          return
+        }
+
+        if (code === 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD') {
+          setIdempotencyKey(crypto.randomUUID())
+          toast.error('Khóa giao dịch bị trùng lặp với nội dung khác. Vui lòng thử lại.')
+          return
+        }
+
+        toast.error(errorData?.message || 'Không thể tạo phiên chuyển tiền. Vui lòng thử lại.')
+      } else {
+        toast.error('Lỗi kết nối khi khởi tạo phiên giao dịch.')
+      }
+    } finally {
+      setIsCheckingOut(false)
+    }
   }
 
-  // Khi nhập mã PIN thành công và nhận transactionToken
-  const handlePinSuccess = (transactionToken: string) => {
-    setIsSubmitting(true)
+  // Khi nhập mã PIN thành công và nhận transactionToken: gọi POST /api/payments/:id/confirm
+  const handlePinSuccess = async (transactionToken: string) => {
+    if (!paymentId) {
+      toast.error('Không tìm thấy mã giao dịch để xác nhận.')
+      return
+    }
+
+    setIsConfirming(true)
     setPinModalOpen(false)
 
-    // Tạo mã giao dịch mẫu hoặc hoàn tất
-    const generatedTxnId = `FV${Date.now().toString().slice(-8)}${Math.floor(1000 + Math.random() * 9000)}`
-    const nowIso = new Date().toISOString()
+    try {
+      await paymentApi.confirmPayment(paymentId, transactionToken)
 
-    setTimeout(() => {
+      // Cập nhật lại số dư ví và sổ cái tức thì
+      queryClient.invalidateQueries({ queryKey: walletKeys.all })
+
       setCompletedTxn({
-        id: generatedTxnId,
-        timestamp: nowIso,
+        id: paymentId,
+        timestamp: new Date().toISOString(),
         recipientName: recipient?.maskedName || 'Người nhận',
         recipientPhone: recipientQuery,
         amount: quote?.amount || amount,
@@ -240,12 +321,52 @@ export function TransferPage() {
         message: message.trim() || 'Chuyển tiền FinVault',
         token: transactionToken
       })
-      setIsSubmitting(false)
+
       setCurrentStep(3)
       toast.success('Chuyển tiền thành công!', {
         description: `Đã gửi ${formatVnd(amount)} tới ${recipient?.maskedName}.`
       })
-    }, 600)
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const errorData = err.response?.data?.error || err.response?.data
+        const code = errorData?.code
+
+        if (code === 'TXN_TOKEN_EXPIRED') {
+          toast.error('Mã xác thực giao dịch đã hết hạn. Vui lòng nhập lại mã PIN.')
+          // Mở lại PinModal với cùng paymentId
+          setPinModalOpen(true)
+          return
+        }
+
+        if (code === 'PAYMENT_EXPIRED') {
+          toast.error('Giao dịch đã hết thời gian giữ tiền (5 phút). Vui lòng thực hiện lại từ đầu.')
+          handleResetNewTransfer()
+          return
+        }
+
+        if (code === 'TXN_TOKEN_REUSED') {
+          toast.error('Mã xác thực giao dịch đã được sử dụng. Vui lòng nhập lại mã PIN.')
+          setPinModalOpen(true)
+          return
+        }
+
+        if (code === 'TXN_TOKEN_MISMATCH') {
+          toast.error('Mã xác thực không hợp lệ cho giao dịch này.')
+          return
+        }
+
+        if (code === 'PAYMENT_NOT_PENDING') {
+          toast.error('Giao dịch không còn ở trạng thái chờ xác nhận.')
+          return
+        }
+
+        toast.error(errorData?.message || 'Xác nhận giao dịch thất bại. Vui lòng thử lại.')
+      } else {
+        toast.error('Lỗi kết nối khi xác nhận giao dịch.')
+      }
+    } finally {
+      setIsConfirming(false)
+    }
   }
 
   // Sao chép mã giao dịch
@@ -256,7 +377,7 @@ export function TransferPage() {
     setTimeout(() => setCopiedTxn(false), 2000)
   }
 
-  // Reset form để làm giao dịch mới
+  // Reset form để làm giao dịch mới hoàn toàn
   const handleResetNewTransfer = () => {
     setCurrentStep(1)
     setQuote(null)
@@ -264,6 +385,8 @@ export function TransferPage() {
     setAmount('50000')
     setMessage('Chuyển tiền FinVault')
     setCompletedTxn(null)
+    setPaymentId(null)
+    setIdempotencyKey(crypto.randomUUID())
   }
 
   return (
@@ -709,12 +832,18 @@ export function TransferPage() {
                 </Button>
                 <Button
                   type="button"
-                  onClick={handleOpenPinModal}
-                  disabled={isSubmitting || quoteCountdown <= 0}
+                  onClick={handleStartCheckout}
+                  disabled={isCheckingOut || isConfirming || quoteCountdown <= 0}
                   className="h-11 font-semibold gap-2 shadow-sm cursor-pointer"
                 >
                   <Lock className="h-4 w-4" />
-                  <span>Xác nhận chuyển tiền</span>
+                  <span>
+                    {isCheckingOut
+                      ? 'Đang tạo phiên...'
+                      : isConfirming
+                        ? 'Đang xác nhận...'
+                        : 'Xác nhận chuyển tiền'}
+                  </span>
                 </Button>
               </div>
             </CardContent>
@@ -839,12 +968,13 @@ export function TransferPage() {
         </div>
       )}
 
-      {/* Shared PIN Modal: Kích hoạt tại Bước 3 */}
+      {/* Shared PIN Modal: Kích hoạt tại Bước 2 */}
       <PinModal
         open={pinModalOpen}
         onOpenChange={setPinModalOpen}
         title="Xác thực mã PIN giao dịch"
         description={`Xác nhận chuyển ${formatVnd(amount)} tới ${recipient?.maskedName || 'người nhận'}.`}
+        paymentId={paymentId || undefined}
         amount={amount}
         onSuccess={handlePinSuccess}
         onCancel={() => setPinModalOpen(false)}
