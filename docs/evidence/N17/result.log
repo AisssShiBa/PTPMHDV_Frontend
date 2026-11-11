@@ -1,0 +1,83 @@
+N17 - Web Admin (Frontend) - evidence
+=====================================
+Date: 2026-11-12 (Asia/Ho_Chi_Minh)
+Repo: PTPMHDV_Frontend, branch: nguyen
+OS: Microsoft Windows 11 Home Single Language (NT 10.0.26200.0)
+Node: v24.21.0
+npm: 11.19.0
+Code SHA (HEAD at test time): f5b7930b72d65745e12efc342da096e51ef9345c
+Base SHA (merge-base with origin/main): 02a44baa2dcaa5b916e0168f344625059b146749
+
+Scope of change
+---------------
+- features/admin restructured to types -> api -> queries (adminKeys factory):
+  GET /api/admin/dashboard, GET /api/admin/kyc, POST /api/admin/kyc/:id/review,
+  PATCH /api/admin/kyc/:id/tier, GET /api/admin/kyc/:id/documents,
+  GET /api/payments/admin/topups, approve, reject.
+- Deleted services/adminService.ts and components/KycActionForm.tsx.
+- AdminDashboardPage / AdminKycPage / AdminTopupPage are now 7-line thin pages.
+- AdminDashboard: real aggregate, numbers via formatNumber, no sample data,
+  no setTimeout/Math.random.
+- AdminKycManager: paginated queue, status filter, search, detail panel, audited
+  document viewer (memory-only URLs), approve/reject with mandatory reason,
+  tier change with reason; rejects invalid forms before any request.
+- AdminTopupManager: real list, client search, detail dialog, approve/reject
+  calling the real routes via isPending-locked buttons; NOT_ALLOWED mapped to a
+  Vietnamese explanation because payment-service disables manual ops for VNPAY.
+- Tests added: tests/admin.test.ts (node:test API contract, 5 tests) and
+  src/test/admin.test.tsx (vitest UI/schema/storage/invalidation, 12 tests);
+  tests/auth-api.test.ts updated to adminApi.changeKycTier.
+- Docs: docs/handover/admin.md rewritten; docs/CONTRACT_OPEN_QUESTIONS.md gained
+  the KYC status-filter mismatch, NOT_ALLOWED behavior, no-Idempotency-Key note
+  and the AGENTS.md 6.6 reconciliation conflict.
+
+Commands and actual results
+---------------------------
+1) npm run typecheck
+   PASS - tsc -b --noEmit exited 0.
+
+2) npm run test   (node --import ./tests/register.mjs --test tests/*.test.ts)
+   PASS - tests 40, pass 40, fail 0, skipped 0, duration ~2.1s.
+   Includes tests/admin.test.ts 5/5: dashboard route + data unwrap; KYC list
+   page/limit/status/trimmed search; review body with/without detail; tier body;
+   documents audited encoded route; topups list/approve/reject routes + bodies.
+
+3) npm run test:unit   (vitest run)
+   PASS - Test Files 13 passed (13), Tests 76 passed (76), duration ~20.6s.
+   Includes src/test/admin.test.tsx 12/12: reject requires reason (schema + form,
+   zero request when missing); tier body; topup reject schema; 403/409 Vietnamese
+   messages via errorMessage; 4 states for KYC list, topups and dashboard;
+   documents viewer asserts localStorage/sessionStorage empty; approve invalidates
+   adminKeys.topups() and adminKeys.dashboard(); NOT_ALLOWED Vietnamese message.
+
+4) npm run build   (tsc -b && vite build)
+   PASS - built in ~1.7s. Warnings only (pre-existing): chunk > 500 kB notice.
+
+5) npm run lint   (eslint .)
+   FAIL - 29 errors / 33 warnings, all pre-existing outside N17 files
+   (apps/mobile/App.tsx, PinModal.tsx, merchant/payment/user/wallet features,
+   hooks, QrLoginPage / TopupResult / TransactionsPage / TransferPage /
+   UtilitiesPage, acceptance-k18.test.tsx). Error count fell from 33 to 29
+   because the old adminService/admin pages errors were removed by N17.
+   N17 scope check (npx eslint src/features/admin
+   src/pages/AdminDashboardPage.tsx src/pages/AdminKycPage.tsx
+   src/pages/AdminTopupPage.tsx src/test/admin.test.tsx): PASS, 0 errors,
+   0 warnings (13 files matched by the JSON report).
+
+6) Static greps (plan requirement)
+   PASS - direct `axios` import: 0; bare `Number(`: 0 (only formatNumber);
+   `setTimeout`: 0, across src/features/admin/** and the 3 admin pages.
+
+7) npm run check   (lint + typecheck + test + build)
+   FAIL - stops at the lint step above (exit code 1); typecheck/test/test:unit/
+   build were run separately and passed (items 1-4).
+
+Summary
+-------
+PASS: typecheck, node tests (40/40), vitest (76/76), production build, scoped
+      eslint (0/0), static greps.
+FAIL: repo-wide lint (pre-existing errors outside N17); `npm run check` cannot
+      go green in this working tree until those unrelated files are fixed.
+SKIP: none.
+NOT_RUN: real end-to-end admin flow (approve KYC -> Cấp 1 + notification to user)
+      needs Docker Compose + Đ17 admin login + N20 seed; not available locally.
