@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { X, PlusCircle, Loader2, ChevronUp, ChevronDown, CheckCircle2, Copy, AlertCircle, Timer } from 'lucide-react'
 import { toast } from 'sonner'
 import type { TopupResponse } from '@/features/payment/types/payment.types'
+import { formatVnd, parseVndToBigInt, isValidMoneyInput } from '@/lib/format'
 
 interface Props {
   isOpen: boolean
@@ -11,12 +12,12 @@ interface Props {
   onSuccess?: () => void
 }
 
-const PRESET_AMOUNTS = [50000, 100000, 200000, 500000, 1000000]
-const STEP = 50000
+const PRESET_AMOUNTS = ['50000', '100000', '200000', '500000', '1000000']
+const STEP = 50000n
 
 export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
   const user = useAuthStore((state) => state.user)
-  const [amountDisplay, setAmountDisplay] = useState('100,000')
+  const [amountDisplay, setAmountDisplay] = useState('100.000 ₫')
   const [amountValue, setAmountValue] = useState('100000')
   const [loading, setLoading] = useState(false)
   const [topupData, setTopupData] = useState<TopupResponse | null>(null)
@@ -26,7 +27,7 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
   // Reset state when closed
   useEffect(() => {
     if (!isOpen) {
-      setAmountDisplay('100,000')
+      setAmountDisplay('100.000 ₫')
       setAmountValue('100000')
       setTopupData(null)
       setStatus('PENDING')
@@ -89,21 +90,36 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/\D/g, '')
     setAmountValue(rawValue)
-    setAmountDisplay(rawValue ? Number(rawValue).toLocaleString('vi-VN') : '')
+    setAmountDisplay(rawValue ? formatVnd(rawValue) : '')
   }
 
-  const handlePresetSelect = (value: number) => {
-    setAmountValue(value.toString())
-    setAmountDisplay(value.toLocaleString('vi-VN'))
+  const handlePresetSelect = (value: string) => {
+    setAmountValue(value)
+    setAmountDisplay(formatVnd(value))
   }
 
   const handleStep = (direction: 'up' | 'down') => {
-    let currentVal = Number(amountValue) || 0;
-    if (direction === 'up') currentVal += STEP;
-    else currentVal = Math.max(0, currentVal - STEP);
+    let currentVal = 0n
+    try {
+      currentVal = parseVndToBigInt(amountValue || '0')
+    } catch {
+      currentVal = 0n
+    }
+    if (direction === 'up') currentVal += STEP
+    else currentVal = currentVal > STEP ? currentVal - STEP : 0n
 
-    setAmountValue(currentVal.toString());
-    setAmountDisplay(currentVal ? currentVal.toLocaleString('vi-VN') : '0');
+    const strVal = currentVal.toString()
+    setAmountValue(strVal)
+    setAmountDisplay(currentVal > 0n ? formatVnd(strVal) : '0 ₫')
+  }
+
+  const isAmountValid = () => {
+    if (!amountValue || !isValidMoneyInput(amountValue)) return false
+    try {
+      return parseVndToBigInt(amountValue) >= 10000n
+    } catch {
+      return false
+    }
   }
 
   const handleCreateTopup = async (e: React.FormEvent) => {
@@ -112,22 +128,23 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
       toast.error('Vui lòng đăng nhập để nạp tiền')
       return
     }
-    if (!amountValue || Number(amountValue) < 10000) {
-      toast.error('Số tiền nạp tối thiểu là 10,000 VND')
+    if (!isAmountValid()) {
+      toast.error('Số tiền nạp tối thiểu là 10.000 VND')
       return
     }
 
     try {
       setLoading(true)
-      const res = await paymentService.createTopup(amountValue) as any
+      const res = await paymentService.createTopup(amountValue) as { paymentUrl?: string }
       if (res.paymentUrl) {
         window.location.href = res.paymentUrl
       } else {
         toast.error('Không nhận được đường dẫn thanh toán từ VNPAY')
         setLoading(false)
       }
-    } catch (err: any) {
-      toast.error('Tạo yêu cầu nạp tiền thất bại: ' + (err?.response?.data?.error?.message || err.message))
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Lỗi không xác định'
+      toast.error('Tạo yêu cầu nạp tiền thất bại: ' + message)
       setLoading(false)
     }
   }
@@ -196,19 +213,19 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                   type="button"
                   onClick={() => handlePresetSelect(val)}
                   className={`py-2 text-xs font-semibold rounded-lg border transition-all ${
-                    amountValue === val.toString()
+                    amountValue === val
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted'
                   }`}
                 >
-                  {val.toLocaleString('vi-VN')}
+                  {formatVnd(val)}
                 </button>
               ))}
             </div>
 
             <button
               type="submit"
-              disabled={loading || !amountValue || Number(amountValue) < 10000}
+              disabled={loading || !isAmountValid()}
               className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-all mt-4"
             >
               {loading && <Loader2 className="size-4 animate-spin" />}
@@ -256,8 +273,8 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
               <div className="flex justify-between items-center pb-2 border-b border-border/50">
                 <span className="text-muted-foreground">Số tiền</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-primary">{topupData.paymentInfo.amount.toLocaleString('vi-VN')} VND</span>
-                  <button onClick={() => handleCopy(topupData.paymentInfo.amount.toString(), 'Số tiền')} className="text-primary hover:text-primary/80">
+                  <span className="font-bold text-primary">{formatVnd(topupData.paymentInfo.amount)}</span>
+                  <button onClick={() => handleCopy(String(topupData.paymentInfo.amount), 'Số tiền')} className="text-primary hover:text-primary/80">
                     <Copy className="size-4" />
                   </button>
                 </div>
@@ -292,7 +309,7 @@ export const TopupModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
             </div>
             <h3 className="text-xl font-bold text-emerald-500">Nạp tiền thành công!</h3>
             <p className="text-muted-foreground text-sm">
-              {Number(topupData.topup.amount).toLocaleString('vi-VN')} VND đã được cộng vào ví của bạn.
+              {formatVnd(topupData.topup.amount)} đã được cộng vào ví của bạn.
             </p>
             <button
               onClick={onClose}

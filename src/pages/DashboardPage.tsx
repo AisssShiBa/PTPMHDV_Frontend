@@ -18,14 +18,18 @@ import {
   Check,
   ChevronRight,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { formatVnd } from '@/lib/format'
+import { useWalletMe, useWalletLedger } from '@/features/wallet'
+import { formatVnd, formatDateTime, compareMoney, parseVndToBigInt } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { EmptyState } from '@/components/common/EmptyState'
 import { toast } from 'sonner'
 
 export function DashboardPage() {
@@ -33,56 +37,56 @@ export function DashboardPage() {
   const [showBalance, setShowBalance] = useState(true)
   const [copied, setCopied] = useState(false)
 
-  // Số dư ví mặc định hoặc từ user store
-  const rawBalance = user?.balance || '1250000'
-  const walletId = 'FV-8899-2026'
+  // Gọi API lấy số dư và hạn mức ví của chính người dùng (GET /api/wallets/me)
+  const {
+    data: wallet,
+    isLoading: isWalletLoading,
+    isError: isWalletError,
+    refetch: refetchWallet
+  } = useWalletMe()
+
+  // Gọi API lấy vài giao dịch gần đây (GET /api/wallets/me/ledger?limit=5)
+  const {
+    data: ledgerData,
+    isLoading: isLedgerLoading,
+    isError: isLedgerError,
+    refetch: refetchLedger
+  } = useWalletLedger({ limit: 5 })
+
+  // Số dư ví: ưu tiên availableBalance, fallback balance
+  const rawBalance = wallet?.availableBalance ?? wallet?.balance ?? user?.balance ?? '0'
+  const heldBalance = wallet?.heldBalance ?? '0'
+  const hasHeldBalance = compareMoney(heldBalance, '0') > 0
+  const walletDisplayId = wallet?.walletId || wallet?.id || user?.id || 'FV-PRIMARY'
 
   const handleCopyWalletId = () => {
-    navigator.clipboard.writeText(walletId)
+    navigator.clipboard.writeText(walletDisplayId)
     setCopied(true)
     toast.success('Đã sao chép mã ví FinVault')
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Danh sách giao dịch gần đây thực tế
-  const recentTransactions = [
-    {
-      id: 'txn_01',
-      title: 'Chuyển tiền cho Khoa Trần',
-      subtitle: 'Chuyển tiền P2P tức thì',
-      type: 'EXPENSE',
-      amount: '200000',
-      time: '11:45 Hôm nay',
-      status: 'SUCCESS'
-    },
-    {
-      id: 'txn_02',
-      title: 'Nạp tiền ví từ VNPAY',
-      subtitle: 'Cổng thanh toán điện tử',
-      type: 'INCOME',
-      amount: '500000',
-      time: '09:20 Hôm nay',
-      status: 'SUCCESS'
-    },
-    {
-      id: 'txn_03',
-      title: 'Nhận tiền từ Highlands Coffee',
-      subtitle: 'Thanh toán đối tác',
-      type: 'INCOME',
-      amount: '950000',
-      time: '18:30 Hôm qua',
-      status: 'SUCCESS'
-    },
-    {
-      id: 'txn_04',
-      title: 'Thanh toán tiền điện EVN',
-      subtitle: 'Hóa đơn sinh hoạt tháng 11',
-      type: 'EXPENSE',
-      amount: '350000',
-      time: '14:15 - 04/11/2026',
-      status: 'SUCCESS'
+  // Hạn mức giao dịch chuẩn theo KYC Tier (Bảng ghi đè Prompt 0)
+  const tier = wallet?.kycTier ?? user?.kycTier ?? 1
+  const standardDailyLimit = tier === 0 ? '500000' : tier === 1 ? '20000000' : '100000000'
+
+  const dailyLimitStr = wallet?.dailyLimit || standardDailyLimit
+  const dailyUsedStr = wallet?.dailyUsed || '0'
+
+  // Tính phần trăm hạn mức sử dụng (tính qua BigInt)
+  let percentUsed = 0
+  try {
+    const bigLimit = parseVndToBigInt(dailyLimitStr)
+    const bigUsed = parseVndToBigInt(dailyUsedStr)
+    if (bigLimit > 0n) {
+      const pct = (bigUsed * 100n) / bigLimit
+      percentUsed = pct > 100n ? 100 : Math.min(100, Math.max(0, +pct.toString()))
     }
-  ]
+  } catch {
+    percentUsed = 0
+  }
+
+  const recentTransactions = ledgerData?.items ?? []
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
@@ -103,7 +107,7 @@ export function DashboardPage() {
             className="px-3 py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 text-xs font-semibold gap-1.5"
           >
             <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            <span>Tài khoản Cấp {user?.kycTier ?? 1} (Đã xác thực)</span>
+            <span>Tài khoản Cấp {tier} ({tier > 0 ? 'Đã xác thực' : 'Chưa xác thực'})</span>
           </Badge>
           <Button asChild variant="outline" size="sm" className="text-xs font-semibold">
             <Link to="/app/profile">Xem hạn mức</Link>
@@ -137,13 +141,14 @@ export function DashboardPage() {
                   type="button"
                   onClick={handleCopyWalletId}
                   className="inline-flex items-center gap-1.5 text-xs text-white/80 hover:text-white bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+                  title="Bấm để sao chép mã ví"
                 >
-                  <span>{walletId}</span>
+                  <span className="max-w-[140px] truncate">{walletDisplayId}</span>
                   {copied ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5" />}
                 </button>
               </div>
 
-              {/* Balance Amount */}
+              {/* Balance Amount with 4 UI states */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-xs font-medium text-white/80">
                   <span>Số dư khả dụng</span>
@@ -156,9 +161,33 @@ export function DashboardPage() {
                     {showBalance ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   </button>
                 </div>
-                <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                  {showBalance ? formatVnd(rawBalance) : '•••••••• ₫'}
-                </div>
+
+                {isWalletLoading ? (
+                  <div className="h-10 w-48 bg-white/20 rounded-lg animate-pulse" />
+                ) : isWalletError ? (
+                  <div className="flex items-center gap-2 text-rose-300 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Lỗi tải số dư</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => refetchWallet()}
+                      className="h-7 text-xs text-white hover:bg-white/20 ml-2"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" /> Thử lại
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                    {showBalance ? formatVnd(rawBalance) : '•••••••• ₫'}
+                  </div>
+                )}
+
+                {hasHeldBalance && showBalance && (
+                  <p className="text-xs text-amber-300 font-medium">
+                    (Đang tạm giữ giao dịch: {formatVnd(heldBalance)})
+                  </p>
+                )}
               </div>
             </div>
 
@@ -166,9 +195,11 @@ export function DashboardPage() {
             <div className="relative z-10 pt-6 mt-6 border-t border-white/15 space-y-2 text-xs text-white/80">
               <div className="flex items-center justify-between">
                 <span>Hạn mức chuyển tiền hôm nay:</span>
-                <span className="font-semibold text-white">19.700.000 ₫ / 20.000.000 ₫</span>
+                <span className="font-semibold text-white">
+                  Đã dùng {formatVnd(dailyUsedStr)} / {formatVnd(dailyLimitStr)}
+                </span>
               </div>
-              <Progress value={98} className="h-1.5 bg-white/20" />
+              <Progress value={percentUsed} className="h-1.5 bg-white/20" />
             </div>
           </div>
         </div>
@@ -205,7 +236,7 @@ export function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">4 giao dịch chuyển tiền & hóa đơn</p>
+              <p className="text-xs text-muted-foreground">Giao dịch chuyển tiền & dịch vụ</p>
             </CardContent>
           </Card>
         </div>
@@ -239,7 +270,7 @@ export function DashboardPage() {
             </div>
             <div>
               <p className="font-bold text-sm text-foreground">Nạp tiền</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Qua cổng VNPAY</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Mô phỏng VNPAY</p>
             </div>
           </Link>
 
@@ -251,7 +282,7 @@ export function DashboardPage() {
               <ArrowUpCircle className="h-6 w-6" />
             </div>
             <div>
-              <p className="font-bold text-sm text-foreground">Rút tiền</p>
+              <p className="font-bold text-sm text-foreground">Rút tiền (mô phỏng)</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">Về ngân hàng</p>
             </div>
           </Link>
@@ -265,7 +296,7 @@ export function DashboardPage() {
             </div>
             <div>
               <p className="font-bold text-sm text-foreground">Quét QR</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Đăng nhập & Trả</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Đăng nhập</p>
             </div>
           </Link>
         </div>
@@ -289,47 +320,83 @@ export function DashboardPage() {
           </div>
 
           <Card className="shadow-sm border-border bg-card divide-y divide-border/60 overflow-hidden">
-            {recentTransactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="p-4 sm:p-4.5 flex items-center justify-between gap-4 hover:bg-muted/40 transition-colors"
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      tx.type === 'INCOME'
-                        ? 'bg-emerald-500/10 text-emerald-600'
-                        : 'bg-primary/10 text-primary'
-                    }`}
-                  >
-                    {tx.type === 'INCOME' ? (
-                      <ArrowDownCircle className="h-5 w-5" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{tx.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{tx.time}</p>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <p
-                    className={`text-sm font-bold tracking-tight ${
-                      tx.type === 'INCOME' ? 'text-emerald-600' : 'text-foreground'
-                    }`}
-                  >
-                    {tx.type === 'INCOME' ? '+' : '-'}
-                    {formatVnd(tx.amount)}
-                  </p>
-                  <div className="flex items-center justify-end gap-1 text-[11px] text-emerald-600 font-medium mt-0.5">
-                    <CheckCircle2 className="h-3 w-3" />
-                    <span>Thành công</span>
-                  </div>
-                </div>
+            {isLedgerLoading ? (
+              <div className="p-8 space-y-4">
+                <div className="h-12 bg-muted rounded-xl animate-pulse" />
+                <div className="h-12 bg-muted rounded-xl animate-pulse" />
+                <div className="h-12 bg-muted rounded-xl animate-pulse" />
               </div>
-            ))}
+            ) : isLedgerError ? (
+              <div className="p-8 text-center space-y-3">
+                <p className="text-sm text-rose-500">Không thể tải danh sách giao dịch gần đây</p>
+                <Button size="sm" variant="outline" onClick={() => refetchLedger()}>
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Thử lại
+                </Button>
+              </div>
+            ) : recentTransactions.length === 0 ? (
+              <div className="p-6">
+                <EmptyState
+                  title="Chưa có giao dịch nào"
+                  description="Các biến động số dư chuyển tiền, nạp rút sẽ hiển thị tại đây."
+                />
+              </div>
+            ) : (
+              recentTransactions.map((tx) => {
+                const isIncome = tx.direction === 'CREDIT' || tx.direction === 'IN'
+                const displayTitle =
+                  tx.transferType === 'TOPUP'
+                    ? 'Nạp tiền vào ví'
+                    : tx.transferType === 'P2P_TRANSFER'
+                    ? isIncome
+                      ? tx.counterpartyName
+                        ? `Nhận tiền từ ${tx.counterpartyName}`
+                        : 'Nhận tiền chuyển khoản'
+                      : tx.counterpartyName
+                      ? `Chuyển tiền tới ${tx.counterpartyName}`
+                      : 'Chuyển tiền P2P'
+                    : tx.transferType === 'REFUND'
+                    ? 'Hoàn tiền giao dịch'
+                    : tx.description || 'Giao dịch ví FinVault'
+
+                return (
+                  <div
+                    key={tx.id}
+                    className="p-4 sm:p-4.5 flex items-center justify-between gap-4 hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div
+                        className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-primary/10 text-primary'
+                        }`}
+                      >
+                        {isIncome ? <ArrowDownCircle className="h-5 w-5" /> : <Send className="h-4 w-4" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{displayTitle}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {tx.createdAt ? formatDateTime(tx.createdAt) : 'Vừa xong'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <p
+                        className={`text-sm font-bold tracking-tight ${
+                          isIncome ? 'text-emerald-600' : 'text-foreground'
+                        }`}
+                      >
+                        {isIncome ? '+' : '-'}
+                        {formatVnd(tx.amount)}
+                      </p>
+                      <div className="flex items-center justify-end gap-1 text-[11px] text-emerald-600 font-medium mt-0.5">
+                        <CheckCircle2 className="h-3 w-3" />
+                        <span>Thành công</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </Card>
         </div>
 
@@ -339,7 +406,7 @@ export function DashboardPage() {
           <div className="space-y-3">
             <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
               <Receipt className="h-4 w-4 text-primary" />
-              <span>Dịch vụ & Tiện ích</span>
+              <span>Dịch vụ & Tiện ích (mô phỏng)</span>
             </h2>
 
             <Card className="shadow-sm border-border bg-card p-4 space-y-3">
@@ -352,7 +419,7 @@ export function DashboardPage() {
                     <Smartphone className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">Nạp tiền điện thoại</p>
+                    <p className="text-xs font-semibold text-foreground">Nạp tiền điện thoại (mô phỏng)</p>
                     <p className="text-[11px] text-muted-foreground">Chiết khấu đến 3%</p>
                   </div>
                 </div>
@@ -368,7 +435,7 @@ export function DashboardPage() {
                     <Receipt className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">Hóa đơn Điện & Nước</p>
+                    <p className="text-xs font-semibold text-foreground">Hóa đơn Điện & Nước (mô phỏng)</p>
                     <p className="text-[11px] text-muted-foreground">Tự động nhắc kỳ cước</p>
                   </div>
                 </div>
@@ -384,7 +451,7 @@ export function DashboardPage() {
               <span>Bảo vệ kép FinVault</span>
             </div>
             <p className="text-muted-foreground leading-relaxed text-[11px]">
-              Mọi giao dịch chuyển tiền đều được xác thực bằng mã PIN 6 số và khóa Idempotency chống lặp lệnh giao dịch.
+              Mọi giao dịch chuyển tiền đều được bảo vệ bởi mã PIN 6 số và khóa Idempotency chống lặp lệnh giao dịch.
             </p>
           </div>
         </div>

@@ -1,64 +1,27 @@
-// d:\PTPMHDV\Frontend\src\features\wallet\services\walletService.ts
+// src/features/wallet/services/walletService.ts
 import api from '@/lib/axios'
-import type { WalletBalance, WalletHistoryItem, WalletTransferResult } from '../types/wallet.types'
-import { unwrap, type ApiResponse } from '@/lib/apiResponse'
+import type { WalletMe, LedgerItem } from '../types/wallet.types'
 
+/**
+ * @deprecated Legacy wallet service. Sử dụng walletApi và paymentApi thay thế.
+ * Các route ví cũ /wallets/:userId/transfer và các route bị gateway chặn đã được gỡ bỏ theo K18.
+ */
 export const walletService = {
   /**
-   * Lấy số dư ví của người dùng
+   * Lấy số dư ví (đã chuyển sang /wallets/me)
    */
-  getBalance: async (userId: string): Promise<WalletBalance> => {
-    const res = await api.get(`/wallets/${userId}/balance?ownerType=USER`)
+  getBalance: async (_userId?: string): Promise<WalletMe> => {
+    const res = await api.get('/wallets/me')
     return res.data?.data ?? res.data
   },
 
   /**
-   * Nạp tiền vào ví (Credit / Topup)
+   * Lịch sử biến động số dư (đã chuyển sang /wallets/me/ledger)
    */
-  topup: async (userId: string, amount: string | number): Promise<any> => {
-    const res = await api.post(`/wallets/${userId}/credit`, {
-      amount: String(amount),
-      referenceId: `TOPUP-${Date.now()}`,
-      transferType: 'TOPUP'
+  getHistory: async (_userId?: string, _page = 1, limit = 10): Promise<LedgerItem[]> => {
+    const res = await api.get('/wallets/me/ledger', {
+      params: { limit }
     })
-    return res.data?.data ?? res.data
-  },
-
-  /**
-   * Trừ tiền ví (Debit)
-   */
-  debit: async (userId: string, amount: string | number, referenceId?: string): Promise<any> => {
-    const res = await api.post(`/wallets/${userId}/debit`, {
-      amount: String(amount),
-      referenceId: referenceId || `DEBIT-${Date.now()}`,
-      transferType: 'PAYMENT'
-    })
-    return res.data?.data ?? res.data
-  },
-
-  /**
-   * Chuyển tiền P2P
-   */
-  transfer: async (userId: string, toUserId: string, amount: string, referenceId: string): Promise<WalletTransferResult> => {
-    const res = await api.post<ApiResponse<WalletTransferResult>>(`/wallets/${encodeURIComponent(userId)}/transfer`, {
-      toUserId,
-      amount: String(amount),
-      referenceId
-    })
-    const result = unwrap(res.data)
-    if (!result || typeof result.transactionId !== 'string' || !result.transactionId) {
-      throw new Error('Invalid transfer response')
-    }
-    return result
-  },
-
-  /**
-   * Lịch sử biến động số dư
-   */
-  getHistory: async (userId: string, page = 1, limit = 10): Promise<WalletHistoryItem[]> => {
-    const res = await api.get(`/wallets/${userId}/history`, {
-      params: { page, limit }
-    })
-    return res.data?.data ?? res.data
+    return res.data?.data?.items ?? res.data
   }
 }
