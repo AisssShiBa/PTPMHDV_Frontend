@@ -199,3 +199,8 @@ export function validateTransferAmount(
   return { valid: true }
 }
 
+/**
+ * Bí danh an toàn cho parseVndToBigInt
+ */
+export const toBigIntSafe = parseVndToBigInt
+

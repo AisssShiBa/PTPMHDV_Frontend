@@ -30,6 +30,7 @@ export interface WalletMe {
 
 export interface LedgerItem {
   id: string
+  walletId?: string
   transactionId?: string
   direction: 'CREDIT' | 'DEBIT' | 'IN' | 'OUT'
   amount: string
