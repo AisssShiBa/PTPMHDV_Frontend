@@ -1,0 +1,154 @@
+N16 - Utilities (Frontend) - evidence
+====================================
+Date: 2026-11-13 (Asia/Ho_Chi_Minh)
+Repo: PTPMHDV_Frontend, branch: nguyen
+OS: Microsoft Windows 11 Home Single Language (NT 10.0.26200.0)
+Node: v24.21.0
+npm: 11.19.0
+Code SHA (HEAD at test time): 4a40110ba13a6447a6fa91ffd9ffe7e37c786595
+Base SHA (merge-base with origin/main): 02a44baa2dcaa5b916e0168f344625059b146749
+
+Scope of change
+---------------
+- New feature module src/features/utilities: types, constants, status, schemas,
+  idempotency, errors, api, queries, index plus components TopupForm,
+  BillPaymentForm, PaymentSummary, OrderStatusPanel, UtilitiesWorkspace.
+- src/pages/UtilitiesPage.tsx reduced to a 8-line thin page that renders
+  UtilitiesWorkspace; no axios/api import, no mock data, no setTimeout, no
+  Math.random, no hardcoded balance/phone/sample buttons.
+- Endpoints (through Gateway, base /api):
+  POST /utilities/topup                body {phone, amount}, Idempotency-Key
+  GET  /utilities/bills/lookup         query provider, customerCode
+  POST /utilities/bills/pay            body {provider, customerCode, amount},
+                                       Idempotency-Key
+  GET  /utilities/orders/{orderId}     order tracking (encodeURIComponent)
+  POST /payments/{paymentId}/confirm   X-Transaction-Token from PinModal
+  GET  /wallets/me                     available balance (existing wallet hook)
+- Money stays a string end-to-end; comparisons use BigInt helpers from
+  lib/format; there is no Number() conversion of money anywhere in the feature.
+- Validation mirrors utilities-service: VN mobile phone (03/05/07/08/09, +84
+  normalised to 0), exactly the 6 allowed denominations, provider/customerCode
+  patterns, positive integer bill amount taken ONLY from the lookup response.
+- Idempotency: key bound to the payload intent (TOPUP|phone|amount or
+  BILL|provider|customerCode|amount); retry after an unknown outcome reuses the
+  same key, editing the form produces a new key. Key lives in a useRef only.
+- Retry policy: no response / 408 / 502 / 504 / UPSTREAM_UNAVAILABLE /
+  GATEWAY_TIMEOUT on checkout show a "Thu lai" banner and resend the same key;
+  definite 4xx never auto-retries. Unknown outcome on confirm does not confirm
+  again, it switches to order polling.
+- PIN flow: PinModal receives paymentId and amount from the created order; the
+  transactionToken is passed straight into paymentApi.confirmPayment and is
+  never stored in React/Zustand/localStorage/sessionStorage.
+- Polling: TanStack refetchInterval every 2s, stops at SUCCESS, FAILED,
+  REFUNDED, REFUND_FAILED; REFUNDED is displayed explicitly; wallet query is
+  invalidated on a terminal status.
+- Error mapping to Vietnamese by backend code, incl. INVALID_PHONE,
+  INVALID_AMOUNT, INVALID_PROVIDER, INVALID_CUSTOMER_CODE,
+  IDEMPOTENCY_KEY_REQUIRED, LIMIT_EXCEEDED, BILL_NOT_FOUND,
+  BILL_AMOUNT_MISMATCH, PROVIDER_TIMEOUT, PIN_*, TXN_TOKEN_*, PAYMENT_*.
+- "Mo phong" badge/notice kept on both the top-up and the bill-payment tab.
+- docs/handover/utilities.md created per TEMPLATE.md, documenting contract
+  shapes, discount-only semantics, removed UI fields, PIN flow, polling and the
+  backend gaps (K13 PHONE_TOPUP/BILL_PAYMENT, discount not credited, no
+  provider catalogue).
+- Tests: tests/utilities.test.ts (node, API/schema/error/polling, 14 tests) and
+  src/test/utilities.test.tsx (vitest + MSW, 8 UI tests: 4 states, top-up +
+  PIN + SUCCESS, retry keeps key, edit gives new key, double-click, REFUNDED
+  and polling stop, bill lookup + pay with lookup amount, BILL_NOT_FOUND).
+- Dependency note: npm install --no-package-lock --no-audit --no-fund was used
+  (the committed package-lock.json is out of sync with package.json); the
+  lockfile was not modified.
+
+Commands and actual results
+---------------------------
+1) npm run typecheck
+   PASS - tsc -b --noEmit exited 0.
+
+2) npm test   (node --import ./tests/register.mjs --test tests/*.test.ts)
+   PASS - tests 59, pass 59, fail 0, skipped 0, duration ~1.24s.
+   New in N16: tests/utilities.test.ts 14/14 covering exact request body and
+   Idempotency-Key header for topup/pay, bills/lookup query params, order route
+   encoding, phone/amount/bill schemas incl. boundaries, intent+key reuse and
+   rotation, discount floor(amount*3/100) via BigInt, polling stop statuses,
+   Vietnamese error mapping, retry classification, and a source scan proving the
+   page/feature contain no Number(, setTimeout, Math.random or sample phone.
+
+3) npm run test:unit   (vitest run)
+   PASS - Test Files 15 passed (15), Tests 94 passed (94), duration ~9.5s.
+   New in N16: src/test/utilities.test.tsx 8/8 (MSW, onUnhandledRequest=error):
+   - loading/error/empty/success for the wallet QueryBoundary;
+   - top-up posts {phone, amount} + Idempotency-Key, PIN keypad 123456 confirms
+     /payments/pay-utilities-1/confirm with the transaction token, polls
+     /utilities/orders/:id and renders "Giao dich thanh cong" with providerRef;
+   - 502 UPSTREAM_UNAVAILABLE shows the retry banner, clicking "Thu lai" resends
+     with the SAME Idempotency-Key;
+   - editing the phone number before resubmitting generates a DIFFERENT key;
+   - triple click sends exactly one create request;
+   - REFUNDED shows "FinVault da hoan tien vao vi", the status badge, and
+     GET /orders is called exactly once over a 2.2s window (polling stopped);
+   - bill lookup sends provider/customerCode, payment posts the lookup amount
+     with an Idempotency-Key;
+   - 422 BILL_NOT_FOUND shows the Vietnamese message, never raw backend text.
+
+4) npm run build   (tsc -b && vite build)
+   PASS - built in ~0.7s (UtilitiesPage chunk 36.46 kB / 9.50 kB gzip).
+   Warnings only: pre-existing chunk > 500 kB notice.
+
+5) npm run lint   (eslint .)
+   FAIL - 28 errors / 32 warnings, all pre-existing outside N16 files.
+   JSON report: no N16 file appears; error files are apps/mobile/App.tsx,
+   features/auth/PinModal.tsx, features/merchant, features/payment,
+   features/user, features/wallet, hooks, pages/QrLoginPage.tsx,
+   pages/TopupResult.tsx, pages/TransferPage.tsx, test/acceptance-k18.test.tsx.
+   (Counts dropped by 1 error / 1 warning vs N18 because the old mock
+   UtilitiesPage was replaced.)
+
+6) npx eslint src/features/utilities src/pages/UtilitiesPage.tsx
+   src/test/utilities.test.tsx
+   PASS - 0 errors / 0 warnings (exit 0).
+
+7) Static greps (plan requirement)
+   PASS - in src/features/utilities/** and UtilitiesPage.tsx:
+   bare Number( = 0, setTimeout = 0, Math.random = 0, direct axios import in
+   pages/UtilitiesPage.tsx = 0, sample phone/hardcoded balance = 0.
+   localStorage|sessionStorage matches = 1, and it is only the comment in
+   queries.ts stating the transaction token is never stored there.
+
+8) npm run check   (lint + typecheck + test + build)
+   FAIL - stops at the repo-wide lint step; typecheck/test/test:unit/build were
+   run separately and passed (items 1-4).
+
+Summary
+-------
+PASS: typecheck, node tests (59/59), vitest (94/94 incl. 8 N16 UI tests),
+      production build, scoped eslint (0/0), static greps.
+FAIL: repo-wide lint (28 errors / 32 warnings, all pre-existing outside N16);
+      `npm run check` cannot go green in this working tree until those
+      unrelated files are fixed.
+SKIP: none.
+NOT_RUN: live T1/T2 (real top-up and real bill payment through Compose).
+      Reasons: (a) this machine has no Docker/PostgreSQL/RabbitMQ, so the
+      services cannot be started; (b) payment-service K13 still rejects
+      PHONE_TOPUP / BILL_PAYMENT (payment.validation.ts only accepts CARD_TOPUP,
+      BUS_TICKET, MOVIE_TICKET, TRAIN_TICKET, WALLET_TRANSFER), so a real
+      checkout currently returns a definite 4xx and the order ends FAILED;
+      (c) real PIN flow needs the K13 fix plus a seeded account (N20) and the
+      real login (D17). Nothing here is claimed as PASS.
+
+Risks / open items
+------------------
+- K13 gap: FE calls the agreed endpoints, but real checkout cannot succeed until
+  payment-service accepts PHONE_TOPUP and BILL_PAYMENT. Recorded in
+  docs/handover/utilities.md section 3.
+- The 3% discount is stored on the order (discountAmount) but neither deducted
+  from the charge nor credited to the wallet; the UI labels it as "ghi nhan"
+  and charges the full denomination. Needs business confirmation.
+- No provider catalogue endpoint: EVN/SAWACO/FPT are fixed sandbox codes in
+  constants.ts because the backend only validates the string shape.
+- Bill amount can only come from lookup; if the provider changes the bill
+  between lookup and payment the backend returns BILL_AMOUNT_MISMATCH and the
+  UI tells the user to look it up again.
+- Gateway token: the FE relies on the existing lib/axios Bearer session; if the
+  Gateway later requires a separate service token for /api/utilities it must be
+  added in infrastructure, not in this feature.
+- No preview build/push was performed; the branch is local only.

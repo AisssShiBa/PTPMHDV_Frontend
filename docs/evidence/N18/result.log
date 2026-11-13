@@ -1,0 +1,81 @@
+N18 - Admin Reconciliation (Frontend) - evidence
+================================================
+Date: 2026-11-12 (Asia/Ho_Chi_Minh)
+Repo: PTPMHDV_Frontend, branch: nguyen
+OS: Microsoft Windows 11 Home Single Language (NT 10.0.26200.0)
+Node: v24.21.0
+npm: 11.19.0
+Code SHA (HEAD at test time): ef07ae4298539e05f81cb3eb6dd3f307d167aa2d
+Base SHA (merge-base with origin/main): 02a44baa2dcaa5b916e0168f344625059b146749
+
+Scope of change
+---------------
+- New feature module src/features/admin/reconciliation: types, api, queries
+  (reconciliationKeys), schemas, error messages, AdminReconciliation component
+  and AdjustAnomalyDialog.
+- Endpoints: POST /api/admin/reconciliation/run?mode=quick|full,
+  GET /api/admin/reconciliation/reports?page&limit,
+  GET /api/admin/reconciliation/reports/:id,
+  POST /api/admin/reconciliation/anomalies/:id/adjust.
+- AdminReconciliationPage reduced to a 7-line thin page.
+- 4-state report list (loading/error/empty/success), report detail, 4 anomaly
+  types + default label for unknown types, isBalanced badges, BigInt balance
+  difference, paginated history.
+- Adjustment amount is a positive integer STRING validated by regex + BigInt
+  (max 18 digits); reason 5..500 chars; submit locked while pending.
+- 409 ALREADY_ADJUSTED refreshes data and explains; 503 ADJUST_OUTCOME_UNKNOWN
+  shows "chưa rõ kết quả" + manual reload and never auto-retries.
+- No Idempotency-Key header is sent because the real route does not accept one;
+  the backend derives a fixed referenceId per anomaly. Documented as a
+  deliberate deviation in docs/handover/admin.md and CONTRACT_OPEN_QUESTIONS.md.
+- AGENTS.md 6.6 conflict (hide adjustment button vs N18) documented; the
+  implementation follows the Week-4 plan and awaits Đạt's confirmation.
+
+Commands and actual results
+---------------------------
+1) npm run typecheck
+   PASS - tsc -b --noEmit exited 0.
+
+2) npm run test   (node --import ./tests/register.mjs --test tests/*.test.ts)
+   PASS - tests 45, pass 45, fail 0, skipped 0, duration ~3.1s.
+   Includes tests/reconciliation.test.ts 5/5: run route + mode query; list/detail
+   routes and pagination; adjust body with no Idempotency-Key; amount boundaries
+   ("", "0", "-1", "1.5", "1e5", " 12a", 19 digits rejected; 1, 18 digits,
+   trimmed accepted); reason 4/5/500/501 and direction enum.
+
+3) npm run test:unit   (vitest run)
+   PASS - Test Files 14 passed (14), Tests 86 passed (86), duration ~26.4s.
+   Includes src/test/reconciliation.test.tsx 10/10: loading/error/empty list;
+   all 4 anomaly labels + unknown default; isBalanced true/false; quick/full
+   mode calls; adjust body; invalid amount blocked before API; 409 refreshes
+   detail; 503 shows message, manual reload only and exactly one POST;
+   double-click sends one request; Vietnamese error messages + distinct keys.
+
+4) npm run build   (tsc -b && vite build)
+   PASS - built in ~1.8s. Warnings only (pre-existing chunk > 500 kB notice).
+
+5) npm run lint   (eslint .)
+   FAIL - 29 errors / 33 warnings, all pre-existing outside N18 files.
+   N18 scope (npx eslint src/features/admin/reconciliation
+   src/test/reconciliation.test.tsx src/pages/AdminReconciliationPage.tsx):
+   PASS, 0 errors / 0 warnings (JSON report: 9 N18 files clean).
+
+6) Static greps (plan requirement)
+   PASS - direct `axios` import: 0; bare `Number(`: 0; `setTimeout`: 0 across
+   src/features/admin/reconciliation/** and AdminReconciliationPage.tsx.
+
+7) npm run check   (lint + typecheck + test + build)
+   FAIL - stops at the repo-wide lint step; typecheck/test/test:unit/build were
+   run separately and passed (items 1-4).
+
+Summary
+-------
+PASS: typecheck, node tests (45/45), vitest (86/86), production build, scoped
+      eslint (0/0), static greps.
+FAIL: repo-wide lint (pre-existing errors outside N18); `npm run check` cannot
+      go green in this working tree until those unrelated files are fixed.
+SKIP: none.
+NOT_RUN: RC1/A8 live run (real reconciliation + adjustment) needs Docker Compose,
+      wallet-service W2-W4 endpoints, N20 seed and Đ17 admin login. The backend
+      client notes W2-W4 may not be implemented on wallet main yet; if absent the
+      UI can only show WALLET_UNAVAILABLE/WALLET_TIMEOUT.

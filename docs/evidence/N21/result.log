@@ -1,0 +1,141 @@
+N21 Part 1 - Consolidated OpenAPI contract (Frontend) - evidence
+================================================================
+Date: 2026-11-13 (Asia/Ho_Chi_Minh)
+Repo: PTPMHDV_Frontend, branch: nguyen
+OS: Microsoft Windows 11 Home Single Language (NT 10.0.26200.0)
+Node: v24.21.0
+npm: 11.19.0
+Code SHA (HEAD at test time): bd90b2d5cebd3727b81b26c6244558aa4e53e601
+Base SHA (merge-base with origin/main): 02a44baa2dcaa5b916e0168f344625059b146749
+Backend reference: origin/main 0b78fb5 (read-only; no Backend file was changed)
+
+Scope of change
+---------------
+- packages/api-contract/openapi.yaml fully rewritten as one consolidated contract
+  for the Web client. Every path item was read from the real Express routers on
+  Backend origin/main and cross-checked against the Gateway mount table in
+  gateway/src/app.ts. No API behaviour was changed and no Backend file was
+  touched.
+- Paths: 87 real route keys (no /api prefix) covering auth, QR login, PIN, users,
+  KYC, merchants/outlets/API keys, wallets (incl. admin + reconciliation),
+  payments (incl. P2P, top-ups, VNPAY), funding (cash-out + VNPAY), utilities,
+  notifications, and admin (dashboard, KYC, merchants, audit logs, reconciliation).
+- The same 87 path items are repeated under /api/... at the end of `paths`
+  because Prism serves path keys directly and does not prepend servers[].url.
+  These are generated $ref aliases, not new routes; a script verified a 1:1
+  mapping in both directions.
+- openapi 3.0.3 (matches the service docs and the Prism setup), servers: [/api],
+  global security [bearerAuth], and `security: []` on the public routes
+  (signup/signin/refresh/signout, QR init/status, VNPAY IPN/return).
+- components: 18 parameters, 7 shared responses, 53 schemas, plus
+  `x-contract-sources` mapping each service to its route files and mounts.
+- `x-planned-paths` is intentionally EMPTY: no route the Web client calls is
+  missing from Backend origin/main. A comment in the file explains the rule and
+  points unknown routes to docs/CONTRACT_OPEN_QUESTIONS.md.
+- Merchant outlet QR is documented as display-only: "QR diem ban chi hien thi,
+  khong co route xac minh tren Web" (full Vietnamese sentence appears in the
+  info description and on the outlet-QR operation).
+- Topup manual approve/reject are documented as always answering 400 NOT_ALLOWED;
+  wallet and reconciliation adjust routes are documented as not accepting
+  `Idempotency-Key`.
+- docs/CONTRACT_OPEN_QUESTIONS.md rewritten: confirmed shapes per owner and the
+  remaining gaps (QR polling secret name, QR status enum, `expiresIn` and
+  `remainingLockSeconds` field names, KYC status filter ignored, W2-W4 rollout,
+  amount type differences).
+- packages/api-contract/README.md updated with the alias rule, the
+  x-planned-paths rule and the `npm run contract:lint` command.
+- Note: two FE/Backend mismatches found during recon are recorded but were NOT
+  fixed here because fixes belong to the auth feature, outside N21 scope:
+  (a) auth.api.ts sends `?secret=` while the Backend reads `?pollSecret=` /
+  `x-poll-secret`; (b) the FE QR status type lists SCANNED/CONFIRMED/EXPIRED
+  while the Backend only returns PENDING/APPROVED/REJECTED (expired = 410).
+
+Commands and actual results
+---------------------------
+1) node <temp>/validate-contract.js
+   PASS - YAML_PARSE_OK (yaml package, strict mode); 87 real paths, 87 alias
+   paths, 53 schemas, 7 responses, 18 parameters, 0 planned keys; every local
+   $ref resolves; every path has at least one operation; every operation has
+   responses; every alias maps to a real path and vice versa; every {param} is
+   declared. STRUCTURAL_CHECK_OK.
+
+2) npm run contract:lint
+   (redocly lint --extends=minimal packages/api-contract/openapi.yaml)
+   PASS - exit 0, "Your API description is valid" in ~110ms.
+   0 errors, 193 warnings. The warnings are the minimal ruleset's
+   operation-operationId (every operation, and the /api aliases duplicate the
+   same operations) and are not contract defects. No error remained after
+   fixing 2 flow-mapping descriptions and adding tag descriptions.
+
+3) Prism load + serve check
+   PASS - `npx prism mock packages/api-contract/openapi.yaml -p 4010 -h 127.0.0.1`
+   logged all 87 real paths and all 87 /api alias paths and reported
+   "Prism is listening on http://127.0.0.1:4010". Live requests:
+   POST /auth/signin          -> 200 {"success":true,"data":{"accessToken"...
+   POST /api/auth/signin      -> 200 (alias works)
+   GET  /api/wallets/me       -> 401 (Prism enforces the global bearer scheme;
+   GET  /api/notifications/me -> 401  no Authorization header was sent, which is
+   GET  /api/merchants/me     -> 401  the expected Prism behaviour, not a
+   GET  /api/admin/dashboard  -> 401  contract error)
+   GET  /api/utilities/bills/lookup?... -> 401 (same reason)
+   Prism request validation logged "The request passed the validation rules"
+   for the 200 responses.
+
+4) npm run typecheck
+   PASS - tsc -b --noEmit exited 0.
+
+5) npm test   (node --import ./tests/register.mjs --test tests/*.test.ts)
+   PASS - tests 59, pass 59, fail 0, skipped 0, duration ~1.30s.
+
+6) node --import ./tests/register.mjs --test tests/contracts.test.ts
+   PASS - tests 8, pass 8, fail 0 (the repo contract tests, run explicitly).
+   Note: these tests assert the FE zod schemas/envelopes; they do not parse
+   openapi.yaml, so item 1 and item 2 are the YAML checks that matter.
+
+7) npm run build   (tsc -b && vite build)
+   PASS - built in ~1.0s. Warnings only: pre-existing chunk > 500 kB notice.
+
+8) npm run lint   (eslint .)
+   FAIL - 60 problems: 28 errors / 32 warnings, all pre-existing and outside
+   N21 files (TransferPage.tsx react-hooks/purity, acceptance-k18.test.tsx
+   unused var, features/auth, features/merchant, features/payment,
+   features/user, features/wallet, hooks, pages/QrLoginPage.tsx,
+   pages/TopupResult.tsx, apps/mobile/App.tsx). ESLint does not lint .yaml/.md,
+   so none of the 28 errors come from this change. The count is identical to
+   the one recorded in N16 (28/32), i.e. N21 added no lint regression.
+
+9) npm run check   (lint + typecheck + test + build)
+   FAIL - stops at the repo-wide lint step (item 8). typecheck, test and build
+   were run separately at the same SHA and passed (items 4, 5, 7).
+
+Summary
+-------
+PASS: YAML parse + structural/$ref/path-parameter validation, redocly lint
+      (valid, 0 errors), Prism load and serve of all 174 path keys,
+      typecheck, node tests 59/59, contracts tests 8/8, production build.
+FAIL: repo-wide lint (28 errors / 32 warnings, all pre-existing outside N21);
+      `npm run check` cannot go green in this working tree for the same reason.
+SKIP: none.
+BLOCKED: N21 Part 2 (technical document v2, the "7 points"). Reason: the
+      Week-3 roadmap section 11 that defines those 7 points has not been
+      supplied. Nothing was invented. This log covers Part 1 only.
+
+Risks / open items
+------------------
+- QR sign-in is currently broken end-to-end on the Web: the client sends
+  `?secret=` while the Backend requires `?pollSecret=`/`x-poll-secret`, and the
+  FE status type expects SCANNED/CONFIRMED/EXPIRED values the Backend never
+  returns. Both are recorded in docs/CONTRACT_OPEN_QUESTIONS.md; the fix belongs
+  to the auth feature and was out of N21 scope.
+- Prism enforces the global bearer security, so anyone using `npm run mock` must
+  send any `Authorization: Bearer <token>` header for protected paths. This is
+  documented in the contract README and in the open-questions doc.
+- The 193 redocly warnings are operationId/tag noise from the minimal ruleset
+  plus the intentional /api aliases. Adding operationIds to both the real paths
+  and the aliases would create duplicate-operationId noise instead, so it was
+  left as-is; the exit code is 0.
+- Admin reconciliation reports/anomalies (W2-W4) depend on the wallet-service
+  rollout; the contract encodes them but live behaviour is still unverified.
+- Local Backend `nguyen` is behind origin/main; all shapes were read via
+  `git show origin/main:<path>`. No pull, merge, push or PR was performed.
+- The branch is local only; nothing was pushed.
