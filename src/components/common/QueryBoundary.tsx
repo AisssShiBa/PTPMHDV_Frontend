@@ -16,6 +16,7 @@ interface QueryBoundaryProps<T> {
   query: QueryLike<T>
   skeleton?: ReactNode
   emptyFallback?: ReactNode
+  errorFallback?: ReactNode | ((error: unknown, refetch?: () => unknown) => ReactNode)
   isEmpty?: (data: T) => boolean
   children: ((data: T) => ReactNode) | ReactNode
 }
@@ -27,6 +28,7 @@ export function QueryBoundary<T>({
   query,
   skeleton,
   emptyFallback,
+  errorFallback,
   isEmpty,
   children
 }: QueryBoundaryProps<T>) {
@@ -46,6 +48,10 @@ export function QueryBoundary<T>({
   }
 
   if (query.isError) {
+    if (errorFallback) {
+      return typeof errorFallback === 'function' ? <>{errorFallback(query.error, query.refetch)}</> : <>{errorFallback}</>
+    }
+
     return (
       <div className="my-4 rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-center" role="alert">
         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">

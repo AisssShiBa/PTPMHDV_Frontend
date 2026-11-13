@@ -42,7 +42,7 @@ beforeEach(() => {
     initialized: true,
   })
   server.use(
-    http.get('*/wallets/:owner/balance', () =>
+    http.get('*/wallets/me', () =>
       HttpResponse.json({ success: true, data: { availableBalance: balance } }),
     ),
     http.post('*/funding/cash-out', async ({ request }) => {

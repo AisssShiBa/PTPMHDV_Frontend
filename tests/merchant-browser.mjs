@@ -75,7 +75,7 @@ const server = createServer(async (req, res) => {
         return success(merchant, 201)
       }
       if (/^\/api\/merchants\/[^/]+\/outlets$/.test(path)) return success({ content: [], page: 1, limit: 10, totalElements: 0, totalPages: 1 })
-      if (/^\/api\/wallets\/[^/]+\/balance$/.test(path)) return success({ availableBalance: '0', balance: '0', heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
+      if (path === '/api/wallets/me' || /^\/api\/wallets\/[^/]+\/balance$/.test(path)) return success({ availableBalance: '0', balance: '0', heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
       if (path === '/api/notifications/me') return success({ notifications: [], unreadCount: 0, pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } })
       if (path === '/api/notifications/socket-ticket') return failure(503, 'SOCKET_UNAVAILABLE')
       return failure(404, 'NOT_FOUND')

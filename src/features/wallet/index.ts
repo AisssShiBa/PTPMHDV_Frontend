@@ -1,1 +1,4 @@
-export { walletKeys, walletQueries, useWalletBalance } from './api/wallet.queries'
+// Feature: wallet
+export * from './types/wallet.types'
+export * from './api/wallet.api'
+export * from './api/wallet.queries'

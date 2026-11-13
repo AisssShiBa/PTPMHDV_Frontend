@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
 import { openBrowser, until } from './browser-support.mjs'
 const root = fileURLToPath(new URL('../', import.meta.url))
-const artifacts = resolve(root, 'docs/evidence/huu-fe-phase4/browser')
+const artifacts = resolve(root, process.env.BROWSER_EVIDENCE_DIR || 'docs/evidence/huu-fe-phase4/browser')
 const runtime = resolve(root, 'node_modules/.tmp/cashout-browser')
 mkdirSync(artifacts, { recursive: true }); mkdirSync(runtime, { recursive: true })
 const cache = resolve(homedir(), '.cache/ms-playwright')
@@ -67,7 +67,7 @@ const server = createServer(async (req, res) => {
         if (mode === 'FAILED') { order.status = 'FAILED'; order.failureReason = 'BANK_DECLINED'; return failure(409, 'CASHOUT_FAILED') }
         order.status = 'SUCCEEDED'; balance = (BigInt(balance) - BigInt(order.amount)).toString(); return success(order)
       }
-      if (/^\/api\/wallets\/[^/]+\/balance$/.test(path)) return success({ availableBalance: balance, balance, heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
+      if (path === '/api/wallets/me' || /^\/api\/wallets\/[^/]+\/balance$/.test(path)) return success({ availableBalance: balance, balance, heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
       if (path === '/api/notifications/me') return success({ notifications: [], unreadCount: 0, pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } })
       if (path === '/api/notifications/socket-ticket') return failure(503, 'SOCKET_UNAVAILABLE')
       return failure(404, 'NOT_FOUND')

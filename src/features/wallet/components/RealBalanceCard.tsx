@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { useWalletBalance } from '../api/wallet.queries'
 import { errorMessage } from '@/lib/apiResponse'
 import { formatNumber, toBigIntSafe } from '@/lib/format'
-import type { WalletBalance } from '../types/wallet.types'
+import type { WalletMe } from '../types/wallet.types'
 import { TrendingUp, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 interface Props {
   className?: string
   refreshTrigger?: number
-  onBalanceLoaded?: (balance: WalletBalance) => void
+  onBalanceLoaded?: (balance: WalletMe) => void
 }
 
 export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigger = 0, onBalanceLoaded }) => {

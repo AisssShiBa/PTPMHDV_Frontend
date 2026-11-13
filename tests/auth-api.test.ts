@@ -5,8 +5,7 @@ import api from '../src/lib/axios'
 import { useAuthStore } from '../src/features/auth/stores/useAuthStore'
 import { userService } from '../src/features/user/services/userService'
 import { merchantService } from '../src/features/merchant/services/merchantService'
-import { adminService } from '../src/features/admin/services/adminService'
-import { walletService } from '../src/features/wallet/services/walletService'
+import { adminApi } from '../src/features/admin/api/admin.api'
 
 const user = { id: '10000000-0000-4000-8000-000000000001', username: 'user', firstName: 'A', lastName: 'B', email: 'a@example.com', role: 'USER' as const }
 const originalAdapter = api.defaults.adapter
@@ -178,16 +177,16 @@ test('admin KYC uses audited endpoints, exact mutation fields and response envel
     assert.equal(config.headers.get('Authorization'), 'Bearer old')
     return response(config, { success: true, data: { kycTier: 2 }, auditLog: { id: 'audit' } })
   }
-  assert.equal((await adminService.updateKycTier(user.id, 2, ' Bank simulation ')).kycTier, 2)
-  await adminService.reviewKyc(user.id, 'REJECTED', ' Invalid documents ')
-  await adminService.getKycDocuments(user.id)
+  assert.equal((await adminApi.changeKycTier(user.id, 2, ' Bank simulation ')).kycTier, 2)
+  await adminApi.reviewKyc(user.id, 'REJECTED', ' Invalid documents ')
+  await adminApi.getKycDocuments(user.id)
   assert.deepEqual(calls, [
     { method: 'patch', url: `/admin/kyc/${user.id}/tier`, body: { tier: 2, reason: 'Bank simulation' } },
     { method: 'post', url: `/admin/kyc/${user.id}/review`, body: { status: 'REJECTED', detail: 'Invalid documents' } },
     { method: 'get', url: `/admin/kyc/${user.id}/documents`, body: undefined }
   ])
   api.defaults.adapter = async (config) => response(config, { success: false, error: { code: 'ERROR', message: 'Error' } })
-  await assert.rejects(adminService.updateKycTier(user.id, 1, 'Restore'))
+  await assert.rejects(adminApi.changeKycTier(user.id, 1, 'Restore'))
 })
 
 test('merchant lookup accepts null but never treats 404 as an empty registration', async () => {
@@ -216,20 +215,4 @@ test('recipient lookup uses authenticated exact search, cancellation and only th
   assert.equal(calls, 1)
   api.defaults.adapter = async (config) => response(config, { success: true, data: { authUserId: 'not-an-id', maskedName: 'Name' } })
   await assert.rejects(userService.lookupRecipient('user@example.com'))
-})
-
-test('transfer preserves the caller reference when reconciling an uncertain attempt', async () => {
-  session()
-  const recipientId = '20000000-0000-4000-8000-000000000001'
-  const bodies: unknown[] = []
-  api.defaults.adapter = async (config) => {
-    assert.equal(config.url, `/wallets/${user.id}/transfer`)
-    bodies.push(JSON.parse(config.data))
-    return response(config, { success: true, data: { transactionId: 'txn-1', replayed: bodies.length > 1 } })
-  }
-  await walletService.transfer(user.id, recipientId, '50000', 'P2P-stable-reference')
-  assert.equal((await walletService.transfer(user.id, recipientId, '50000', 'P2P-stable-reference')).replayed, true)
-  assert.deepEqual(bodies, Array(2).fill({ toUserId: recipientId, amount: '50000', referenceId: 'P2P-stable-reference' }))
-  api.defaults.adapter = async (config) => response(config, { success: true, data: {} })
-  await assert.rejects(walletService.transfer(user.id, recipientId, '50000', 'P2P-stable-reference'))
 })

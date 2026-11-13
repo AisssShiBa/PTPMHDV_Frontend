@@ -12,7 +12,7 @@ registerHooks({
     if (specifier.startsWith('@/') || (specifier.startsWith('.') && context.parentURL?.startsWith('file:'))) {
       const base = specifier.startsWith('@/') ? resolve(root, 'src', specifier.slice(2))
         : fileURLToPath(new URL(specifier, context.parentURL))
-      for (const extension of ['', '.ts', '.tsx']) {
+      for (const extension of ['', '.ts', '.tsx', '/index.ts', '/index.tsx']) {
         if (existsSync(base + extension) && /\.tsx?$/.test(base + extension)) {
           return { url: pathToFileURL(base + extension).href, shortCircuit: true }
         }

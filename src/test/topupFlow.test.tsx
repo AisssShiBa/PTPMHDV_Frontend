@@ -43,7 +43,7 @@ beforeEach(() => {
     initialized: true,
   })
   server.use(
-    http.get('*/wallets/:owner/balance', () =>
+    http.get('*/wallets/me', () =>
       HttpResponse.json({
         success: true,
         data: { availableBalance: '200000.00' },

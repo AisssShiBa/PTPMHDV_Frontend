@@ -56,7 +56,7 @@ export function useCashOutFlow() {
     if (order.userId !== owner) throw new FundingError('INVALID_RESPONSE', true)
     session.current.order = order
     client.setQueryData(fundingKeys.cashout(owner!, order.id), order)
-    void client.invalidateQueries({ queryKey: walletKeys.all(owner!) })
+    void client.invalidateQueries({ queryKey: walletKeys.all })
     update(phase)
     return order
   }

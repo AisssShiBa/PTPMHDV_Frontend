@@ -1,10 +1,24 @@
 import axios from 'axios'
 
+export interface ApiErrorObject {
+  code: string
+  message: string
+  traceId?: string
+  details?: unknown
+}
+
 export interface ApiResponse<T> {
   success: boolean
   data?: T
-  error?: { code: string; message: string; traceId?: string } | null
+  error?: ApiErrorObject | null
   message?: string | null
+}
+
+export function errorDetails<T = unknown>(error: unknown): T | undefined {
+  if (axios.isAxiosError(error)) {
+    return (error.response?.data as ApiResponse<unknown> | undefined)?.error?.details as T | undefined
+  }
+  return undefined
 }
 
 export function unwrap<T>(body: ApiResponse<T>): T {

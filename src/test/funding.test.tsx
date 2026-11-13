@@ -272,7 +272,7 @@ describe('Cashout recovery (MSW, not live acceptance)', () => {
       ),
     ).not.toContain('synthetic-once')
     expect(invalidate).toHaveBeenCalledWith({
-      queryKey: ['wallet', testUser.id],
+      queryKey: ['wallets'],
     })
   })
   it('treats confirmation timeout as unknown and reconciles without replay', async () => {

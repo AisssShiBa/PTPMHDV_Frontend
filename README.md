@@ -1,5 +1,7 @@
 # FinVault Frontend
 
+> **Sau merge main vào Huu:** xem [báo cáo merge và kết quả test mới](docs/handover/huu-main-merge.md). Wallet/P2P K18/K19, Notification và Utilities mới đã được tích hợp; nội dung mô tả source trước merge bên dưới là lịch sử.
+
 Ứng dụng web ví điện tử mô phỏng cho đồ án học tập. React 19, TypeScript, Vite, TanStack Query, Tailwind, Axios; API đi qua Gateway `/api`. Mobile Expo nằm ở `apps/mobile`, ngoài phạm vi bàn giao Web của Hữu.
 
 ## Khởi chạy web

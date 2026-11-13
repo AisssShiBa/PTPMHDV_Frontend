@@ -19,6 +19,7 @@ import {
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { formatVndExact } from '@/lib/format'
 import { useWalletBalance } from '@/features/wallet'
+import { NotificationBell } from '@/features/notification'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -210,19 +211,8 @@ export function MainLayout() {
                 Cấp {user?.kycTier ?? 0}
               </Badge>
 
-              {/* Slot chuông thông báo */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
-                aria-label="Thông báo"
-                onClick={() => navigate('/app/notifications')}
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold shadow-xs">
-                  3
-                </span>
-              </Button>
+              {/* Chuông thông báo thật (socket + unreadCount từ API) */}
+              <NotificationBell />
 
               {/* User Avatar Menu */}
               <DropdownMenu>
@@ -249,7 +239,7 @@ export function MainLayout() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/app/notifications')}>
                     <Bell className="mr-2 h-4 w-4" />
-                    <span>Thông báo (3 mới)</span>
+                    <span>Thông báo</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/app/transfer')}>
                     <Send className="mr-2 h-4 w-4" />

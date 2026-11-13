@@ -175,18 +175,27 @@ export function SignInPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      signIn('annguyen', '123456').then(() => navigate(from, { replace: true }))
+                      signIn('user1', '123456').then(() => navigate(from, { replace: true }))
                     }}
                     className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-left transition-colors font-medium text-[11px] cursor-pointer"
                   >
-                    👤 Khách hàng (An Nguyễn)
+                    👤 Người dùng 1 (100k)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      signIn('user2', '123456').then(() => navigate(from, { replace: true }))
+                    }}
+                    className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-left transition-colors font-medium text-[11px] cursor-pointer"
+                  >
+                    👤 Người dùng 2 (100k)
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       signIn('admin', '123456').then(() => navigate('/admin', { replace: true }))
                     }}
-                    className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-left transition-colors font-medium text-[11px] cursor-pointer"
+                    className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-left transition-colors font-medium text-[11px] cursor-pointer col-span-2 text-center"
                   >
                     🛡️ Quản trị viên (Admin)
                   </button>

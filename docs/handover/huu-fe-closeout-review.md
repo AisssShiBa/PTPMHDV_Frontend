@@ -1,5 +1,7 @@
 # Review local cho closeout trục Hữu — 13/11/2026
 
+> **Sau merge main vào Huu:** xem [báo cáo merge và kết quả test mới](huu-main-merge.md). Wallet/P2P K18/K19, Notification và Utilities mới đã được tích hợp; nội dung mô tả source trước merge bên dưới là lịch sử.
+
 Tài liệu này phục vụ owner review, không thay kết quả review chéo hay xác nhận merge.
 
 ## Phần tự hoàn tất trong phiên closeout

@@ -1,5 +1,7 @@
 # Closeout Hữu — hướng dẫn tiếp nhận
 
+> **Sau merge main vào Huu:** xem [báo cáo merge và kết quả test mới](huu-main-merge.md). Wallet/P2P K18/K19, Notification và Utilities mới đã được tích hợp; nội dung mô tả source trước merge bên dưới là lịch sử.
+
 Đã tự hoàn tất regression hiện hữu, dữ liệu demo, rehearsal/video và mở rộng kiểm Wallet/P2P qua Gateway/DB. [Báo cáo/evidence đầy đủ](../evidence/huu-fe-closeout/README.md), [video](../evidence/huu-fe-closeout/rehearsal/live-demo-rehearsal.mp4), [review owner](huu-fe-closeout-review.md).
 
 ## Dùng demo

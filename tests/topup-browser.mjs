@@ -50,7 +50,7 @@ const server = createServer(async (req, res) => {
         assert.equal(req.method, 'GET'); return success(otherAccount ? [] : [row()])
       }
       if (path === '/api/payments/topups/' + id) return otherAccount ? failure(403, 'FORBIDDEN') : failRead ? failure(503, 'HTTP_503') : success(row())
-      if (/^\/api\/wallets\/[^/]+\/balance$/.test(path)) return success({ availableBalance: balance, balance, heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
+      if (path === '/api/wallets/me' || /^\/api\/wallets\/[^/]+\/balance$/.test(path)) return success({ availableBalance: balance, balance, heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
       if (path === '/api/notifications/me') return success({ notifications: [], unreadCount: 0, pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } })
       if (path === '/api/notifications/socket-ticket') return failure(503, 'SOCKET_UNAVAILABLE')
       return failure(404, 'NOT_FOUND')

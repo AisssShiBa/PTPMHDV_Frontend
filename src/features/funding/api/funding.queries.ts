@@ -59,7 +59,7 @@ export function useTopupStatus(id: string, enabled = true) {
   })
   useEffect(() => {
     if (query.data && isTopupTerminal(query.data.status)) {
-      void client.invalidateQueries({ queryKey: walletKeys.all(owner) })
+      void client.invalidateQueries({ queryKey: walletKeys.all })
       void client.invalidateQueries({ queryKey: fundingKeys.history(owner) })
     }
   }, [client, owner, query.data])
@@ -91,7 +91,7 @@ export function useCashOutStatus(id: string) {
   })
   useEffect(() => {
     if (query.data)
-      void client.invalidateQueries({ queryKey: walletKeys.all(owner) })
+      void client.invalidateQueries({ queryKey: walletKeys.all })
   }, [client, owner, query.data])
   return query
 }

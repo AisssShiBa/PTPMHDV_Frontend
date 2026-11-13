@@ -1,24 +1,88 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: FinVault API
-  version: 0.1.0
-  description: Shared contract for endpoints currently used by the FinVault web client.
+  version: 0.2.0
+  description: |
+    Consolidated contract for the FinVault web client. Every path below was read
+    from the real Express routers on Backend `origin/main` (0b78fb5) and matches
+    the Gateway mount table in `gateway/src/app.ts`.
+
+    Conventions:
+    - Success envelope: `{ success: true, data: <payload>, message?: string }`.
+    - Error envelope: `{ success: false, error: { code, message, details? }, requestId? }`.
+    - Money is always a decimal string. Never parse it as floating point.
+    - Timestamps are ISO-8601 UTC strings.
+
+    Protected routes require a Gateway-signed request: the browser sends
+    `Authorization: Bearer <accessToken>`; the Gateway verifies it and forwards an
+    `x-gateway-token` to the owning service. `security: []` marks public routes.
+
+    Merchant outlet QR: **QR điểm bán chỉ hiển thị, không có route xác minh trên
+    Web.** The contract exposes the signed payload so the portal can render it;
+    there is no Web endpoint that validates or redeems it.
+
+    Prism serves path keys directly and does not prepend `servers[].url`, so the
+    same path items are repeated under `/api/...` at the end of `paths` (generated
+    aliases, not new routes). Routes that do not exist on the Backend are never
+    invented: they stay in `x-planned-paths` and are tracked in
+    `docs/CONTRACT_OPEN_QUESTIONS.md`.
 servers:
   - url: /api
+security:
+  - bearerAuth: []
 tags:
   - name: Auth
+    description: Authentication, QR sign-in, transaction PIN.
   - name: Users
+    description: Profiles, recipient lookup and KYC uploads.
   - name: Merchants
+    description: Merchant registration, outlets and API keys.
   - name: Wallets
+    description: Wallet balances, ledger, transfers and admin reconciliation.
   - name: Payments
+    description: P2P transfers, generic payments and VNPAY top-ups.
+  - name: Funding
+    description: Cash-out (withdrawal) and VNPAY funding aliases.
+  - name: Utilities
+    description: Phone top-up and bill payment (simulated providers).
   - name: Notifications
+    description: Inbox, read state and the Socket.IO ticket.
   - name: Admin
+    description: Dashboard, KYC/merchant review, audit logs and reconciliation.
+x-contract-sources:
+  - service: auth-service
+    routes: services/auth-service/src/routes/{authRoute,pinRoute,qrLoginRoute}.ts
+    mount: /api/auth, /api/auth/qr-login, /api/auth/pin (legacy alias /api/auth-txn/pin)
+  - service: user-service
+    routes: services/user-service/src/routes/userRoute.ts
+    mount: /api/users
+  - service: merchant-service
+    routes: services/merchant-service/src/routes/merchantRoute.ts
+    mount: /api/merchants
+  - service: wallet-service
+    routes: services/wallet-service/src/routes/{wallet,admin}.routes.ts
+    mount: /api/wallets, /api/wallets/admin
+  - service: payment-service
+    routes: services/payment-service/src/routes/{payment,topup,admin-topup}.routes.ts, src/funding/routes/*.ts
+    mount: /api/payments, /api/funding
+  - service: utilities-service
+    routes: services/utilities-service/src/routes/utilityRoute.ts
+    mount: /api/utilities
+  - service: notification-service
+    routes: services/notification-service/src/routes/notificationRoute.ts
+    mount: /api/notifications
+  - service: admin-service
+    routes: services/admin-service/src/routes/adminRoute.ts
+    mount: /api/admin
 paths:
+
+  # ── Auth ────────────────────────────────────────────────────────────────
   /auth/signup:
     post:
       tags: [Auth]
       summary: Register an account
-      x-needs-confirmation: true
+      security: []
+      x-backend-service: auth-service
       parameters:
         - $ref: '#/components/parameters/ClientPlatform'
       requestBody:
@@ -28,28 +92,39 @@ paths:
             schema:
               type: object
               required: [username, password, email, firstName, lastName]
+              additionalProperties: false
               properties:
-                username: { type: string }
-                password: { type: string, format: password }
+                username: { type: string, minLength: 3 }
+                password: { type: string, format: password, minLength: 8 }
                 email: { type: string, format: email }
                 firstName: { type: string }
                 lastName: { type: string }
-              example: { username: demo, password: password, email: demo@example.test, firstName: Minh, lastName: Nguyen }
       responses:
-        '200':
-          description: Account created
+        '201':
+          description: Account created; `data.userId` is the auth user id and `data.user` the public profile
           content:
             application/json:
-              example: { success: true, data: { user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } }
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [userId, user]
+                        properties:
+                          userId: { type: string, format: uuid }
+                          user: { $ref: '#/components/schemas/AuthUser' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
   /auth/signin:
     post:
       tags: [Auth]
-      summary: Sign in
-      x-needs-confirmation: true
+      summary: Sign in with username and password
+      security: []
+      x-backend-service: auth-service
       parameters:
         - $ref: '#/components/parameters/ClientPlatform'
       requestBody:
@@ -59,184 +134,661 @@ paths:
             schema:
               type: object
               required: [username, password]
+              additionalProperties: false
               properties:
                 username: { type: string }
                 password: { type: string, format: password }
-              example: { username: demo, password: password }
+                platform: { type: string, enum: [web, mobile] }
       responses:
         '200':
-          description: Signed in; mobile clients may also receive a refresh token
+          description: |
+            Signed in. Web clients receive the refresh token in the httpOnly
+            `refreshToken` cookie (path `/api/auth`); mobile clients receive it in
+            `data.refreshToken`.
           content:
             application/json:
-              example: { success: true, data: { accessToken: mock-access-token, refreshToken: mock-refresh-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } }
-              examples:
-                web: { value: { success: true, data: { accessToken: mock-access-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } } }
-                mobile: { value: { success: true, data: { accessToken: mock-access-token, refreshToken: mock-refresh-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } } }
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [accessToken, user]
+                        properties:
+                          accessToken: { type: string }
+                          refreshToken: { type: string, description: Mobile only }
+                          user: { $ref: '#/components/schemas/AuthUser' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
   /auth/refresh:
     post:
       tags: [Auth]
-      summary: Refresh the access token
-      x-needs-confirmation: true
+      summary: Rotate the session and issue a new access token
+      security: []
+      x-backend-service: auth-service
       parameters:
         - $ref: '#/components/parameters/ClientPlatform'
       requestBody:
+        required: false
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               properties:
-                refreshToken: { type: string }
-            examples:
-              web: { value: {} }
-              mobile: { value: { refreshToken: mock-refresh-token } }
+                refreshToken: { type: string, description: Mobile only; web reads the httpOnly cookie }
       responses:
         '200':
-          description: Refreshed session; mobile clients may also receive a refresh token
+          description: Refreshed session (web also rotates the `refreshToken` cookie)
           content:
             application/json:
-              example: { success: true, data: { accessToken: mock-access-token, refreshToken: mock-refresh-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } }
-              examples:
-                web: { value: { success: true, data: { accessToken: mock-access-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } } }
-                mobile: { value: { success: true, data: { accessToken: mock-access-token, refreshToken: mock-refresh-token, user: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, firstName: Minh, lastName: Nguyen, email: demo@example.test, role: USER } } } }
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [accessToken, user]
+                        properties:
+                          accessToken: { type: string }
+                          refreshToken: { type: string, description: Mobile only }
+                          user: { $ref: '#/components/schemas/AuthUser' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
   /auth/signout:
     post:
       tags: [Auth]
-      summary: Sign out
-      x-needs-confirmation: true
-      responses:
-        '200':
-          description: Signed out
-          content:
-            application/json:
-              example: { success: true, data: { signedOut: true } }
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /users/{id}:
-    get:
-      tags: [Users]
-      summary: Get user profile by user ID
-      x-needs-confirmation: true
+      summary: Revoke the refresh-token family and clear the cookie
+      security: []
+      x-backend-service: auth-service
       parameters:
-        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/ClientPlatform'
       responses:
         '200':
-          description: User profile
+          description: Signed out; `data` is null
           content:
             application/json:
-              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, firstName: Minh, lastName: Nguyen, email: demo@example.test } }
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /users/by-auth/{id}:
-    parameters:
-      - $ref: '#/components/parameters/Id'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/qr-login/init:
+    post:
+      tags: [Auth]
+      summary: Start a QR sign-in session (public, web)
+      security: []
+      x-backend-service: auth-service
+      responses:
+        '201':
+          description: QR session created. Keep `pollSecret` in memory only; it is required to poll.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/QrInit' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/qr-login/{id}/status:
     get:
-      tags: [Users]
-      summary: Get profile by auth user ID
-      x-needs-confirmation: true
+      tags: [Auth]
+      summary: Poll a QR sign-in session
+      description: |
+        Backend accepts the polling secret as `?pollSecret=` (documented here) or
+        the `x-poll-secret` header. The web helper currently sends `?secret=`,
+        which the backend ignores; that mismatch is tracked in
+        `docs/CONTRACT_OPEN_QUESTIONS.md`. Status values are exactly
+        `PENDING | APPROVED | REJECTED`; there is no `SCANNED`, `CONFIRMED` or
+        `EXPIRED` status (an expired session is `410 QR_EXPIRED`).
+      security: []
+      x-backend-service: auth-service
+      parameters:
+        - $ref: '#/components/parameters/QrId'
+        - $ref: '#/components/parameters/PollSecret'
       responses:
         '200':
-          description: User profile
+          description: Current session status; APPROVED also sets the refresh cookie and returns the session
           content:
             application/json:
-              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, firstName: Minh, lastName: Nguyen, email: demo@example.test } }
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Users]
-      summary: Update profile
-      x-needs-confirmation: true
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/QrStatus' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '410':
+          description: QR_EXPIRED — the 120-second session is gone
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/qr-login/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm a scanned QR session (mobile / authenticated client)
+      x-backend-service: auth-service
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [qrId, nonce]
+              additionalProperties: false
               properties:
-                firstName: { type: string }
-                lastName: { type: string }
-                phone: { type: string }
-            example: { firstName: Minh, lastName: Nguyen }
+                qrId: { type: string, format: uuid }
+                nonce: { type: string }
       responses:
         '200':
-          description: Updated profile
+          description: Confirmation recorded
           content:
             application/json:
-              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, firstName: Minh, lastName: Nguyen, email: demo@example.test } }
-        '400':
-          $ref: '#/components/responses/BadRequest'
-  /users/by-auth/{id}/kyc:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/pin/setup:
+    post:
+      tags: [Auth]
+      summary: Set the 6-digit transaction PIN for the first time
+      description: Auth service also exposes this route as `/api/auth-txn/pin/setup` (legacy alias).
+      x-backend-service: auth-service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetupPinPayload' }
+      responses:
+        '201':
+          description: PIN created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: PIN_ALREADY_EXISTS
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/pin/verify:
+    post:
+      tags: [Auth]
+      summary: Verify the transaction PIN and receive a 60-second transaction token
+      description: |
+        Returns `data.transactionToken` and `data.expiresIn` (seconds). The token is
+        sent as `X-Transaction-Token` to payment confirm / cash-out confirm.
+      x-backend-service: auth-service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerifyPinPayload' }
+      responses:
+        '200':
+          description: PIN accepted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [transactionToken, expiresIn]
+                        properties:
+                          transactionToken: { type: string }
+                          expiresIn: { type: integer, example: 60 }
+                          message: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401':
+          description: INVALID_PIN — wrong PIN
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '423':
+          description: PIN_LOCKED — too many failed attempts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/pin/change:
+    post:
+      tags: [Auth]
+      summary: Change the transaction PIN
+      description: Auth service also exposes this route as `/api/auth-txn/pin/change` (legacy alias).
+      x-backend-service: auth-service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangePinPayload' }
+      responses:
+        '200':
+          description: PIN changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '423':
+          description: PIN_LOCKED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/pin/status:
+    get:
+      tags: [Auth]
+      summary: Read whether the PIN exists and how long it stays locked
+      x-backend-service: auth-service
+      responses:
+        '200':
+          description: PIN status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/PinStatus' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Users ───────────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get the signed-in profile
+      x-backend-service: user-service
+      responses:
+        '200':
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: PROFILE_NOT_FOUND — auth account exists but no local profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /users/me/kyc:
+    get:
+      tags: [Users]
+      summary: Get KYC status and tier for the signed-in user
+      x-backend-service: user-service
+      responses:
+        '200':
+          description: KYC summary
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserKycStatus' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [Users]
-      summary: Submit KYC documents
-      x-needs-confirmation: true
-      parameters:
-        - $ref: '#/components/parameters/Id'
+      summary: Submit both KYC images for the signed-in user
+      x-backend-service: user-service
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required: [idNumber, document]
+              required: [idNumber, front, back]
               properties:
-                idNumber: { type: string }
-                document: { type: string, format: binary }
+                idNumber: { type: string, maxLength: 50 }
+                front: { type: string, format: binary }
+                back: { type: string, format: binary }
       responses:
-        '200':
-          description: KYC submitted
+        '202':
+          description: 'Documents stored; the profile comes back with kycStatus PENDING'
           content:
             application/json:
-              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, kycStatus: PENDING } }
-        '400':
-          $ref: '#/components/responses/BadRequest'
-  /users/by-auth/{id}/kyc/document:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserProfile' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: KYC_ALREADY_APPROVED / KYC_DOCUMENTS_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '413':
+          description: PAYLOAD_TOO_LARGE — each image is capped at 5 MB
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /users/kyc/documents:
+    post:
+      tags: [Users]
+      summary: Submit both KYC images (identity comes from the gateway token)
+      x-backend-service: user-service
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [idNumber, front, back]
+              properties:
+                idNumber: { type: string, maxLength: 50 }
+                front: { type: string, format: binary }
+                back: { type: string, format: binary }
+      responses:
+        '202':
+          description: Documents stored
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserProfile' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: KYC state conflict
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '413':
+          description: PAYLOAD_TOO_LARGE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /users/lookup:
     get:
       tags: [Users]
-      summary: Get KYC document metadata
-      x-needs-confirmation: true
+      summary: Look up a recipient by exact email or phone
+      x-backend-service: user-service
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 254 }
+      responses:
+        '200':
+          description: Masked recipient
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Recipient' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429':
+          description: Too many lookups; inspect `Retry-After`
+          headers:
+            Retry-After:
+              schema: { type: string, example: '60' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get a profile by local profile id or auth user id
+      x-backend-service: user-service
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
         '200':
-          description: KYC document
+          description: Profile (owner or admin only)
           content:
             application/json:
-              example: { success: true, data: { documentUrl: https://example.test/kyc/demo.jpg, contentType: image/jpeg } }
-        '404':
-          $ref: '#/components/responses/NotFound'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: AMBIGUOUS_IDENTIFIER — use `/users/by-auth/{id}`
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
 
+  /users/by-auth/{id}:
+    get:
+      tags: [Users]
+      summary: Get a profile by auth user id
+      x-backend-service: user-service
+      parameters:
+        - $ref: '#/components/parameters/AuthUserId'
+      responses:
+        '200':
+          description: Profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Users]
+      summary: Update the signed-in profile
+      x-backend-service: user-service
+      parameters:
+        - $ref: '#/components/parameters/AuthUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                fullName: { type: string, maxLength: 100, nullable: true }
+                phone: { type: string, maxLength: 30, nullable: true }
+                address: { type: string, maxLength: 500, nullable: true }
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserProfile' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Optimistic-concurrency conflict
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /users/by-auth/{id}/kyc:
+    post:
+      tags: [Users]
+      summary: Submit KYC images for a specific profile
+      x-backend-service: user-service
+      parameters:
+        - $ref: '#/components/parameters/AuthUserId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [idNumber, front, back]
+              properties:
+                idNumber: { type: string, maxLength: 50 }
+                front: { type: string, format: binary }
+                back: { type: string, format: binary }
+      responses:
+        '202':
+          description: Documents stored
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserProfile' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: KYC state conflict
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '413':
+          description: PAYLOAD_TOO_LARGE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /users/by-auth/{id}/kyc/document:
+    get:
+      tags: [Users]
+      summary: Get a short-lived signed URL for the owner's front KYC image
+      x-backend-service: user-service
+      parameters:
+        - $ref: '#/components/parameters/AuthUserId'
+      responses:
+        '200':
+          description: Signed URL and TTL
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/KycDocumentUrl' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: FORBIDDEN — admins must use `/admin/kyc/{userId}/documents`
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '404':
+          description: NOT_FOUND — no uploaded document
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  # ── Merchants ───────────────────────────────────────────────────────────
   /merchants:
     get:
       tags: [Merchants]
-      summary: List merchants
-      x-needs-confirmation: true
+      summary: List merchants (ADMIN for frontend callers)
+      x-backend-service: merchant-service
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED] }
       responses:
         '200':
-          description: Merchants
+          description: Paginated merchant list
           content:
             application/json:
-              example: { success: true, data: [{ id: 39c330e0-591f-4fe3-99ac-3544f885ad18, businessName: Demo Merchant, status: APPROVED, active: true }] }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MerchantPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /merchants/me:
     get:
       tags: [Merchants]
-      summary: Get current user's merchant registration
-      x-needs-confirmation: true
+      summary: Get the signed-in owner's merchant registration
+      description: 'Returns data null when the owner has not registered; a 404 is an API/deployment error, not a not-registered signal.'
+      x-backend-service: merchant-service
       responses:
         '200':
-          description: Merchant registration or explicit null
+          description: Merchant or explicit null
           content:
             application/json:
-              example: { success: true, data: null }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/Merchant'
+                          - nullable: true
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /merchants/register:
     post:
       tags: [Merchants]
-      summary: Register a merchant
-      x-needs-confirmation: true
+      summary: Register a merchant for the signed-in owner
+      x-backend-service: merchant-service
       requestBody:
         required: true
         content:
@@ -244,218 +796,946 @@ paths:
             schema:
               type: object
               required: [businessName]
+              additionalProperties: false
               properties:
-                businessName: { type: string }
-                businessType: { type: string }
-                address: { type: string }
-            example: { businessName: Demo Merchant, businessType: retail, address: Hanoi }
+                businessName: { type: string, minLength: 1, maxLength: 200 }
+                taxId: { type: string, minLength: 1, maxLength: 50, nullable: true }
+                bankAccount: { type: string, minLength: 1, maxLength: 100, nullable: true }
+                ownerId: { type: string, format: uuid, description: Optional; for frontend callers must equal the signed auth id. Normally omit. }
       responses:
         '201':
-          description: Registration created
+          description: Registration created with status PENDING
           content:
             application/json:
-              example: { success: true, data: { id: 39c330e0-591f-4fe3-99ac-3544f885ad18, businessName: Demo Merchant, status: PENDING } }
-        '400':
-          $ref: '#/components/responses/BadRequest'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Merchant' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: MERCHANT_ALREADY_REGISTERED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /merchants/{id}:
     get:
       tags: [Merchants]
-      summary: Get merchant
-      x-needs-confirmation: true
+      summary: Read a merchant profile as owner or admin
+      x-backend-service: merchant-service
       parameters:
-        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/MerchantId'
       responses:
         '200':
           description: Merchant
           content:
             application/json:
-              example: { success: true, data: { id: 39c330e0-591f-4fe3-99ac-3544f885ad18, businessName: Demo Merchant, status: APPROVED } }
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /merchants/{id}/active:
-    get:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Merchant' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
       tags: [Merchants]
-      summary: Check merchant active status
-      x-needs-confirmation: true
+      summary: Update a merchant profile as owner or admin
+      x-backend-service: merchant-service
       parameters:
-        - $ref: '#/components/parameters/Id'
-      responses:
-        '200':
-          description: Active flag
-          content:
-            application/json:
-              example: { success: true, data: { active: true } }
-
-  /wallets/{userId}/balance:
-    get:
-      tags: [Wallets]
-      summary: Get user wallet balance
-      x-needs-confirmation: true
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: ownerType
-          in: query
-          schema: { type: string, example: USER }
-      responses:
-        '200':
-          description: Balance
-          content:
-            application/json:
-              example: { success: true, data: { balance: "1250000", currency: VND } }
-  /wallets/{userId}/history:
-    get:
-      tags: [Wallets]
-      summary: Get wallet history
-      x-needs-confirmation: true
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema: { type: string }
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Wallet history
-          content:
-            application/json:
-              example: { success: true, data: [{ id: 2f67d342-3cb1-4be2-aecb-2a23a49120b2, amount: "50000", type: CREDIT, createdAt: "2026-01-01T00:00:00Z" }] }
-  /wallets/{userId}/credit:
-    post:
-      tags: [Wallets]
-      summary: Credit a wallet
-      x-needs-confirmation: true
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema: { type: string }
+        - $ref: '#/components/parameters/MerchantId'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [amount], properties: { amount: { type: string }, referenceId: { type: string }, transferType: { type: string } } }
-            example: { amount: "50000", referenceId: TOPUP-1, transferType: TOPUP }
+            schema:
+              type: object
+              minProperties: 1
+              additionalProperties: false
+              properties:
+                businessName: { type: string, minLength: 1, maxLength: 200 }
+                taxId: { type: string, minLength: 1, maxLength: 50, nullable: true }
+                bankAccount: { type: string, minLength: 1, maxLength: 100, nullable: true }
+      responses:
+        '200':
+          description: Updated merchant
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Merchant' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /merchants/{id}/active:
+    get:
+      tags: [Merchants]
+      summary: Check whether a merchant is active
+      x-backend-service: merchant-service
+      parameters:
+        - $ref: '#/components/parameters/MerchantId'
+      responses:
+        '200':
+          description: Active flag; true only when status is APPROVED
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MerchantActive' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /merchants/{id}/outlets:
+    get:
+      tags: [Merchants]
+      summary: List a merchant's outlets
+      x-backend-service: merchant-service
+      parameters:
+        - $ref: '#/components/parameters/MerchantId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Paginated outlet list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/OutletPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Merchants]
+      summary: Create an outlet for an APPROVED merchant
+      x-backend-service: merchant-service
+      parameters:
+        - $ref: '#/components/parameters/MerchantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, code]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 200 }
+                code:
+                  type: string
+                  minLength: 3
+                  maxLength: 64
+                  pattern: '^[A-Za-z0-9_-]+$'
+                  description: Globally unique; letters, digits, hyphen and underscore only.
+      responses:
+        '201':
+          description: Outlet created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Outlet' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: OUTLET_CODE_TAKEN or merchant not approved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /merchants/{id}/outlets/{outletId}/qr:
+    get:
+      tags: [Merchants]
+      summary: Read the signed QR payload for an outlet (display only)
+      description: |
+        QR điểm bán chỉ hiển thị, không có route xác minh trên Web. The response is
+        the signed payload; the web client renders it and never validates it.
+      x-backend-service: merchant-service
+      parameters:
+        - $ref: '#/components/parameters/MerchantId'
+        - $ref: '#/components/parameters/OutletId'
+      responses:
+        '200':
+          description: Signed outlet QR payload
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/OutletQr' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /merchants/{id}/api-keys:
+    post:
+      tags: [Merchants]
+      summary: Issue a merchant API key
+      description: The raw `data.key` credential is returned only once.
+      x-backend-service: merchant-service
+      parameters:
+        - $ref: '#/components/parameters/MerchantId'
+      responses:
+        '201':
+          description: API key created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/CreatedApiKey' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /merchants/{id}/api-keys/{keyId}:
+    delete:
+      tags: [Merchants]
+      summary: Revoke a merchant API key
+      x-backend-service: merchant-service
+      parameters:
+        - $ref: '#/components/parameters/MerchantId'
+        - $ref: '#/components/parameters/KeyId'
+      responses:
+        '200':
+          description: Revoked key metadata
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MerchantApiKey' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Wallets ─────────────────────────────────────────────────────────────
+  /wallets/me:
+    get:
+      tags: [Wallets]
+      summary: Get the signed-in user's wallet
+      x-backend-service: wallet-service
+      responses:
+        '200':
+          description: Wallet balances
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WalletMe' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: WALLET_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /wallets/me/ledger:
+    get:
+      tags: [Wallets]
+      summary: Read the signed-in user's ledger with keyset pagination
+      x-backend-service: wallet-service
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string, description: Opaque cursor from the previous page }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Ledger page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/LedgerPage' }
+        '400':
+          description: INVALID_LIMIT
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: WALLET_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /wallets/{userId}/balance:
+    get:
+      tags: [Wallets]
+      summary: Read a wallet balance (owner, admin or internal)
+      x-backend-service: wallet-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OwnerType'
+      responses:
+        '200':
+          description: Balance, held balance and available balance
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WalletBalance' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /wallets/{userId}/history:
+    get:
+      tags: [Wallets]
+      summary: Read paginated wallet history
+      x-backend-service: wallet-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OwnerType'
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: History page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WalletHistoryPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /wallets/{userId}/credit:
+    post:
+      tags: [Wallets]
+      summary: Credit a wallet (internal service or ADMIN only)
+      x-backend-service: wallet-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OwnerType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreditDebitPayload' }
       responses:
         '200':
           description: Credited
           content:
             application/json:
-              example: { success: true, data: { transactionId: 2f67d342-3cb1-4be2-aecb-2a23a49120b2, balance: "1300000" } }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/LedgerMutation' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: WALLET_LOCKED or idempotent replay mismatch
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /wallets/{userId}/debit:
     post:
       tags: [Wallets]
-      summary: Debit a wallet
-      x-needs-confirmation: true
+      summary: Debit a wallet (internal service or ADMIN only)
+      x-backend-service: wallet-service
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema: { type: string }
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OwnerType'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [amount], properties: { amount: { type: string }, referenceId: { type: string }, transferType: { type: string } } }
-            example: { amount: "50000", referenceId: DEBIT-1, transferType: PAYMENT }
+            schema: { $ref: '#/components/schemas/CreditDebitPayload' }
       responses:
         '200':
           description: Debited
           content:
             application/json:
-              example: { success: true, data: { transactionId: 2f67d342-3cb1-4be2-aecb-2a23a49120b2, balance: "1200000" } }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/LedgerMutation' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: INSUFFICIENT_BALANCE or WALLET_LOCKED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /wallets/{userId}/transfer:
     post:
       tags: [Wallets]
-      summary: Transfer between users
-      x-needs-confirmation: true
+      summary: Transfer between wallets (internal service or ADMIN only)
+      x-backend-service: wallet-service
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema: { type: string }
+        - $ref: '#/components/parameters/UserId'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [toUserId, amount], properties: { toUserId: { type: string }, amount: { type: string }, referenceId: { type: string } } }
-            example: { toUserId: 9d770d17-04ce-4eb3-8542-7346f1476b2a, amount: "25000", referenceId: P2P-1 }
+            schema:
+              type: object
+              required: [toUserId, amount, referenceId]
+              properties:
+                toUserId: { type: string, format: uuid }
+                amount: { type: string, example: '25000' }
+                referenceId: { type: string }
       responses:
         '200':
           description: Transfer completed
           content:
             application/json:
-              example: { success: true, data: { transactionId: 2f67d342-3cb1-4be2-aecb-2a23a49120b2, status: COMPLETED } }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [fromBalance, toBalance, transactionId, replayed]
+                        properties:
+                          fromBalance: { type: string }
+                          toBalance: { type: string }
+                          transactionId: { type: string, format: uuid }
+                          replayed: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: INSUFFICIENT_BALANCE, WALLET_LOCKED or CURRENCY_MISMATCH
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
 
-  /payments:
+  /wallets/admin:
     get:
-      tags: [Payments]
-      summary: List payments
-      x-needs-confirmation: true
+      tags: [Wallets]
+      summary: List wallets (ADMIN)
+      x-backend-service: wallet-service
       parameters:
         - name: userId
           in: query
-          schema: { type: string }
-        - name: type
-          in: query
-          schema: { type: string }
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/OwnerType'
         - name: status
           in: query
-          schema: { type: string }
+          schema: { type: string, enum: [ACTIVE, LOCKED] }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
-          description: Payment list
+          description: Wallet page
           content:
             application/json:
-              example: { success: true, data: [{ id: 40cbb85e-7437-4785-934a-b390c51daffe, amount: "25000", status: COMPLETED, type: PAYMENT }] }
-  /payments/checkout:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WalletPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /wallets/admin/{userId}/lock:
     post:
-      tags: [Payments]
-      summary: Create checkout payment
-      x-needs-confirmation: true
+      tags: [Wallets]
+      summary: Lock a wallet (ADMIN)
+      x-backend-service: wallet-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OwnerType'
+      responses:
+        '200':
+          description: Locked wallet
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WalletView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /wallets/admin/{userId}/unlock:
+    post:
+      tags: [Wallets]
+      summary: Unlock a wallet (ADMIN)
+      x-backend-service: wallet-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OwnerType'
+      responses:
+        '200':
+          description: Unlocked wallet
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WalletView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /wallets/admin/{userId}/adjust:
+    post:
+      tags: [Wallets]
+      summary: Apply an audited manual adjustment (ADMIN)
+      description: The route does not accept `Idempotency-Key`; dedupe is by `referenceId`.
+      x-backend-service: wallet-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OwnerType'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, properties: { merchantId: { type: string }, amount: { type: number }, description: { type: string } } }
-            example: { merchantId: 39c330e0-591f-4fe3-99ac-3544f885ad18, amount: 25000, description: Demo checkout }
+            schema:
+              type: object
+              required: [amount, referenceId, direction]
+              properties:
+                amount: { type: string }
+                referenceId: { type: string, minLength: 1 }
+                direction: { type: string, enum: [CREDIT, DEBIT] }
+                reason: { type: string }
       responses:
-        '201':
-          description: Checkout created
+        '200':
+          description: Adjustment result
           content:
             application/json:
-              example: { success: true, data: { id: 40cbb85e-7437-4785-934a-b390c51daffe, amount: "25000", status: PENDING, checkoutUrl: https://example.test/checkout/demo } }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [userWallet, transactionId, replayed]
+                        properties:
+                          userWallet: { $ref: '#/components/schemas/WalletView' }
+                          transactionId: { type: string, format: uuid }
+                          replayed: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /wallets/admin/reconciliation:
+    get:
+      tags: [Wallets]
+      summary: Run a wallet reconciliation (ADMIN)
+      x-backend-service: wallet-service
+      parameters:
+        - name: mode
+          in: query
+          schema: { type: string, enum: [quick, full], default: quick }
+        - name: isFull
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Reconciliation report
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ReconciliationReport' }
+        '400':
+          description: INVALID_MODE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /wallets/admin/reconciliation/reports:
+    get:
+      tags: [Wallets]
+      summary: List wallet reconciliation reports (ADMIN)
+      x-backend-service: wallet-service
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - name: includeAnomalies
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Report page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ReconciliationReportPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /wallets/admin/reconciliation/reports/{id}:
+    get:
+      tags: [Wallets]
+      summary: Read one wallet reconciliation report (ADMIN)
+      x-backend-service: wallet-service
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          description: Report with anomalies
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ReconciliationReport' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /wallets/admin/reconciliation/anomalies/{id}/adjust:
+    post:
+      tags: [Wallets]
+      summary: Adjust one wallet anomaly (ADMIN)
+      x-backend-service: wallet-service
+      parameters:
+        - $ref: '#/components/parameters/AnomalyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdjustAnomalyPayload' }
+      responses:
+        '200':
+          description: Adjustment result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AnomalyAdjustmentResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Payments ────────────────────────────────────────────────────────────
+  /payments:
+    get:
+      tags: [Payments]
+      summary: List payments visible to the caller
+      description: Regular users always see their own payments; only ADMIN may pass `userId` or omit it to see all.
+      x-backend-service: payment-service
+      parameters:
+        - name: userId
+          in: query
+          schema: { type: string, description: ADMIN only }
+        - name: type
+          in: query
+          schema: { $ref: '#/components/schemas/PaymentType' }
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/PaymentStatus' }
+      responses:
+        '200':
+          description: Payments (newest first)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Payment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /payments/p2p/quote:
+    post:
+      tags: [Payments]
+      summary: Quote a P2P wallet transfer (60-second TTL)
+      x-backend-service: payment-service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destinationUserId, amount]
+              properties:
+                destinationUserId: { type: string, format: uuid }
+                amount:
+                  oneOf:
+                    - { type: string, example: '25000' }
+                    - { type: number, example: 25000 }
+      responses:
+        '200':
+          description: Quote. `fee` is a JSON number (0), not a string.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/P2pQuote' }
+        '400':
+          description: INVALID_AMOUNT, SELF_TRANSFER_NOT_ALLOWED or INSUFFICIENT_FUNDS
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: DESTINATION_WALLET_NOT_FOUND or SENDER_WALLET_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /payments/p2p/checkout:
+    post:
+      tags: [Payments]
+      summary: Create a P2P transfer payment
+      description: Requires `Idempotency-Key`. The same key with a different payload is rejected.
+      x-backend-service: payment-service
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destinationUserId, amount]
+              properties:
+                destinationUserId: { type: string, format: uuid }
+                destinationOwnerType: { type: string, enum: [USER, MERCHANT, SYSTEM], default: USER }
+                amount: { type: string, example: '25000' }
+                note: { type: string, maxLength: 255 }
+      responses:
+        '201':
+          description: Payment created; confirm it with the PIN transaction token
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/Payment'
+                          - type: object
+                            properties:
+                              replayed: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: IDEMPOTENCY_KEY_REUSED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /payments/checkout:
+    post:
+      tags: [Payments]
+      summary: Create a generic payment (card top-up, tickets, utilities, wallet transfer)
+      description: |
+        `Idempotency-Key` is required (header or body `idempotencyKey`; both may be
+        sent but must match). `PHONE_TOPUP` and `BILL_PAYMENT` were added to the
+        backend enum; the web client normally uses `/utilities/*` instead.
+      x-backend-service: payment-service
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, type]
+              properties:
+                amount: { type: string, example: '25000' }
+                type: { $ref: '#/components/schemas/PaymentType' }
+                referenceId: { type: string }
+                destinationUserId: { type: string, format: uuid }
+                destinationOwnerType: { type: string, enum: [USER, MERCHANT, SYSTEM], default: USER }
+                callbackTopic: { type: string, maxLength: 100, default: finvault.events }
+                idempotencyKey: { type: string, maxLength: 255 }
+      responses:
+        '201':
+          description: Payment created or replayed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/Payment'
+                          - type: object
+                            properties:
+                              replayed: { type: boolean }
+        '400':
+          description: VALIDATION_ERROR, IDEMPOTENCY_KEY_REQUIRED or IDEMPOTENCY_KEY_MISMATCH
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /payments/{id}:
     get:
       tags: [Payments]
       summary: Get payment details
-      x-needs-confirmation: true
+      x-backend-service: payment-service
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
         '200':
-          description: Payment details
+          description: Payment with status history
           content:
             application/json:
-              example: { success: true, data: { id: 40cbb85e-7437-4785-934a-b390c51daffe, amount: "25000", status: COMPLETED, type: PAYMENT } }
-        '404':
-          $ref: '#/components/responses/NotFound'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Payment' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /payments/{id}/confirm:
+    post:
+      tags: [Payments]
+      summary: Confirm a payment with the PIN transaction token
+      description: |
+        Send the 60-second token from `/auth/pin/verify` as `X-Transaction-Token`.
+        The token is bound to `paymentId` and `amount`.
+      x-backend-service: payment-service
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/TransactionToken'
+      responses:
+        '200':
+          description: Confirmed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Payment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: FORBIDDEN — token does not match the payment or amount
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: PAYMENT_ALREADY_CONFIRMED or CONFLICT
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /payments/{id}/cancel:
     post:
       tags: [Payments]
-      summary: Cancel payment
-      x-needs-confirmation: true
+      summary: Cancel a pending payment and release its hold
+      x-backend-service: payment-service
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
         '200':
-          description: Payment cancelled
+          description: Cancelled payment
           content:
             application/json:
-              example: { success: true, data: { id: 40cbb85e-7437-4785-934a-b390c51daffe, status: CANCELLED } }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Payment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: CONFLICT — the payment is not PENDING
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /payments/topups:
     get:
       tags: [Payments]
@@ -502,84 +1782,555 @@ paths:
           content:
             application/json:
               example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, code: NAP12345678, amount: '50000.00', status: PENDING, expiresAt: '2026-11-13T10:30:00Z' } }
+  /payments/topups/vnpay/ipn:
+    get:
+      tags: [Payments]
+      summary: VNPAY IPN callback (public, HMAC-verified)
+      description: Returns VNPAY's `{ RspCode, Message }` response, not the FinVault envelope.
+      security: []
+      x-backend-service: payment-service
+      responses:
+        '200':
+          description: VNPAY acknowledgement
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [RspCode, Message]
+                properties:
+                  RspCode: { type: string, example: '00' }
+                  Message: { type: string, example: Confirm Success }
+
+  /payments/topups/vnpay/return:
+    get:
+      tags: [Payments]
+      summary: VNPAY browser return (public, read-only)
+      description: Verifies the signature and echoes the query parameters; it never credits the wallet.
+      security: []
+      x-backend-service: payment-service
+      responses:
+        '200':
+          description: Verified VNPAY parameters
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '400':
+          description: INVALID_SIGNATURE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /payments/admin/topups:
     get:
       tags: [Payments]
-      summary: List top-ups for admin
-      x-needs-confirmation: true
+      summary: List top-up requests for admins
+      x-backend-service: payment-service
       parameters:
         - name: status
           in: query
-          schema: { type: string }
+          schema: { $ref: '#/components/schemas/TopupStatus' }
       responses:
         '200':
-          description: Admin top-up list
+          description: Top-up requests
           content:
             application/json:
-              example: { success: true, data: [{ id: e5156448-bcea-4718-a045-6c748b4184d9, userId: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, amount: 50000, status: PENDING }] }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/TopupRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /payments/admin/topups/{id}/approve:
     post:
       tags: [Payments]
-      summary: Approve a top-up
-      x-needs-confirmation: true
+      summary: Approve a top-up manually (currently disabled by the backend)
+      description: |
+        The route exists but `TopupService.approveTopup` always throws
+        `400 NOT_ALLOWED` because VNPAY IPN owns crediting. The web client keeps
+        the button and maps `NOT_ALLOWED` to a Vietnamese explanation.
+      x-backend-service: payment-service
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
-        '200':
-          description: Top-up approved
+        '400':
+          description: NOT_ALLOWED — manual approval is disabled
           content:
             application/json:
-              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, status: APPROVED } }
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /payments/admin/topups/{id}/reject:
     post:
       tags: [Payments]
-      summary: Reject a top-up
-      x-needs-confirmation: true
+      summary: Reject a top-up manually (currently disabled by the backend)
+      description: Same `400 NOT_ALLOWED` behavior as approve. No `Idempotency-Key` header is accepted.
+      x-backend-service: payment-service
       parameters:
         - $ref: '#/components/parameters/Id'
       requestBody:
+        required: true
         content:
           application/json:
-            schema: { type: object, required: [reason], properties: { reason: { type: string } } }
-            example: { reason: Invalid transfer reference }
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500 }
       responses:
-        '200':
-          description: Top-up rejected
+        '400':
+          description: NOT_ALLOWED — manual review is disabled
           content:
             application/json:
-              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, status: REJECTED } }
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
+  # ── Funding ─────────────────────────────────────────────────────────────
+  /funding/cash-out:
+    post:
+      tags: [Funding]
+      summary: Create a cash-out (withdrawal) request
+      description: |
+        Requires `Idempotency-Key`. `destination` is optional because the payout
+        destination contract is not settled. Confirm with the PIN transaction
+        token; poll `GET /funding/cash-out/{id}` after a timeout instead of
+        retrying with a new key.
+      x-backend-service: payment-service
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: string
+                  pattern: '^\d+$'
+                  maxLength: 18
+                  description: Positive integer VND string
+                destination: { type: string, maxLength: 255 }
+      responses:
+        '201':
+          description: Cash-out created or replayed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/CashOut' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Wallet hold conflict (insufficient funds / locked wallet)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '503':
+          description: CASHOUT_PROCESSING — query the status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /funding/cash-out/{id}/confirm:
+    post:
+      tags: [Funding]
+      summary: Confirm a cash-out with the PIN transaction token
+      x-backend-service: payment-service
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/TransactionToken'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transactionToken: { type: string, description: Fallback only; header takes precedence }
+      responses:
+        '200':
+          description: Cash-out succeeded
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/CashOut' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: CASHOUT_FAILED with `failureReason`
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '503':
+          description: CASHOUT_PROCESSING or CASHOUT_PAYOUT_PENDING — query the status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /funding/cash-out/{id}:
+    get:
+      tags: [Funding]
+      summary: Read a cash-out status
+      x-backend-service: payment-service
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Cash-out view
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/CashOut' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /funding/vnpay:
+    post:
+      tags: [Funding]
+      summary: Create a VNPAY top-up through the funding alias
+      description: Thin alias over the same `TopupService` used by `/payments/topups`.
+      x-backend-service: payment-service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: number, minimum: 10000, maximum: 100000000 }
+      responses:
+        '201':
+          description: Top-up created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [topupId, paymentUrl]
+                        properties:
+                          topupId: { type: string, format: uuid }
+                          paymentUrl: { type: string, format: uri }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /funding/vnpay/create:
+    post:
+      tags: [Funding]
+      summary: Create a VNPAY top-up (explicit `/create` alias)
+      x-backend-service: payment-service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: number, minimum: 10000, maximum: 100000000 }
+      responses:
+        '201':
+          description: Top-up created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [topupId, paymentUrl]
+                        properties:
+                          topupId: { type: string, format: uuid }
+                          paymentUrl: { type: string, format: uri }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /funding/vnpay/ipn:
+    get:
+      tags: [Funding]
+      summary: VNPAY IPN callback through the funding alias (public)
+      security: []
+      x-backend-service: payment-service
+      responses:
+        '200':
+          description: VNPAY acknowledgement
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [RspCode, Message]
+                properties:
+                  RspCode: { type: string }
+                  Message: { type: string }
+
+  /funding/vnpay/return:
+    get:
+      tags: [Funding]
+      summary: VNPAY browser return through the funding alias (public)
+      security: []
+      x-backend-service: payment-service
+      responses:
+        '200':
+          description: Verified VNPAY parameters
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '400':
+          description: INVALID_SIGNATURE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  # ── Utilities ───────────────────────────────────────────────────────────
+  /utilities/topup:
+    post:
+      tags: [Utilities]
+      summary: Create a phone top-up order (simulated provider)
+      description: Requires `Idempotency-Key`. The allowed amounts are fixed denominations.
+      x-backend-service: utilities-service
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, amount]
+              properties:
+                phone: { type: string, example: '0912345678' }
+                amount:
+                  type: string
+                  enum: ['10000', '20000', '50000', '100000', '200000', '500000']
+      responses:
+        '201':
+          description: Order created; `paymentId` points at the pending payment
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UtilityOrder' }
+        '200':
+          description: 'Replayed the same idempotency key; replayed is true'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UtilityOrder' }
+        '400':
+          description: VALIDATION_ERROR, IDEMPOTENCY_KEY_REQUIRED, INVALID_PHONE or INVALID_AMOUNT
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: IDEMPOTENCY_KEY_REUSED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /utilities/bills/lookup:
+    get:
+      tags: [Utilities]
+      summary: Look up a simulated bill
+      x-backend-service: utilities-service
+      parameters:
+        - name: provider
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 32 }
+        - name: customerCode
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 64 }
+      responses:
+        '200':
+          description: Bill details with `amountFormatted`
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/BillLookup' }
+        '400':
+          description: INVALID_PROVIDER or INVALID_CUSTOMER_CODE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: BILL_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '504':
+          description: PROVIDER_TIMEOUT
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /utilities/bills/pay:
+    post:
+      tags: [Utilities]
+      summary: Pay a simulated bill
+      description: Requires `Idempotency-Key`. `amount` must exactly match the looked-up bill.
+      x-backend-service: utilities-service
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, customerCode, amount]
+              properties:
+                provider: { type: string }
+                customerCode: { type: string }
+                amount: { type: string, example: '35000' }
+      responses:
+        '201':
+          description: Order created; `paymentId` points at the pending payment
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UtilityOrder' }
+        '200':
+          description: 'Replayed the same idempotency key; replayed is true'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UtilityOrder' }
+        '400':
+          description: VALIDATION_ERROR or IDEMPOTENCY_KEY_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: BILL_AMOUNT_MISMATCH or IDEMPOTENCY_KEY_REUSED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /utilities/orders/{id}:
+    get:
+      tags: [Utilities]
+      summary: Get a utility order status
+      x-backend-service: utilities-service
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Order view
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UtilityOrder' }
+        '400':
+          description: VALIDATION_ERROR — `orderId` must be a UUID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Notifications ───────────────────────────────────────────────────────
   /notifications/me:
     get:
       tags: [Notifications]
-      summary: List current user's notifications
+      summary: List the signed-in user's notifications
+      description: Server-side pagination only; `type`/`unread` filters are not supported (the web page filters loaded pages).
+      x-backend-service: notification-service
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
         '200':
-          description: Paginated notification inbox
+          description: Paginated inbox with unread count
           content:
             application/json:
-              example: { success: true, data: { notifications: [{ id: 02165dcc-c6c4-4e20-95e0-7f23e20c44e1, type: PAYMENT_SUCCESS, message: Thanh toán thành công., read: false, createdAt: "2026-01-01T00:00:00Z" }], unreadCount: 1, pagination: { page: 1, limit: 10, total: 1, totalPages: 1 } } }
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/NotificationPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /notifications/me/read-all:
     patch:
       tags: [Notifications]
-      summary: Mark all current user's notifications read
+      summary: Mark all of the signed-in user's notifications read
+      x-backend-service: notification-service
       responses:
         '200':
-          description: Updated notification count
+          description: Number of updated notifications
           content:
             application/json:
-              example: { success: true, data: { updatedCount: 1 } }
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [updatedCount]
+                        properties:
+                          updatedCount: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /notifications/{id}/read:
     patch:
       tags: [Notifications]
       summary: Mark one notification read
+      x-backend-service: notification-service
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
@@ -587,145 +2338,584 @@ paths:
           description: Updated notification
           content:
             application/json:
-              example: { success: true, data: { id: 02165dcc-c6c4-4e20-95e0-7f23e20c44e1, type: PAYMENT_SUCCESS, message: Thanh toán thành công., read: true, createdAt: "2026-01-01T00:00:00Z" } }
-        '404':
-          $ref: '#/components/responses/NotFound'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Notification' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /notifications/socket-ticket:
     get:
       tags: [Notifications]
-      summary: Get the current user's one-time socket ticket
+      summary: Get a one-time Socket.IO ticket
+      description: 'Connect to Socket.IO with an auth ticket. Tickets are single-use and short-lived.'
+      x-backend-service: notification-service
+      parameters:
+        - name: deviceId
+          in: query
+          schema: { type: string, maxLength: 128 }
       responses:
         '200':
-          description: Short-lived Gateway Token ticket
+          description: Ticket and expiry
           content:
             application/json:
-              example: { success: true, data: { ticket: mock-gateway-ticket } }
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/SocketTicket' }
+        '400':
+          description: VALIDATION_ERROR — invalid deviceId
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: DEVICE_REVOKED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  # ── Admin ───────────────────────────────────────────────────────────────
   /admin/dashboard:
     get:
       tags: [Admin]
       summary: Get admin dashboard statistics
-      x-needs-confirmation: true
+      x-backend-service: admin-service
       responses:
         '200':
-          description: Dashboard metrics
+          description: Aggregated metrics
           content:
             application/json:
-              example: { success: true, data: { users: 120, merchants: 8, pendingKyc: 3, pendingTopups: 2 } }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AdminDashboardStats' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500':
+          description: DASHBOARD_ERROR
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /admin/dashboard/stats:
+    get:
+      tags: [Admin]
+      summary: Same dashboard statistics (legacy alias)
+      x-backend-service: admin-service
+      responses:
+        '200':
+          description: Aggregated metrics
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AdminDashboardStats' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /admin/kyc:
     get:
       tags: [Admin]
-      summary: List KYC reviews
-      x-needs-confirmation: true
+      summary: List KYC profiles
+      description: |
+        `status` is forwarded to user-service as `status`, but user-service reads
+        `kycStatus`; the server-side filter is therefore effectively ignored
+        today. Tracked in `docs/CONTRACT_OPEN_QUESTIONS.md`.
+      x-backend-service: admin-service
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - name: status
           in: query
-          schema: { type: string }
+          schema: { type: string, enum: [NONE, PENDING, APPROVED, REJECTED] }
         - name: search
           in: query
           schema: { type: string }
       responses:
         '200':
-          description: KYC review page
+          description: KYC page
           content:
             application/json:
-              example: { success: true, data: { content: [{ userId: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, status: PENDING }], totalElements: 1 } }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AdminKycPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '502':
+          description: KYC_FETCH_FAILED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /admin/kyc/{userId}/review:
     post:
       tags: [Admin]
-      summary: Review KYC
-      x-needs-confirmation: true
+      summary: Approve or reject a KYC profile
+      x-backend-service: admin-service
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema: { type: string }
+        - $ref: '#/components/parameters/UserId'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [status], properties: { status: { type: string, enum: [APPROVED, REJECTED] }, detail: { type: string } } }
-            example: { status: APPROVED, detail: Verified }
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [APPROVED, REJECTED] }
+                detail: { type: string, maxLength: 500, description: Required when REJECTED }
       responses:
         '200':
-          description: KYC decision
+          description: Decision applied and audited
           content:
             application/json:
-              example: { success: true, data: { userId: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, status: APPROVED } }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserKycRecord' }
+        '400':
+          description: VALIDATION_ERROR or INVALID_STATUS
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: INVALID_TRANSITION or KYC_DOCUMENTS_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '503':
+          description: AUDIT_UNAVAILABLE — nothing was changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /admin/kyc/{userId}/status:
+    patch:
+      tags: [Admin]
+      summary: Same KYC decision (PATCH alias)
+      x-backend-service: admin-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [APPROVED, REJECTED] }
+                detail: { type: string, maxLength: 500 }
+      responses:
+        '200':
+          description: Decision applied
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserKycRecord' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/kyc/{userId}/tier:
+    patch:
+      tags: [Admin]
+      summary: Change an approved profile's KYC tier with an audit reason
+      x-backend-service: admin-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tier, reason]
+              properties:
+                tier: { type: integer, enum: [1, 2] }
+                reason: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '200':
+          description: Tier changed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/UserKycRecord' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: KYC must be APPROVED first / invalid transition
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /admin/kyc/{userId}/documents:
+    get:
+      tags: [Admin]
+      summary: Get both private KYC image URLs (every view is audited)
+      x-backend-service: admin-service
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Signed front/back URLs
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/KycDocuments' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: KYC_DOCUMENTS_INCOMPLETE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '503':
+          description: AUDIT_UNAVAILABLE — documents were not read
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /admin/merchants:
     get:
       tags: [Admin]
-      summary: List merchant reviews
-      x-needs-confirmation: true
+      summary: List merchant registrations
+      x-backend-service: admin-service
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - name: status
           in: query
-          schema: { type: string }
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED] }
         - name: search
           in: query
           schema: { type: string }
       responses:
         '200':
-          description: Merchant review page
+          description: Merchant page
           content:
             application/json:
-              example:
-                success: true
-                data:
-                  content:
-                    - { id: 39c330e0-591f-4fe3-99ac-3544f885ad18, businessName: Demo Merchant, status: PENDING }
-                  totalElements: 1
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/MerchantPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '502':
+          description: MERCHANT_FETCH_FAILED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
   /admin/merchants/{merchantId}/review:
     post:
       tags: [Admin]
-      summary: Review a merchant
-      x-needs-confirmation: true
+      summary: Approve or reject a merchant
+      x-backend-service: admin-service
       parameters:
-        - name: merchantId
-          in: path
-          required: true
-          schema: { type: string }
+        - $ref: '#/components/parameters/MerchantIdParam'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [status], properties: { status: { type: string, enum: [APPROVED, REJECTED] }, detail: { type: string } } }
-            example: { status: APPROVED, detail: Verified }
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [APPROVED, REJECTED] }
+                detail: { type: string, maxLength: 500 }
       responses:
         '200':
-          description: Merchant decision
+          description: Decision applied and audited
           content:
             application/json:
-              example: { success: true, data: { id: 39c330e0-591f-4fe3-99ac-3544f885ad18, status: APPROVED } }
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '400':
+          description: VALIDATION_ERROR or INVALID_STATUS
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/merchants/{merchantId}/status:
+    patch:
+      tags: [Admin]
+      summary: Same merchant decision (PATCH alias)
+      x-backend-service: admin-service
+      parameters:
+        - $ref: '#/components/parameters/MerchantIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [APPROVED, REJECTED] }
+                detail: { type: string, maxLength: 500 }
+      responses:
+        '200':
+          description: Decision applied
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /admin/audit-logs:
     get:
       tags: [Admin]
       summary: List audit logs
-      x-needs-confirmation: true
+      x-backend-service: admin-service
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: adminId
+          in: query
+          schema: { type: string }
+        - name: targetId
+          in: query
+          schema: { type: string }
       responses:
         '200':
-          description: Audit log list
+          description: Audit log page
           content:
             application/json:
-              example: { success: true, data: [{ id: 6efb54f5-50e1-4602-a9c8-b1bcf1c346df, action: KYC_APPROVED, actorId: admin-demo, createdAt: "2026-01-01T00:00:00Z" }] }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AdminAuditLogPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
-  # Prism serves path keys directly and does not prepend the OpenAPI server URL.
-  /api/auth/signin:
-    $ref: '#/paths/~1auth~1signin'
+  /admin/reconciliation/run:
+    post:
+      tags: [Admin]
+      summary: Run an admin reconciliation
+      description: |
+        `mode` defaults to `quick`. Only one run per mode may be in progress.
+        The admin audit row is written before the wallet call; a lost response is
+        recorded as UNKNOWN.
+      x-backend-service: admin-service
+      parameters:
+        - name: mode
+          in: query
+          schema: { type: string, enum: [quick, full], default: quick }
+      responses:
+        '200':
+          description: Reconciliation report
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ReconciliationReport' }
+        '400':
+          description: INVALID_MODE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: RECONCILIATION_IN_PROGRESS
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '502':
+          description: WALLET_UNAVAILABLE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '504':
+          description: WALLET_TIMEOUT
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /admin/reconciliation/reports:
+    get:
+      tags: [Admin]
+      summary: List reconciliation reports
+      x-backend-service: admin-service
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Report page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ReconciliationReportPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '502':
+          description: WALLET_UNAVAILABLE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /admin/reconciliation/reports/{id}:
+    get:
+      tags: [Admin]
+      summary: Read one reconciliation report with its anomalies
+      x-backend-service: admin-service
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          description: Report
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ReconciliationReport' }
+        '400':
+          description: INVALID_REPORT_ID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/reconciliation/anomalies/{id}/adjust:
+    post:
+      tags: [Admin]
+      summary: Adjust one reconciliation anomaly
+      description: |
+        The backend derives a fixed `referenceId = adjust-anomaly-<id>`; the route
+        does not accept `Idempotency-Key`. A repeated successful adjustment is
+        `409 ALREADY_ADJUSTED`. An UNKNOWN outcome is not retried automatically.
+      x-backend-service: admin-service
+      parameters:
+        - $ref: '#/components/parameters/AnomalyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdjustAnomalyPayload' }
+      responses:
+        '200':
+          description: Adjustment applied
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AnomalyAdjustmentResult' }
+        '400':
+          description: INVALID_ANOMALY_ID, INVALID_DIRECTION, INVALID_AMOUNT, REASON_REQUIRED or INVALID_REASON
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: ADJUSTMENT_IN_PROGRESS or ALREADY_ADJUSTED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '503':
+          description: AUDIT_UNAVAILABLE or ADJUST_OUTCOME_UNKNOWN — reload, never guess
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  # Generated Prism aliases: Prism serves path keys directly and does not
+  # prepend servers[].url, so every real path is repeated under /api.
   /api/auth/signup:
     $ref: '#/paths/~1auth~1signup'
+  /api/auth/signin:
+    $ref: '#/paths/~1auth~1signin'
   /api/auth/refresh:
     $ref: '#/paths/~1auth~1refresh'
   /api/auth/signout:
     $ref: '#/paths/~1auth~1signout'
+  /api/auth/qr-login/init:
+    $ref: '#/paths/~1auth~1qr-login~1init'
+  /api/auth/qr-login/{id}/status:
+    $ref: '#/paths/~1auth~1qr-login~1{id}~1status'
+  /api/auth/qr-login/confirm:
+    $ref: '#/paths/~1auth~1qr-login~1confirm'
+  /api/auth/pin/setup:
+    $ref: '#/paths/~1auth~1pin~1setup'
+  /api/auth/pin/verify:
+    $ref: '#/paths/~1auth~1pin~1verify'
+  /api/auth/pin/change:
+    $ref: '#/paths/~1auth~1pin~1change'
+  /api/auth/pin/status:
+    $ref: '#/paths/~1auth~1pin~1status'
+  /api/users/me:
+    $ref: '#/paths/~1users~1me'
+  /api/users/me/kyc:
+    $ref: '#/paths/~1users~1me~1kyc'
+  /api/users/kyc/documents:
+    $ref: '#/paths/~1users~1kyc~1documents'
+  /api/users/lookup:
+    $ref: '#/paths/~1users~1lookup'
   /api/users/{id}:
     $ref: '#/paths/~1users~1{id}'
   /api/users/by-auth/{id}:
@@ -744,6 +2934,18 @@ paths:
     $ref: '#/paths/~1merchants~1{id}'
   /api/merchants/{id}/active:
     $ref: '#/paths/~1merchants~1{id}~1active'
+  /api/merchants/{id}/outlets:
+    $ref: '#/paths/~1merchants~1{id}~1outlets'
+  /api/merchants/{id}/outlets/{outletId}/qr:
+    $ref: '#/paths/~1merchants~1{id}~1outlets~1{outletId}~1qr'
+  /api/merchants/{id}/api-keys:
+    $ref: '#/paths/~1merchants~1{id}~1api-keys'
+  /api/merchants/{id}/api-keys/{keyId}:
+    $ref: '#/paths/~1merchants~1{id}~1api-keys~1{keyId}'
+  /api/wallets/me:
+    $ref: '#/paths/~1wallets~1me'
+  /api/wallets/me/ledger:
+    $ref: '#/paths/~1wallets~1me~1ledger'
   /api/wallets/{userId}/balance:
     $ref: '#/paths/~1wallets~1{userId}~1balance'
   /api/wallets/{userId}/history:
@@ -754,24 +2956,74 @@ paths:
     $ref: '#/paths/~1wallets~1{userId}~1debit'
   /api/wallets/{userId}/transfer:
     $ref: '#/paths/~1wallets~1{userId}~1transfer'
+  /api/wallets/admin:
+    $ref: '#/paths/~1wallets~1admin'
+  /api/wallets/admin/{userId}/lock:
+    $ref: '#/paths/~1wallets~1admin~1{userId}~1lock'
+  /api/wallets/admin/{userId}/unlock:
+    $ref: '#/paths/~1wallets~1admin~1{userId}~1unlock'
+  /api/wallets/admin/{userId}/adjust:
+    $ref: '#/paths/~1wallets~1admin~1{userId}~1adjust'
+  /api/wallets/admin/reconciliation:
+    $ref: '#/paths/~1wallets~1admin~1reconciliation'
+  /api/wallets/admin/reconciliation/reports:
+    $ref: '#/paths/~1wallets~1admin~1reconciliation~1reports'
+  /api/wallets/admin/reconciliation/reports/{id}:
+    $ref: '#/paths/~1wallets~1admin~1reconciliation~1reports~1{id}'
+  /api/wallets/admin/reconciliation/anomalies/{id}/adjust:
+    $ref: '#/paths/~1wallets~1admin~1reconciliation~1anomalies~1{id}~1adjust'
   /api/payments:
     $ref: '#/paths/~1payments'
+  /api/payments/p2p/quote:
+    $ref: '#/paths/~1payments~1p2p~1quote'
+  /api/payments/p2p/checkout:
+    $ref: '#/paths/~1payments~1p2p~1checkout'
   /api/payments/checkout:
     $ref: '#/paths/~1payments~1checkout'
   /api/payments/{id}:
     $ref: '#/paths/~1payments~1{id}'
+  /api/payments/{id}/confirm:
+    $ref: '#/paths/~1payments~1{id}~1confirm'
   /api/payments/{id}/cancel:
     $ref: '#/paths/~1payments~1{id}~1cancel'
   /api/payments/topups:
     $ref: '#/paths/~1payments~1topups'
   /api/payments/topups/{id}:
     $ref: '#/paths/~1payments~1topups~1{id}'
+  /api/payments/topups/vnpay/ipn:
+    $ref: '#/paths/~1payments~1topups~1vnpay~1ipn'
+  /api/payments/topups/vnpay/return:
+    $ref: '#/paths/~1payments~1topups~1vnpay~1return'
   /api/payments/admin/topups:
     $ref: '#/paths/~1payments~1admin~1topups'
   /api/payments/admin/topups/{id}/approve:
     $ref: '#/paths/~1payments~1admin~1topups~1{id}~1approve'
   /api/payments/admin/topups/{id}/reject:
     $ref: '#/paths/~1payments~1admin~1topups~1{id}~1reject'
+  /api/funding/cash-out:
+    $ref: '#/paths/~1funding~1cash-out'
+  /api/funding/cash-out/{id}/confirm:
+    $ref: '#/paths/~1funding~1cash-out~1{id}~1confirm'
+  /api/funding/cash-out/{id}:
+    $ref: '#/paths/~1funding~1cash-out~1{id}'
+  /api/funding/vnpay:
+    $ref: '#/paths/~1funding~1vnpay'
+  /api/funding/vnpay/create:
+    $ref: '#/paths/~1funding~1vnpay~1create'
+  /api/funding/vnpay/ipn:
+    $ref: '#/paths/~1funding~1vnpay~1ipn'
+  /api/funding/vnpay/return:
+    $ref: '#/paths/~1funding~1vnpay~1return'
+  /api/utilities/topup:
+    $ref: '#/paths/~1utilities~1topup'
+  /api/utilities/bills/lookup:
+    $ref: '#/paths/~1utilities~1bills~1lookup'
+  /api/utilities/bills/pay:
+    $ref: '#/paths/~1utilities~1bills~1pay'
+  /api/utilities/orders/{id}:
+    $ref: '#/paths/~1utilities~1orders~1{id}'
+  /api/notifications/me:
+    $ref: '#/paths/~1notifications~1me'
   /api/notifications/me/read-all:
     $ref: '#/paths/~1notifications~1me~1read-all'
   /api/notifications/{id}/read:
@@ -780,67 +3032,101 @@ paths:
     $ref: '#/paths/~1notifications~1socket-ticket'
   /api/admin/dashboard:
     $ref: '#/paths/~1admin~1dashboard'
+  /api/admin/dashboard/stats:
+    $ref: '#/paths/~1admin~1dashboard~1stats'
   /api/admin/kyc:
     $ref: '#/paths/~1admin~1kyc'
   /api/admin/kyc/{userId}/review:
     $ref: '#/paths/~1admin~1kyc~1{userId}~1review'
+  /api/admin/kyc/{userId}/status:
+    $ref: '#/paths/~1admin~1kyc~1{userId}~1status'
+  /api/admin/kyc/{userId}/tier:
+    $ref: '#/paths/~1admin~1kyc~1{userId}~1tier'
+  /api/admin/kyc/{userId}/documents:
+    $ref: '#/paths/~1admin~1kyc~1{userId}~1documents'
   /api/admin/merchants:
     $ref: '#/paths/~1admin~1merchants'
   /api/admin/merchants/{merchantId}/review:
     $ref: '#/paths/~1admin~1merchants~1{merchantId}~1review'
+  /api/admin/merchants/{merchantId}/status:
+    $ref: '#/paths/~1admin~1merchants~1{merchantId}~1status'
   /api/admin/audit-logs:
     $ref: '#/paths/~1admin~1audit-logs'
-  /api/notifications/me:
-    $ref: '#/paths/~1notifications~1me'
+  /api/admin/reconciliation/run:
+    $ref: '#/paths/~1admin~1reconciliation~1run'
+  /api/admin/reconciliation/reports:
+    $ref: '#/paths/~1admin~1reconciliation~1reports'
+  /api/admin/reconciliation/reports/{id}:
+    $ref: '#/paths/~1admin~1reconciliation~1reports~1{id}'
+  /api/admin/reconciliation/anomalies/{id}/adjust:
+    $ref: '#/paths/~1admin~1reconciliation~1anomalies~1{id}~1adjust'
 
-x-planned-paths:
-  /users/me:
-    get:
-      summary: Planned user profile endpoint
-      x-status: planned
-      responses:
-        '200':
-          description: Planned response
-          content:
-            application/json:
-              example: { success: true, data: { id: 6d8a9871-2f68-4f7b-b0e8-3d11edc2ca81, username: demo, role: USER } }
-  /wallets/me:
-    get:
-      summary: Planned authenticated wallet endpoint
-      x-status: planned
-      responses:
-        '200':
-          description: Planned response
-          content:
-            application/json:
-              example: { success: true, data: { balance: "1250000", currency: VND } }
-  /auth-txn/pin/setup:
-    post:
-      summary: Planned transaction PIN setup
-      x-status: planned
-      responses:
-        '200':
-          description: Planned response
-          content:
-            application/json:
-              example: { success: true, data: { configured: true } }
-  /auth-txn/pin/verify:
-    post:
-      summary: Planned transaction PIN verification
-      x-status: planned
-      responses:
-        '200':
-          description: Planned response
-          content:
-            application/json:
-              example: { success: true, data: { verified: true } }
+# No Web route is currently known to be missing from the Backend. If that
+# changes, add the path here AND record it in docs/CONTRACT_OPEN_QUESTIONS.md
+# with the owning service. The extension is intentionally empty rather than
+# holding invented routes.
+x-planned-paths: {}
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     Id:
       name: id
       in: path
       required: true
-      schema: { type: string }
+      schema: { type: string, format: uuid }
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AuthUserId:
+      name: id
+      in: path
+      required: true
+      description: Auth user id (UUID) used by `/users/by-auth/{id}`
+      schema: { type: string, format: uuid }
+    MerchantId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    MerchantIdParam:
+      name: merchantId
+      in: path
+      required: true
+      description: Merchant id used by the `/admin/merchants/{merchantId}/...` routes
+      schema: { type: string, format: uuid }
+    OutletId:
+      name: outletId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    KeyId:
+      name: keyId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ReportId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    AnomalyId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, description: Positive integer serialized as a string }
+    QrId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     Page:
       name: page
       in: query
@@ -849,29 +3135,722 @@ components:
       name: limit
       in: query
       schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
     ClientPlatform:
       name: x-client-platform
       in: header
       required: false
       schema: { type: string, enum: [web, mobile] }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 255 }
+    TransactionToken:
+      name: X-Transaction-Token
+      in: header
+      required: true
+      schema: { type: string }
+    PollSecret:
+      name: pollSecret
+      in: query
+      required: true
+      description: Secret from `/auth/qr-login/init`. The `x-poll-secret` header is also accepted.
+      schema: { type: string }
+    OwnerType:
+      name: ownerType
+      in: query
+      schema: { type: string, enum: [USER, MERCHANT, SYSTEM], default: USER }
+
   responses:
     BadRequest:
       description: Invalid request
       content:
         application/json:
-          example: { success: false, error: { code: BAD_REQUEST, message: Request is invalid }, requestId: mock-request-id }
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
     Unauthorized:
-      description: Authentication failed
+      description: Authentication failed or missing
       content:
         application/json:
-          example: { success: false, error: { code: INVALID_CREDENTIALS, message: Authentication failed }, requestId: mock-request-id }
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Forbidden:
+      description: The caller does not own the resource or lacks the role
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
     NotFound:
       description: Resource not found
       content:
         application/json:
-          example: { success: false, error: { code: NOT_FOUND, message: Resource not found }, requestId: mock-request-id }
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
     Conflict:
-      description: Resource already exists
+      description: Duplicate or conflicting state
       content:
         application/json:
-          example: { success: false, error: { code: DUPLICATE_RESOURCE, message: Resource already exists }, requestId: mock-request-id }
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    RateLimited:
+      description: Too many requests
+      headers:
+        Retry-After:
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    ServiceUnavailable:
+      description: Upstream dependency unavailable
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean, enum: [true] }
+        data: {}
+        message: { type: string }
+
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, enum: [false] }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: VALIDATION_ERROR }
+            message: { type: string }
+            details: {}
+        requestId: { type: string }
+
+    AuthUser:
+      type: object
+      required: [id, username, email, firstName, lastName, role]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        role: { type: string, enum: [USER, ADMIN] }
+
+    UserProfile:
+      type: object
+      required: [id, authUserId, email, kycStatus, kycTier, hasKycDocument, version, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        authUserId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        kycStatus: { type: string, enum: [NONE, PENDING, APPROVED, REJECTED] }
+        kycTier: { type: integer, minimum: 0, maximum: 2 }
+        idNumber: { type: string, nullable: true }
+        hasKycDocument: { type: boolean }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+
+    UserKycStatus:
+      type: object
+      required: [kycStatus, kycTier, hasKycDocument]
+      properties:
+        kycStatus: { type: string, enum: [NONE, PENDING, APPROVED, REJECTED] }
+        kycTier: { type: integer }
+        hasKycDocument: { type: boolean }
+        kycRejectReason: { type: string, description: Present only when REJECTED }
+
+    UserKycRecord:
+      type: object
+      required: [id, authUserId, email, kycStatus, kycTier, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        authUserId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        kycStatus: { type: string, enum: [NONE, PENDING, APPROVED, REJECTED] }
+        kycTier: { type: integer }
+        idNumber: { type: string, nullable: true }
+        idImageUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    KycDocumentUrl:
+      type: object
+      required: [url, expiresIn]
+      properties:
+        url: { type: string, format: uri }
+        expiresIn: { type: integer, example: 300 }
+
+    KycDocuments:
+      type: object
+      required: [frontUrl, backUrl, expiresAt]
+      properties:
+        frontUrl: { type: string, format: uri }
+        backUrl: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+
+    Recipient:
+      type: object
+      required: [authUserId, maskedName]
+      properties:
+        authUserId: { type: string, format: uuid }
+        maskedName: { type: string, example: 'N*** V** A' }
+
+    QrInit:
+      type: object
+      required: [qrId, nonce, pollSecret, expiresAt]
+      properties:
+        qrId: { type: string, format: uuid }
+        nonce: { type: string }
+        pollSecret: { type: string, description: Keep in memory only }
+        expiresAt: { type: string, format: date-time }
+
+    QrStatus:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+        accessToken: { type: string, description: Present only for APPROVED }
+        user: { $ref: '#/components/schemas/AuthUser' }
+
+    SetupPinPayload:
+      type: object
+      required: [pin, confirmPin]
+      additionalProperties: false
+      properties:
+        pin: { type: string, pattern: '^\d{6}$' }
+        confirmPin: { type: string, pattern: '^\d{6}$' }
+
+    VerifyPinPayload:
+      type: object
+      required: [pin, paymentId, amount]
+      additionalProperties: false
+      properties:
+        pin: { type: string, pattern: '^\d{6}$' }
+        paymentId: { type: string }
+        amount:
+          oneOf:
+            - { type: string, pattern: '^\d+$' }
+            - { type: number, minimum: 1 }
+
+    ChangePinPayload:
+      type: object
+      required: [oldPin, newPin, confirmNewPin]
+      additionalProperties: false
+      properties:
+        oldPin: { type: string, pattern: '^\d{6}$' }
+        newPin: { type: string, pattern: '^\d{6}$' }
+        confirmNewPin: { type: string, pattern: '^\d{6}$' }
+
+    PinStatus:
+      type: object
+      required: [hasPin, isLocked, remainingLockSeconds]
+      properties:
+        hasPin: { type: boolean }
+        isLocked: { type: boolean }
+        remainingLockSeconds: { type: integer, minimum: 0 }
+
+    Merchant:
+      type: object
+      required: [id, ownerId, businessName, status, version, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        ownerId: { type: string, format: uuid }
+        businessName: { type: string }
+        taxId: { type: string, nullable: true }
+        bankAccount: { type: string, nullable: true }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+
+    MerchantActive:
+      type: object
+      required: [id, ownerId, businessName, status, active]
+      properties:
+        id: { type: string, format: uuid }
+        ownerId: { type: string, format: uuid }
+        businessName: { type: string }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+        active: { type: boolean, description: True only when status is APPROVED }
+
+    MerchantPage:
+      type: object
+      required: [content, page, limit, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/Merchant' }
+        page: { type: integer }
+        limit: { type: integer }
+        totalElements: { type: integer }
+        totalPages: { type: integer, minimum: 1 }
+
+    Outlet:
+      type: object
+      required: [id, merchantId, name, code, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        merchantId: { type: string, format: uuid }
+        name: { type: string }
+        code: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    OutletPage:
+      type: object
+      required: [content, page, limit, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/Outlet' }
+        page: { type: integer }
+        limit: { type: integer }
+        totalElements: { type: integer }
+        totalPages: { type: integer, minimum: 1 }
+
+    OutletQr:
+      type: object
+      required: [version, merchantId, outletId, outletCode, issuedAt, token, signature, algorithm]
+      properties:
+        version: { type: integer, enum: [1] }
+        merchantId: { type: string, format: uuid }
+        outletId: { type: string, format: uuid }
+        outletCode: { type: string }
+        issuedAt: { type: integer, description: Unix epoch milliseconds }
+        token: { type: string }
+        signature: { type: string }
+        algorithm: { type: string, enum: [HMAC-SHA256] }
+
+    MerchantApiKey:
+      type: object
+      required: [id, keyId, prefix, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        keyId: { type: string, format: uuid }
+        prefix: { type: string, description: Public display fragment; not a credential }
+        revokedAt: { type: string, format: date-time, nullable: true }
+        lastUsedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    CreatedApiKey:
+      allOf:
+        - $ref: '#/components/schemas/MerchantApiKey'
+        - type: object
+          required: [key]
+          properties:
+            key: { type: string, description: Raw `<keyId>.<secret>`; returned only once }
+
+    WalletMe:
+      type: object
+      required: [id, userId, balance, heldBalance, availableBalance, currency, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string }
+        balance: { type: string, example: '1250000.00' }
+        heldBalance: { type: string }
+        availableBalance: { type: string }
+        currency: { type: string, enum: [VND] }
+        status: { type: string, enum: [ACTIVE, LOCKED] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    WalletView:
+      type: object
+      required: [id, userId, ownerType, balance, heldBalance, availableBalance, currency, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string }
+        ownerType: { type: string, enum: [USER, MERCHANT, SYSTEM] }
+        systemCode: { type: string, nullable: true }
+        balance: { type: string }
+        heldBalance: { type: string }
+        availableBalance: { type: string }
+        currency: { type: string, enum: [VND] }
+        status: { type: string, enum: [ACTIVE, LOCKED] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    WalletBalance:
+      type: object
+      required: [balance, heldBalance, availableBalance, currency, status]
+      properties:
+        balance: { type: string }
+        heldBalance: { type: string }
+        availableBalance: { type: string }
+        currency: { type: string, enum: [VND] }
+        status: { type: string, enum: [ACTIVE, LOCKED] }
+
+    WalletPage:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/WalletView' }
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+
+    LedgerItem:
+      type: object
+      required: [id, transactionId, direction, amount, balanceAfter, referenceId, transferType, createdAt]
+      properties:
+        id: { type: string, description: BigInt serialized as a string }
+        transactionId: { type: string, format: uuid }
+        direction: { type: string, enum: [CREDIT, DEBIT] }
+        amount: { type: string }
+        balanceAfter: { type: string }
+        referenceId: { type: string }
+        transferType: { type: string, enum: [TOPUP, PAYMENT, REFUND, P2P_TRANSFER, ADJUSTMENT] }
+        note: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    LedgerPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/LedgerItem' }
+        nextCursor: { type: string, nullable: true }
+
+    WalletHistoryPage:
+      type: object
+      required: [items, total, page, limit, from, to]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/LedgerItem' }
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+
+    LedgerMutation:
+      type: object
+      required: [balance, transactionId, replayed]
+      properties:
+        balance: { type: string }
+        transactionId: { type: string, format: uuid }
+        replayed: { type: boolean }
+
+    CreditDebitPayload:
+      type: object
+      required: [amount, referenceId]
+      properties:
+        amount: { type: string }
+        referenceId: { type: string }
+        transferType: { type: string, enum: [TOPUP, PAYMENT, REFUND, P2P_TRANSFER, ADJUSTMENT] }
+        systemCode: { type: string, enum: [MAIN, FEE, CLEARING_TOPUP, SETTLEMENT] }
+
+    PaymentType:
+      type: string
+      enum: [CARD_TOPUP, BUS_TICKET, MOVIE_TICKET, TRAIN_TICKET, WALLET_TRANSFER, PHONE_TOPUP, BILL_PAYMENT]
+
+    PaymentStatus:
+      type: string
+      enum: [PENDING, PROCESSING, SUCCESS, FAILED, REFUNDED, REFUNDING, REFUND_FAILED, CANCELLED, EXPIRED]
+
+    Payment:
+      type: object
+      required: [id, userId, amount, type, referenceId, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string }
+        amount: { type: string, example: '25000.00' }
+        type: { $ref: '#/components/schemas/PaymentType' }
+        referenceId: { type: string }
+        destinationUserId: { type: string, nullable: true }
+        destinationOwnerType: { type: string, nullable: true, enum: [USER, MERCHANT, SYSTEM] }
+        status: { $ref: '#/components/schemas/PaymentStatus' }
+        failureReason: { type: string, nullable: true }
+        failureCode: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        histories:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              fromStatus: { type: string, nullable: true }
+              toStatus: { type: string }
+              note: { type: string, nullable: true }
+              createdAt: { type: string, format: date-time }
+
+    P2pQuote:
+      type: object
+      required: [destinationUserId, amount, fee, expiresAt]
+      properties:
+        destinationUserId: { type: string, format: uuid }
+        amount: { type: string }
+        fee: { type: number, example: 0, description: 'JSON number; not a string' }
+        expiresAt: { type: string, format: date-time }
+
+    TopupStatus:
+      type: string
+      enum: [PENDING, PROCESSING, APPROVED, REJECTED, EXPIRED, FAILED]
+
+    TopupRequest:
+      type: object
+      required: [id, userId, amount, code, status, expiresAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string }
+        amount: { type: string, example: '50000.00' }
+        code: { type: string }
+        status: { $ref: '#/components/schemas/TopupStatus' }
+        expiresAt: { type: string, format: date-time }
+        approvedBy: { type: string, nullable: true }
+        approvedAt: { type: string, format: date-time, nullable: true }
+        rejectReason: { type: string, nullable: true }
+        walletTransactionId: { type: string, format: uuid, nullable: true }
+        vnpTransactionNo: { type: string, nullable: true }
+        vnpBankCode: { type: string, nullable: true }
+        vnpPayDate: { type: string, nullable: true }
+        vnpResponseCode: { type: string, nullable: true }
+        paymentUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CashOut:
+      type: object
+      required: [id, userId, amount, destination, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string }
+        amount: { type: string, example: '200000' }
+        destination: { type: string, nullable: true }
+        status: { type: string, enum: [REQUESTED, HOLDING, PAYOUT_PENDING, SUCCEEDED, FAILED] }
+        failureReason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        replayed: { type: boolean }
+
+    BillLookup:
+      type: object
+      required: [provider, customerCode, customerName, amount, period, amountFormatted]
+      properties:
+        provider: { type: string }
+        customerCode: { type: string }
+        customerName: { type: string }
+        amount: { type: string, example: '35000' }
+        period: { type: string, example: '2026-10' }
+        amountFormatted: { type: string, example: '35.000đ' }
+
+    UtilityOrder:
+      type: object
+      required: [orderId, type, status, amount, discountAmount, target, createdAt, updatedAt]
+      properties:
+        orderId: { type: string, format: uuid }
+        type: { type: string, enum: [TELCO_TOPUP, BILL_PAY] }
+        status:
+          type: string
+          enum: [PENDING_PAYMENT, PAID, PROVIDER_PENDING, SUCCESS, FAILED, REFUND_REQUESTED, REFUNDED, REFUND_FAILED]
+        amount: { type: string }
+        discountAmount: { type: string, description: Stored only; the backend does not deduct or credit it }
+        target: { type: string, description: Normalised phone number or customer code }
+        providerCode: { type: string, nullable: true }
+        providerRef: { type: string, nullable: true }
+        paymentId: { type: string, format: uuid, nullable: true }
+        failureReason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        replayed: { type: boolean }
+
+    Notification:
+      type: object
+      required: [id, userId, type, message, read, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        eventId: { type: string, nullable: true, description: 'Outbox/inbox event id; used for realtime dedupe' }
+        userId: { type: string }
+        type:
+          type: string
+          enum:
+            - PAYMENT_SUCCESS
+            - PAYMENT_FAILED
+            - PAYMENT_EXPIRED
+            - PAYMENT_REFUNDED
+            - PAYMENT_CANCELLED
+            - WALLET_CREDITED
+            - WALLET_DEBITED
+            - KYC_APPROVED
+            - KYC_REJECTED
+            - KYC_TIER_CHANGED
+            - MERCHANT_APPROVED
+            - MERCHANT_REJECTED
+            - TOPUP_SUCCEEDED
+            - CASHOUT_SUCCEEDED
+            - CASHOUT_FAILED
+            - UTILITY_SUCCEEDED
+            - UTILITY_FAILED
+            - UTILITY_REFUNDED
+        message: { type: string }
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    NotificationPage:
+      type: object
+      required: [notifications, unreadCount, pagination]
+      properties:
+        notifications:
+          type: array
+          items: { $ref: '#/components/schemas/Notification' }
+        unreadCount: { type: integer }
+        pagination:
+          type: object
+          required: [page, limit, total, totalPages]
+          properties:
+            page: { type: integer }
+            limit: { type: integer }
+            total: { type: integer }
+            totalPages: { type: integer }
+
+    SocketTicket:
+      type: object
+      required: [ticket, expiresAt]
+      properties:
+        ticket: { type: string }
+        expiresAt: { type: string, format: date-time }
+
+    AdminDashboardStats:
+      type: object
+      required: [users, merchants, audits]
+      properties:
+        users:
+          type: object
+          required: [total, kycBreakdown]
+          properties:
+            total: { type: integer }
+            kycBreakdown:
+              type: object
+              required: [none, pending, approved, rejected]
+              properties:
+                none: { type: integer }
+                pending: { type: integer }
+                approved: { type: integer }
+                rejected: { type: integer }
+        merchants:
+          type: object
+          required: [total, statusBreakdown]
+          properties:
+            total: { type: integer }
+            statusBreakdown:
+              type: object
+              required: [pending, approved, rejected]
+              properties:
+                pending: { type: integer }
+                approved: { type: integer }
+                rejected: { type: integer }
+        audits:
+          type: object
+          required: [totalLogs, todayActionsCount, recentActivities]
+          properties:
+            totalLogs: { type: integer }
+            todayActionsCount: { type: integer }
+            recentActivities:
+              type: array
+              items: { $ref: '#/components/schemas/AdminAuditLog' }
+
+    AdminKycPage:
+      type: object
+      required: [content, page, limit, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/UserKycRecord' }
+        page: { type: integer }
+        limit: { type: integer }
+        totalElements: { type: integer }
+        totalPages: { type: integer, minimum: 1 }
+
+    AdminAuditLog:
+      type: object
+      required: [id, adminId, action, targetId, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        adminId: { type: string }
+        action: { type: string, example: APPROVE_KYC }
+        targetId: { type: string }
+        detail: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    AdminAuditLogPage:
+      type: object
+      required: [content, page, limit, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/AdminAuditLog' }
+        page: { type: integer }
+        limit: { type: integer }
+        totalElements: { type: integer }
+        totalPages: { type: integer }
+
+    ReconciliationAnomaly:
+      type: object
+      required: [id, type, walletId, detail]
+      properties:
+        id: { type: string, description: BigInt serialized as a string }
+        type: { type: string, example: NEGATIVE_BALANCE }
+        walletId: { type: integer }
+        detail: { type: object, additionalProperties: true }
+
+    ReconciliationReport:
+      type: object
+      required: [id, runAt, totalWallets, anomaliesFound, systemBalanceExpected, systemBalanceActual, isBalanced, anomalies]
+      properties:
+        id: { type: integer, description: Wallet report id or admin run log id }
+        runAt: { type: string, format: date-time }
+        totalWallets: { type: integer }
+        anomaliesFound: { type: integer }
+        systemBalanceExpected: { type: string }
+        systemBalanceActual: { type: string }
+        isBalanced: { type: boolean }
+        anomalies:
+          type: array
+          items: { $ref: '#/components/schemas/ReconciliationAnomaly' }
+
+    ReconciliationReportPage:
+      type: object
+      required: [items, page, limit, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ReconciliationReport' }
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+
+    AdjustAnomalyPayload:
+      type: object
+      required: [direction, amount, reason]
+      additionalProperties: false
+      properties:
+        direction: { type: string, enum: [CREDIT, DEBIT] }
+        amount: { type: string, pattern: '^\d+$', example: '50000' }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+
+    AnomalyAdjustmentResult:
+      type: object
+      required: [anomalyId, status, referenceId]
+      properties:
+        anomalyId: { type: string }
+        status: { type: string, enum: [PENDING, SUCCEEDED, FAILED, UNKNOWN] }
+        referenceId: { type: string, example: adjust-anomaly-123 }
+        transactionId: { type: string, format: uuid }
+        replayed: { type: boolean }

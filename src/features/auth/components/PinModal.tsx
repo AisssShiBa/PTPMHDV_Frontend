@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useState, useRef, useEffect } from 'react'
 import {
   Dialog,
@@ -155,7 +156,11 @@ function PinModalSession({
       onOpenChange?.(false)
     } catch (error) {
       if (!active.current) return
-      setErrorMsg(errorMessage(error))
+      const details = axios.isAxiosError(error) ? error.response?.data?.error : undefined
+      const remaining = details?.details?.remainingAttempts ?? details?.remainingAttempts ?? details?.details?.attemptsRemaining
+      if (['INVALID_PIN', 'PIN_INVALID'].includes(details?.code) && typeof remaining === 'number' && Number.isInteger(remaining) && remaining >= 0 && remaining <= 5) {
+        setErrorMsg(`Mã PIN không chính xác. Bạn còn ${remaining} lần thử.`)
+      } else setErrorMsg(errorMessage(error))
       setPin(Array(6).fill(''))
       try {
         const status = await authApi.getPinStatus()
