@@ -1,0 +1,31 @@
+
+> frontend@0.0.0 test:unit
+> vitest run
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ✓ src/test/apiResponse.test.ts (4 tests) 10ms
+ ✓ src/test/format.test.ts (8 tests) 30ms
+ ✓ src/test/axios.test.ts (4 tests) 152ms
+ ✓ src/test/funding.test.tsx (19 tests) 182ms
+ ✓ src/test/notificationBell.test.tsx (2 tests) 657ms
+   ✓ decrements the unread count once when the same notification is clicked twice  460ms
+ ✓ src/test/transactionSafety.test.tsx (5 tests) 710ms
+   ✓ Transaction PIN > cannot issue a fake token when the caller has no bound order  324ms
+ ✓ src/test/topupFlow.test.tsx (14 tests) 748ms
+ ✓ src/test/merchantOnboarding.test.tsx (13 tests) 882ms
+ ✓ src/test/userProfile.test.tsx (12 tests) 1114ms
+   ✓ Profile and KYC integration > saves changed profile fields through PUT and reads them again after remount  417ms
+ ✓ src/test/merchantTools.test.tsx (12 tests) 1444ms
+ ✓ src/test/cashoutFlow.test.tsx (15 tests) 3405ms
+   ✓ Cashout UI contract (MSW, no live bank) > rejects decimal/zero inputs without creating an order  411ms
+   ✓ Cashout UI contract (MSW, no live bank) > binds PIN to server order and amount, confirms once and only prints after server SUCCEEDED  686ms
+   ✓ Cashout UI contract (MSW, no live bank) > keeps payout UNKNOWN pending and reads status instead of replaying token  490ms
+   ✓ Cashout UI contract (MSW, no live bank) > allows fresh PIN only after explicit token expiry and REQUESTED GET  387ms
+
+ Test Files  11 passed (11)
+      Tests  108 passed (108)
+   Start at  10:38:04
+   Duration  5.87s (transform 1.29s, setup 3.52s, collect 7.57s, tests 9.34s, environment 7.05s, prepare 1.68s)
+

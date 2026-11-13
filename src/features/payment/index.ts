@@ -1,2 +1,2 @@
 // Feature: payment
-export {}
+export { TopupResultPanel } from './components/TopupResultPanel'

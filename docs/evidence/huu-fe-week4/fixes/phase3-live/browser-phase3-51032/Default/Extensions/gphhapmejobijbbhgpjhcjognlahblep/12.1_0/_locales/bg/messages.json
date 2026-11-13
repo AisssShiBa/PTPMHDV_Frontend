@@ -1,0 +1,168 @@
+{
+   "_DO_NOT_EDIT": {
+      "description": "This file is auto generated with po2chrome-messages tool from bg.po.",
+      "message": ""
+   },
+   "close": {
+      "message": "Затваряне"
+   },
+   "error_connector_response": {
+      "description": "Shown to user when response from connector API call does not follow known format.",
+      "message": "Получен е грешен отговор от програмата за свързване"
+   },
+   "extension_enabled": {
+      "description": "Used as title, eg in table header. Means 'Does GNOME Shell extension enabled?'",
+      "message": "Включено"
+   },
+   "extension_installed": {
+      "description": "Used as title, eg in table header. Means 'Does GNOME Shell extension installed?'",
+      "message": "Инсталирано"
+   },
+   "extension_name": {
+      "description": "Used as title, eg in table header. Means 'GNOME Shell extension name'.",
+      "message": "Разширение"
+   },
+   "extension_status_downgrade": {
+      "description": "This is a part of phrase like 'Extension Top Icons must be downgraded'.",
+      "message": "трябва да бъде понижено"
+   },
+   "extension_status_upgrade": {
+      "description": "This is a part of phrase like 'Extension Top Icons can be upgraded'.",
+      "message": "може да бъде надградено"
+   },
+   "extension_synchronized": {
+      "description": "Used as title, eg in table header. Means 'Does GNOME Shell extension status synchronized with remote browser storage?'",
+      "message": "Синхронизирано"
+   },
+   "gs_chrome": {
+      "description": "This is a project title. Used as extension name in Chrome Store and in some titlebars.",
+      "message": "Интеграцията на GNOME обвивката"
+   },
+   "manifest_description": {
+      "description": "Used as extension description in Chrome Store",
+      "message": "Това разширение осигурява интеграция с GNOME обвивката и съответното хранилище за разширения https://extensions.gnome.org"
+   },
+   "native_request_failed": {
+      "description": "$REQUEST$ is a placeholder for technical name of request that web extension make via native messaging host application.",
+      "message": "«$REQUEST$» заявката от обвивката е неуспешна",
+      "placeholders": {
+         "request": {
+            "content": "$1"
+         }
+      }
+   },
+   "never": {
+      "description": "This is a part of phrase 'Last check: never'",
+      "message": "никога"
+   },
+   "no": {
+      "message": "Не"
+   },
+   "no_gnome_shell": {
+      "description": "Shown to user when native connector unable to query GNOME Shell version or settings",
+      "message": "Настройките или версията на GNOME обвивката не могат да бъдат намерени. Уверете се, че тя е инсталирана и работи."
+   },
+   "no_host_connector": {
+      "description": "$url$ is a placeholder for URL",
+      "message": "Въпреки че разширението за интеграция с GNOME обвивката работи, не може да бъде открита програма за свързване с обвивката на хоста. За инструкции за инсталиране на програма за свързване вижте \u003Ca href='$url$'>документацията\u003C/a>.",
+      "placeholders": {
+         "url": {
+            "content": "$1"
+         }
+      }
+   },
+   "no_host_response": {
+      "description": "Means 'Web extension does not received answer from native messaging host application.'",
+      "message": "Няма отговор от хоста"
+   },
+   "open_website": {
+      "description": "Tooltip for browser extensions icon.",
+      "message": "Отваряне на уеб страницата за разширения на GNOME"
+   },
+   "options_link": {
+      "description": "Link name for options tab.",
+      "message": "Опции"
+   },
+   "options_saved": {
+      "description": "Means 'Options were saved successfully after user clicked Save button'",
+      "message": "Опциите са запазени."
+   },
+   "options_show_release_notes": {
+      "description": "Option name. Allow to enable/disable popup with release notes when Web extension is updated.",
+      "message": "Показване на бележките за изданието, когато разширението за браузъра е обновено"
+   },
+   "options_synchronize_extensions": {
+      "description": "Option name. Allow to enable/disable synchronization of GNOME Shell extensions with remote browser storage.",
+      "message": "Синхронизиране на списъка с разширения на GNOME обвивката"
+   },
+   "options_synchronize_extensions_notice": {
+      "description": "This is a notice under option name.",
+      "message": "Когато е включено, списъкът с разширенията на GNOME обвивката ще бъде синхронизиран с вашата Google регистрация."
+   },
+   "options_title": {
+      "description": "$GS_CHROME$ is placeholder for 'GNOME Shell integration' string. This string used as title for Options page. This title is not shown in Chrome, but may be shown in other browsers.",
+      "message": "$GS_CHROME$ опции",
+      "placeholders": {
+         "gs_chrome": {
+            "content": "$1"
+         }
+      }
+   },
+   "options_use_light_icon": {
+      "description": "Use light icon that is looked better with dark themes.",
+      "message": "Използване на светли иконки (тъмна тема)"
+   },
+   "platform_not_supported": {
+      "message": "Програмата за свързване с обвивката на хоста не се поддържа за вашата платформа."
+   },
+   "retry": {
+      "message": "Повтаряне"
+   },
+   "save": {
+      "message": "Запазване"
+   },
+   "synchronization": {
+      "description": "Link name for synchronization tab in options dialog.",
+      "message": "Синхронизация"
+   },
+   "synchronization_cancel": {
+      "message": "Не включвайте синхронизацията."
+   },
+   "synchronization_failed": {
+      "description": "$CAUSE$ is placeholder for error that caused synchronization failure.",
+      "message": "Разширенията не може да бъдат синхронизирани: $CAUSE$",
+      "placeholders": {
+         "cause": {
+            "content": "$1"
+         }
+      }
+   },
+   "synchronization_storage_exists": {
+      "message": "Вашето хранилище за отдалечена синхронизация вече съдържа списък с разширения."
+   },
+   "synchronization_use_local": {
+      "message": "Използване на локалния списък с разширения и презаписване на отдалечения."
+   },
+   "synchronization_use_remote": {
+      "message": "Използване на отдалечения списък с разширения и презаписване на локалния."
+   },
+   "translation_credits": {
+      "description": "This is content of 'About translation' tab in Options dialog. Thank you for translation and feel free to add yourself here. HTML markup enabled for this string. New line character is treated as line break (\u003Cbr />)",
+      "message": "twlvnn kraftwerk \u003Ckraft_werk@tutanota.com>\n\nПроектът за превод на GNOME има нужда от подкрепа.\nНаучете повече за нас на \u003Ca href=\"http://gnome.cult.bg\">http://gnome.cult.bg\u003C/a>\nДокладвайте за грешки на \u003Ca href=\"http://gnome.cult.bg/bugs\">http://gnome.cult.bg/bugs\u003C/a>"
+   },
+   "translation_credits_title": {
+      "description": "Link name for translation credits tab in options dialog.",
+      "message": "Относно превода"
+   },
+   "unknown_error": {
+      "description": "This should newer be shown to user. However better safe than sorry.",
+      "message": "неизвестна грешка"
+   },
+   "warning_apis_missing": {
+      "description": "$$1 is a placeholder for a list of missing APIs",
+      "message": "Вашата програма за свързване с обвивката на хоста не поддържа следните API функции: $$1. Вероятно трябва да обновите програмата за свързване или да инсталирате приставки за липсващите API функции. За инструкции вижте \u003Ca href='$$2'>документацията\u003C/a>."
+   },
+   "yes": {
+      "message": "Да"
+   }
+}

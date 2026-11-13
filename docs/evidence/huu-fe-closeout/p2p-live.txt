@@ -1,0 +1,16 @@
+
+> frontend@0.0.0 test:huu:p2p:live
+> node tests/huu-closeout-live.mjs p2p
+
+Waiting for a fresh Gateway rate-limit window before bulk synthetic accounts
+a4: PASS
+s4: PASS
+s5: PASS
+a9: PASS
+s6: PASS
+s15: PASS
+concurrentConfirm: PASS
+ambiguousCapture: FAIL
+s8: FAIL
+s16: FAIL
+realtime: PASS

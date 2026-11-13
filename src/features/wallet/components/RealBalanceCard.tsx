@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { walletService } from '../services/walletService'
+import { useWalletBalance } from '../api/wallet.queries'
+import { errorMessage } from '@/lib/apiResponse'
+import { formatNumber, toBigIntSafe } from '@/lib/format'
 import type { WalletBalance } from '../types/wallet.types'
-import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { TrendingUp, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 interface Props {
@@ -11,41 +12,21 @@ interface Props {
 }
 
 export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigger = 0, onBalanceLoaded }) => {
-  const user = useAuthStore((state) => state.user)
-  const [balance, setBalance] = useState<WalletBalance | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [showBalance, setShowBalance] = useState(true)
-
-  const fetchBalance = async () => {
-    if (!user?.id) return
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await walletService.getBalance(String(user.id))
-      setBalance(data)
-      onBalanceLoaded?.(data)
-    } catch (err: any) {
-      setError(err?.response?.data?.error?.message || 'Chưa khởi tạo ví hoặc lỗi kết nối')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchBalance()
-  }, [user?.id, refreshTrigger])
-
-  const formattedBalance = balance
-    ? Number(balance.availableBalance || balance.balance || 0).toLocaleString('vi-VN')
-    : '0'
+  const query = useWalletBalance(refreshTrigger)
+  const balance = query.data
+  const loading = query.isFetching
+  const error = query.isError ? errorMessage(query.error) : null
+  const fetchBalance = () => { void query.refetch() }
+  useEffect(() => { if (balance) onBalanceLoaded?.(balance) }, [balance, onBalanceLoaded])
+  const formattedBalance = formatNumber(balance?.availableBalance ?? balance?.balance ?? '0')
 
   return (
     <div className={`rounded-2xl bg-linear-to-br from-violet-600 via-primary to-purple-800 p-6 text-white shadow-xl shadow-primary/20 flex flex-col justify-between ${className}`}>
       <div>
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-wider text-purple-200">
-            Số dư khả dụng (Tiền thật)
+            Số dư khả dụng
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -88,8 +69,8 @@ export const RealBalanceCard: React.FC<Props> = ({ className = '', refreshTrigge
           </span>
           <span>{balance?.status === 'ACTIVE' ? 'Ví đang hoạt động' : 'Ví chưa kích hoạt'}</span>
         </div>
-        {balance && Number(balance.heldBalance) > 0 && (
-          <span className="text-amber-300">Đang giữ: ₫ {Number(balance.heldBalance).toLocaleString('vi-VN')}</span>
+        {balance && toBigIntSafe(balance.heldBalance) > 0n && (
+          <span className="text-amber-300">Đang giữ: ₫ {formatNumber(balance.heldBalance)}</span>
         )}
       </div>
     </div>

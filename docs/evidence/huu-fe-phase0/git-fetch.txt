@@ -1,0 +1,5 @@
+Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.

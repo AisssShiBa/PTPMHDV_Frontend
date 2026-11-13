@@ -1,0 +1,62 @@
+{
+  "project": "finvault-acceptance-dadc7eef7537",
+  "privateCredentialsFile": "/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Backend/.cache/acceptance-week2/finvault-acceptance-dadc7eef7537/huu-closeout-demo-accounts.json",
+  "principals": {
+    "admin": {
+      "id": "9397c30b-bf55-41eb-ab31-f2feb194c17f",
+      "email": "closeoutadmin-82c09c34-8bbf-4dce-9aff-9a19bb2f6c65@example.test"
+    },
+    "tier0": {
+      "id": "d1954dd9-7a03-4048-9cd7-0bda4d1503c7",
+      "email": "closeouttier0-94906cbc-2152-4f0d-8e6c-6304db046631@example.test"
+    },
+    "tier1": {
+      "id": "4981b673-fb72-4d96-a88c-566a393f0940",
+      "email": "closeouttier1-54d49e16-da55-4970-8da8-48c4532061e7@example.test"
+    },
+    "tier2": {
+      "id": "c4c88df6-65a0-47a5-9701-171dbec26520",
+      "email": "closeouttier2-2033e179-256e-49f7-95c7-a4b3e0205493@example.test"
+    },
+    "merchantPending": {
+      "id": "350c8859-0d6e-48fa-a64d-87c1fa10a2cb",
+      "email": "closeoutmerchantPending-1397f27c-4c20-4224-b2ed-355fdb1c2545@example.test"
+    },
+    "merchantApproved": {
+      "id": "c1a04717-963c-434c-ade3-c7f51c6880c1",
+      "email": "closeoutmerchantApproved-d07e803f-d1fd-47f1-a390-132688a4879a@example.test"
+    }
+  },
+  "merchants": {
+    "merchantPending": {
+      "id": "32a6b423-0816-494f-afe3-acb3c518ae2e",
+      "status": "PENDING"
+    },
+    "merchantApproved": {
+      "id": "dca287ff-504b-4740-9593-d9f7df1f8756",
+      "outletId": "42082e9d-42f7-4ab2-af17-6f9104c2c2e7",
+      "status": "APPROVED"
+    }
+  },
+  "cashouts": {
+    "tier0": {
+      "id": "e34d5323-a2c4-46da-b446-ae44f4fb6517",
+      "status": "SUCCEEDED",
+      "amount": "10000"
+    },
+    "tier1": {
+      "id": "ddf8b6e5-572d-418c-aa77-dcaa34a6a0f2",
+      "status": "FAILED",
+      "amount": "10111"
+    },
+    "tier2": {
+      "id": "275078ba-dd69-47e0-8deb-b8b3245b384e",
+      "status": "PAYOUT_PENDING",
+      "amount": "10222"
+    }
+  },
+  "topupId": "ed866bd0-c2e1-45a5-b10c-1e78dd3ebb14",
+  "noRealIdentityDocuments": true,
+  "payout": "SIMULATED",
+  "realVnpaySandbox": "NOT_RUN"
+}

@@ -1,0 +1,429 @@
+{
+  "status": "PASS",
+  "mode": "demo",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "testedAt": "2026-11-13T04:31:18.628Z",
+  "checks": [
+    {
+      "label": "tier0",
+      "tier": 0,
+      "wallet": {
+        "balance": "300000.00",
+        "held": "0.00",
+        "tier": 0
+      }
+    },
+    {
+      "label": "tier1",
+      "tier": 1,
+      "wallet": {
+        "balance": "300000.00",
+        "held": "0.00",
+        "tier": 1
+      }
+    },
+    {
+      "label": "tier2",
+      "tier": 2,
+      "wallet": {
+        "balance": "300000.00",
+        "held": "0.00",
+        "tier": 2
+      }
+    },
+    {
+      "label": "merchant-states",
+      "merchants": {
+        "merchantPending": {
+          "id": "32a6b423-0816-494f-afe3-acb3c518ae2e",
+          "status": "PENDING"
+        },
+        "merchantApproved": {
+          "id": "dca287ff-504b-4740-9593-d9f7df1f8756",
+          "outletId": "42082e9d-42f7-4ab2-af17-6f9104c2c2e7",
+          "status": "APPROVED"
+        }
+      }
+    },
+    {
+      "label": "topup-synthetic",
+      "topupId": "ed866bd0-c2e1-45a5-b10c-1e78dd3ebb14",
+      "status": "APPROVED",
+      "realSandbox": "NOT_RUN"
+    },
+    {
+      "label": "cashout-states",
+      "cashouts": {
+        "tier0": {
+          "id": "e34d5323-a2c4-46da-b446-ae44f4fb6517",
+          "status": "SUCCEEDED",
+          "amount": "10000"
+        },
+        "tier1": {
+          "id": "ddf8b6e5-572d-418c-aa77-dcaa34a6a0f2",
+          "status": "FAILED",
+          "amount": "10111"
+        },
+        "tier2": {
+          "id": "275078ba-dd69-47e0-8deb-b8b3245b384e",
+          "status": "PAYOUT_PENDING",
+          "amount": "10222"
+        }
+      }
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/9397c30b-bf55-41eb-ab31-f2feb194c17f/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/d1954dd9-7a03-4048-9cd7-0bda4d1503c7/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/4981b673-fb72-4d96-a88c-566a393f0940/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/c4c88df6-65a0-47a5-9701-171dbec26520/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/350c8859-0d6e-48fa-a64d-87c1fa10a2cb/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/c1a04717-963c-434c-ade3-c7f51c6880c1/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/d1954dd9-7a03-4048-9cd7-0bda4d1503c7/credit",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/users/kyc/documents",
+      "status": 202
+    },
+    {
+      "method": "POST",
+      "path": "/admin/kyc/cc820857-f83b-47e1-ad8d-9ea4a49664d2/review",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/4981b673-fb72-4d96-a88c-566a393f0940/credit",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/users/kyc/documents",
+      "status": 202
+    },
+    {
+      "method": "POST",
+      "path": "/admin/kyc/ce8bbcb8-3685-4ea1-ac07-28f1e31cafbf/review",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/kyc/ce8bbcb8-3685-4ea1-ac07-28f1e31cafbf/tier",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/c4c88df6-65a0-47a5-9701-171dbec26520/credit",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/register",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/register",
+      "status": 201
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/dca287ff-504b-4740-9593-d9f7df1f8756/status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/dca287ff-504b-4740-9593-d9f7df1f8756/outlets",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/dca287ff-504b-4740-9593-d9f7df1f8756/outlets/42082e9d-42f7-4ab2-af17-6f9104c2c2e7/qr",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/payments/topups",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/setup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/verify",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/e34d5323-a2c4-46da-b446-ae44f4fb6517/confirm",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/e34d5323-a2c4-46da-b446-ae44f4fb6517",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/setup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/verify",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/ddf8b6e5-572d-418c-aa77-dcaa34a6a0f2/confirm",
+      "status": 409,
+      "code": "CASHOUT_FAILED"
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/ddf8b6e5-572d-418c-aa77-dcaa34a6a0f2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/setup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/verify",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/275078ba-dd69-47e0-8deb-b8b3245b384e/confirm",
+      "status": 503,
+      "code": "CASHOUT_PROCESSING"
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/275078ba-dd69-47e0-8deb-b8b3245b384e",
+      "status": 200
+    }
+  ],
+  "scope": "Synthetic interactive demo fixtures, no real VNPAY sandbox"
+}

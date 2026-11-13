@@ -178,11 +178,9 @@ export function UtilitiesPage() {
         toast.error('Vui lòng nhập số điện thoại hợp lệ (tối thiểu 10 số).')
         return
       }
-    } else {
-      if (!billResult) {
-        toast.error('Vui lòng tra cứu hóa đơn trước khi thanh toán.')
-        return
-      }
+    } else if (!billResult) {
+      toast.error('Vui lòng tra cứu hóa đơn trước khi thanh toán.')
+      return
     }
 
     if (!isBalanceSufficient) {
@@ -196,7 +194,7 @@ export function UtilitiesPage() {
   // Khi nhập PIN thành công
   const handlePinSuccess = () => {
     setPinModalOpen(false)
-    const randomId = `FV-${Math.floor(8000000 + Math.random() * 1000000)}`
+    const randomId = `FV-${crypto.randomUUID()}`
     const nowIso = new Date().toISOString()
     const updatedBalance = availableBalance - currentPayAmount
 

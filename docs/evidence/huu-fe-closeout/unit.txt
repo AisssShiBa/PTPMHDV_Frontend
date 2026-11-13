@@ -1,0 +1,34 @@
+
+> frontend@0.0.0 test:unit
+> vitest run
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ✓ src/test/format.test.ts (8 tests) 47ms
+ ✓ src/test/apiResponse.test.ts (4 tests) 53ms
+ ✓ src/test/axios.test.ts (4 tests) 157ms
+ ✓ src/test/notificationBell.test.tsx (2 tests) 603ms
+   ✓ decrements the unread count once when the same notification is clicked twice  425ms
+ ✓ src/test/funding.test.tsx (18 tests) 347ms
+ ✓ src/test/topupFlow.test.tsx (14 tests) 1147ms
+   ✓ Topup create UI (MSW contract only) > validates custom amount without float coercion and makes no request for invalid input  353ms
+ ✓ src/test/merchantOnboarding.test.tsx (13 tests) 1164ms
+ ✓ src/test/userProfile.test.tsx (12 tests) 1418ms
+   ✓ Profile and KYC integration > saves changed profile fields through PUT and reads them again after remount  419ms
+ ✓ src/test/transactionSafety.test.tsx (5 tests) 1510ms
+   ✓ Transaction PIN > cannot issue a fake token when the caller has no bound order  618ms
+   ✓ Transaction PIN > uses the real API adapter with the exact order and amount  434ms
+ ✓ src/test/merchantTools.test.tsx (12 tests) 2095ms
+   ✓ Merchant tools sensitive workflows > does not offer outlet/QR/key create for PENDING  304ms
+ ✓ src/test/cashoutFlow.test.tsx (15 tests) 3466ms
+   ✓ Cashout UI contract (MSW, no live bank) > rejects decimal/zero inputs without creating an order  446ms
+   ✓ Cashout UI contract (MSW, no live bank) > binds PIN to server order and amount, confirms once and only prints after server SUCCEEDED  586ms
+   ✓ Cashout UI contract (MSW, no live bank) > keeps payout UNKNOWN pending and reads status instead of replaying token  532ms
+   ✓ Cashout UI contract (MSW, no live bank) > allows fresh PIN only after explicit token expiry and REQUESTED GET  434ms
+
+ Test Files  11 passed (11)
+      Tests  107 passed (107)
+   Start at  11:36:24
+   Duration  7.10s (transform 2.39s, setup 4.40s, collect 13.87s, tests 12.01s, environment 8.94s, prepare 2.63s)
+

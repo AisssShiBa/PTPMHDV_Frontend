@@ -459,35 +459,41 @@ paths:
   /payments/topups:
     get:
       tags: [Payments]
-      summary: List payment top-ups
-      x-needs-confirmation: true
+      summary: List current user's top-ups
       responses:
         '200':
-          description: Top-up list
+          description: Account-scoped top-up list; amounts are decimal strings
           content:
             application/json:
-              example: { success: true, data: [{ id: e5156448-bcea-4718-a045-6c748b4184d9, amount: 50000, status: PENDING }] }
+              example: { success: true, data: [{ id: e5156448-bcea-4718-a045-6c748b4184d9, code: NAP12345678, amount: '50000.00', status: PENDING, expiresAt: '2026-11-13T10:30:00Z' }] }
     post:
       tags: [Payments]
-      summary: Create a top-up
-      x-needs-confirmation: true
+      summary: Create an idempotent VNPAY top-up
+      description: Use string VND. The backend also accepts bounded legacy integers. A supplied key binds the current account and amount, including concurrent retries; a changed amount returns 422. Deploy the top-up idempotency migration first.
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          description: Required by the frontend; optional only for compatibility with legacy callers.
+          schema: { type: string, format: uuid }
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [amount], properties: { amount: { type: number } } }
-            example: { amount: 50000 }
+            schema: { type: object, required: [amount], properties: { amount: { type: string, pattern: '^[1-9][0-9]{0,8}$', description: 'Integer VND from 10000 to 100000000' } } }
+            example: { amount: '50000' }
       responses:
         '201':
-          description: Top-up created
+          description: Top-up created or replayed without an additional order
           content:
             application/json:
-              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, amount: 50000, status: PENDING, qrCode: https://example.test/qr/demo } }
+              example: { success: true, data: { topupId: e5156448-bcea-4718-a045-6c748b4184d9, paymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?synthetic=example' } }
+        '422':
+          description: Idempotency key reused with a different amount
   /payments/topups/{id}:
     get:
       tags: [Payments]
       summary: Get top-up status
-      x-needs-confirmation: true
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
@@ -495,7 +501,7 @@ paths:
           description: Top-up status
           content:
             application/json:
-              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, amount: 50000, status: PENDING } }
+              example: { success: true, data: { id: e5156448-bcea-4718-a045-6c748b4184d9, code: NAP12345678, amount: '50000.00', status: PENDING, expiresAt: '2026-11-13T10:30:00Z' } }
   /payments/admin/topups:
     get:
       tags: [Payments]

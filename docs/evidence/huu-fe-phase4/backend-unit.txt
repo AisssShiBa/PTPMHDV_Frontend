@@ -1,0 +1,117 @@
+TAP version 13
+# [CashOut] Hold outcome unknown; will reconcile by holdRef { id: '637d8402-a050-4b16-b1b5-81fa43eefe6b' }
+# [CashOut] Hold extend failed; continuing to reconcile {
+#   id: 'd3646c26-fa3b-4a2a-bbec-abaa35d0efd6',
+#   code: 'HOLD_NOT_EXTENDABLE',
+#   error: 'hold is gone'
+# }
+# [CashOut] STOP-1: bank SUCCEEDED but hold is no longer capturable { id: '8fb629f3-b963-474b-8aa7-633b9cc8aba7', code: 'HOLD_EXPIRED' }
+# Subtest: C01 success: one hold, one payout, one capture, SUCCEEDED + outbox event
+ok 1 - C01 success: one hold, one payout, one capture, SUCCEEDED + outbox event
+  ---
+  duration_ms: 14.019867
+  ...
+# Subtest: C02 bank failure: release once, no capture, FAILED + failed event
+ok 2 - C02 bank failure: release once, no capture, FAILED + failed event
+  ---
+  duration_ms: 0.819838
+  ...
+# Subtest: C03 unknown payout: PAYOUT_PENDING, hold kept, no release or capture
+ok 3 - C03 unknown payout: PAYOUT_PENDING, hold kept, no release or capture
+  ---
+  duration_ms: 0.427757
+  ...
+# Subtest: C03 recovery: provider later reports SUCCESS -> capture exactly once
+ok 4 - C03 recovery: provider later reports SUCCESS -> capture exactly once
+  ---
+  duration_ms: 1.686753
+  ...
+# Subtest: C03 recovery: provider later reports FAILED -> release, FAILED
+ok 5 - C03 recovery: provider later reports FAILED -> release, FAILED
+  ---
+  duration_ms: 0.447372
+  ...
+# Subtest: C04 same key and payload replays the same CashOut, one record
+ok 6 - C04 same key and payload replays the same CashOut, one record
+  ---
+  duration_ms: 0.429072
+  ...
+# Subtest: C05 same key, different amount is rejected with no side effect
+ok 7 - C05 same key, different amount is rejected with no side effect
+  ---
+  duration_ms: 0.612943
+  ...
+# Subtest: C06 two confirms with the same token: exactly one claim
+ok 8 - C06 two confirms with the same token: exactly one claim
+  ---
+  duration_ms: 0.668789
+  ...
+# Subtest: C07 token bound to another payment is refused with no hold
+ok 9 - C07 token bound to another payment is refused with no hold
+  ---
+  duration_ms: 0.435424
+  ...
+# Subtest: C09 a jti already spent by Payment is refused before any hold
+ok 10 - C09 a jti already spent by Payment is refused before any hold
+  ---
+  duration_ms: 0.338423
+  ...
+# Subtest: C10 deterministic wallet rejection fails the order without contacting the bank
+ok 11 - C10 deterministic wallet rejection fails the order without contacting the bank
+  ---
+  duration_ms: 0.396464
+  ...
+# Subtest: C10 ambiguous wallet failure schedules a retry instead of failing the order
+ok 12 - C10 ambiguous wallet failure schedules a retry instead of failing the order
+  ---
+  duration_ms: 1.805678
+  ...
+# Subtest: C11 crash after payout before capture resumes with the same refs
+ok 13 - C11 crash after payout before capture resumes with the same refs
+  ---
+  duration_ms: 0.418647
+  ...
+# Subtest: C13 AWAIT_RECONCILE extends the hold before every provider query
+ok 14 - C13 AWAIT_RECONCILE extends the hold before every provider query
+  ---
+  duration_ms: 0.43123
+  ...
+# Subtest: C13 an extend failure is not terminal and the provider conclusion still settles
+ok 15 - C13 an extend failure is not terminal and the provider conclusion still settles
+  ---
+  duration_ms: 0.59692
+  ...
+# Subtest: C13 bank SUCCESS but an expired hold is never reported as SUCCEEDED
+ok 16 - C13 bank SUCCESS but an expired hold is never reported as SUCCEEDED
+  ---
+  duration_ms: 0.596392
+  ...
+# Subtest: a worker that lost its lease cannot commit a terminal state
+ok 17 - a worker that lost its lease cannot commit a terminal state
+  ---
+  duration_ms: 0.299586
+  ...
+# Subtest: amount must be a positive whole VND value
+ok 18 - amount must be a positive whole VND value
+  ---
+  duration_ms: 0.440669
+  ...
+# Subtest: C15 create() never touches the wallet
+ok 19 - C15 create() never touches the wallet
+  ---
+  duration_ms: 0.26377
+  ...
+# Subtest: amount comparison is Decimal-based, so 100000 equals 100000
+ok 20 - amount comparison is Decimal-based, so 100000 equals 100000
+  ---
+  duration_ms: 0.167737
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 398.627743

@@ -1,0 +1,18 @@
+PARSE PASS src/pages/ProfilePage.tsx
+PARSE PASS src/features/auth/index.ts
+PARSE PASS src/test/userProfile.test.tsx
+PARSE PASS src/features/user/api/user.queries.ts
+PARSE PASS src/features/user/components/KycDocumentViewer.tsx
+PARSE PASS src/features/user/components/KycForm.tsx
+PARSE PASS src/features/user/components/KycStatusBadge.tsx
+PARSE PASS src/features/user/components/KycTierBadge.tsx
+PARSE PASS src/features/user/components/ProfileForm.tsx
+PARSE PASS src/features/user/components/UserProfilePanel.tsx
+PARSE PASS src/features/user/hooks/useRecipientLookup.ts
+PARSE PASS src/features/user/hooks/useUserProfile.ts
+PARSE PASS src/features/user/index.ts
+PARSE PASS src/features/user/schemas/recipient.schema.ts
+PARSE PASS src/features/user/schemas/user.schema.ts
+PARSE PASS src/features/user/services/userService.ts
+PARSE PASS src/features/user/types/user.types.ts
+SYNTAX ONLY: cached esbuild 0.28.2; not TypeScript typecheck, tests or production build

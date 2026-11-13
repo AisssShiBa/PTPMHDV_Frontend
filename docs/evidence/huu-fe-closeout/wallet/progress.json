@@ -1,0 +1,34 @@
+[
+  {
+    "scenario": "walletA9",
+    "startedAt": "2026-11-13T04:40:00.912Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:40:02.878Z"
+  },
+  {
+    "scenario": "walletS6",
+    "startedAt": "2026-11-13T04:40:02.878Z",
+    "status": "FAIL",
+    "error": "POST /wallets/6e857653-51b0-433b-b835-b0bc21fe08ea/hold: unexpected status (no code)",
+    "finishedAt": "2026-11-13T04:40:04.199Z"
+  },
+  {
+    "scenario": "s7",
+    "startedAt": "2026-11-13T04:40:04.199Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:40:10.340Z"
+  },
+  {
+    "scenario": "inlineExpiry",
+    "startedAt": "2026-11-13T04:40:10.340Z",
+    "status": "FAIL",
+    "error": "Unexpected token 'R', \"[RabbitMQ:w\"... is not valid JSON",
+    "finishedAt": "2026-11-13T04:40:12.227Z"
+  },
+  {
+    "scenario": "s10",
+    "startedAt": "2026-11-13T04:40:12.228Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:40:18.308Z"
+  }
+]

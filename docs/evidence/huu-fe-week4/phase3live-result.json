@@ -1,0 +1,32 @@
+{
+  "result": "FAIL",
+  "error": "PUT /api/users/by-auth/c2b867a1-6681-4d70-8b8c-8a68ee705a23: NOT_FOUND\n\n404 !== 200\n",
+  "checks": [],
+  "api": [
+    {
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/users/by-auth/c2b867a1-6681-4d70-8b8c-8a68ee705a23",
+      "status": 404
+    }
+  ]
+}

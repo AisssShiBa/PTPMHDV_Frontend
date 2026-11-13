@@ -14,34 +14,32 @@ export function useNotificationSocket(
   onNotification: (notification: NotificationItem) => void
 ) {
   const handlerRef = useRef(onNotification)
-  const [connected, setConnected] = useState(false)
-  handlerRef.current = onNotification
+  const [connection, setConnection] = useState({ userId, accessToken, connected: false })
+  useEffect(() => { handlerRef.current = onNotification }, [onNotification])
 
   useEffect(() => {
     if (!userId || !accessToken || useMock) {
-      setConnected(false)
       return
     }
 
     let active = true
     let serverDisconnectTimer: ReturnType<typeof setTimeout> | undefined
-    setConnected(false)
     const socket = io(resolveSocketOrigin(apiBaseUrl, window.location.origin), {
       path: '/socket.io',
       auth: createSocketAuth(
         () => notificationService.getSocketTicket(),
-        (error) => console.error('Failed to fetch notification socket ticket', error)
+        () => setConnection({ userId, accessToken, connected: false })
       )
     })
 
     socket.on('connect', () => {
-      if (active) setConnected(true)
+      if (active) setConnection({ userId, accessToken, connected: true })
     })
-    socket.on('connect_error', (error) => {
-      console.error('Notification socket connection failed', error)
+    socket.on('connect_error', () => {
+      if (active) setConnection({ userId, accessToken, connected: false })
     })
     socket.on('disconnect', (reason) => {
-      if (active) setConnected(false)
+      if (active) setConnection({ userId, accessToken, connected: false })
       if (active && reason === 'io server disconnect') {
         serverDisconnectTimer = setTimeout(() => socket.connect(), 1000)
       }
@@ -57,5 +55,5 @@ export function useNotificationSocket(
     }
   }, [userId, accessToken])
 
-  return connected
+  return Boolean(userId && accessToken && !useMock && connection.userId === userId && connection.accessToken === accessToken && connection.connected)
 }

@@ -1,0 +1,5 @@
+
+> frontend@0.0.0 test:unit
+> vitest run src/test/userProfile.test.tsx
+
+sh: line 1: vitest: command not found

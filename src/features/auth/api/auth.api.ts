@@ -40,7 +40,7 @@ export interface VerifyPinPayload {
 
 export interface VerifyPinResponse {
   transactionToken: string
-  expiresInSeconds: number
+  expiresIn: number
 }
 
 export interface PinStatusResponse {
@@ -144,10 +144,11 @@ export const authApi = {
    * Endpoint: POST /api/auth/pin/verify
    */
   async verifyPin(payload: VerifyPinPayload): Promise<VerifyPinResponse> {
+    if (!payload.paymentId || !payload.amount) throw new Error('Thiếu thông tin giao dịch cần xác thực.')
     const res = await api.post<ApiResponse<VerifyPinResponse>>('/auth/pin/verify', {
       pin: payload.pin,
-      paymentId: payload.paymentId || 'default',
-      amount: payload.amount ? String(payload.amount) : '0'
+      paymentId: payload.paymentId,
+      amount: String(payload.amount)
     })
     return unwrap(res.data)
   },

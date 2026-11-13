@@ -1,5 +1,6 @@
 // d:\PTPMHDV\Frontend\src\features\payment\services\paymentService.ts
 import api from '@/lib/axios'
+import { fundingApi } from '@/features/funding'
 import type { PaymentRecord, CheckoutDto } from '../types/payment.types'
 
 export const paymentService = {
@@ -30,7 +31,7 @@ export const paymentService = {
   /**
    * Hủy đơn thanh toán
    */
-  cancel: async (id: string): Promise<any> => {
+  cancel: async (id: string): Promise<unknown> => {
     const res = await api.post(`/payments/${id}/cancel`)
     return res.data?.data ?? res.data
   },
@@ -38,18 +39,8 @@ export const paymentService = {
   /**
    * Tạo yêu cầu nạp tiền
    */
-  createTopup: async (amount: number | string) => {
-    const res = await api.post('/payments/topups', { amount: Number(amount) })
-    return res.data?.data ?? res.data
-  },
-
-  /**
-   * Kiểm tra trạng thái của 1 giao dịch
-   */
-  getTopupStatus: async (id: string) => {
-    const res = await api.get(`/payments/topups/${id}`)
-    return res.data?.data ?? res.data
-  },
+  createTopup: fundingApi.createTopup,
+  getTopupStatus: fundingApi.getTopup,
 
   // ================= ADMIN APIs =================
 

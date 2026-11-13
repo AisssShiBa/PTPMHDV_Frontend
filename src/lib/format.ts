@@ -105,3 +105,6 @@ export function compareMoney(a: string, b: string): number {
 export function isGreaterThan(a: string, b: string): boolean {
   return compareMoney(a, b) > 0
 }
+
+// Strict money helpers for Funding; legacy display helpers stay compatible.
+export { isValidMoneyInput, parseVndToBigInt, normalizeVnd, formatVndExact } from './money'

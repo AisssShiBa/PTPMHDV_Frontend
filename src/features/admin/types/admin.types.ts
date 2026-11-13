@@ -47,6 +47,6 @@ export interface AuditLogItem {
   action: string
   adminId: string
   targetId: string | null
-  details: any
+  details: unknown
   createdAt: string
 }

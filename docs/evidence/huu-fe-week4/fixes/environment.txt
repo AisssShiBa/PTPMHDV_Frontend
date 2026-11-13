@@ -1,0 +1,6 @@
+20261113090000_topup_idempotency|t
+Tested at 2026-11-13T04:01:54.199702+00:00
+Node v22.23.1; timezone Asia/Ho_Chi_Minh
+Project finvault-acceptance-dadc7eef7537; Gateway loopback:40825
+Gateway/Auth/User/Merchant/Wallet/Payment/Admin/Postgres/Redis/RabbitMQ/MinIO healthy before tests. See stack.txt.
+Private acceptance payment override NODE_ENV=test, MOCK_PAYOUT_ENABLED=true; synthetic terminal SYNTH_TMN_CODE.

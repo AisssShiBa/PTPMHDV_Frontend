@@ -1,10 +1,11 @@
 // d:\PTPMHDV\Frontend\src\features\notification\components\NotificationBell.tsx
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { BadgeCheck, Bell, CheckCheck, Clock, CreditCard, Loader2, RotateCcw, ShieldCheck, Store, WalletCards, XCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { notificationService } from '../services/notificationService'
-import type { NotificationItem, NotificationType } from '../types/notification.types'
+import type { NotificationItem, NotificationType, NotificationListResponse } from '../types/notification.types'
 import { useNotificationSocket } from '../hooks/useNotificationSocket'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { toast } from 'sonner'
@@ -26,75 +27,63 @@ const notificationIconByType: Record<NotificationType, LucideIcon> = {
 }
 
 function notificationErrorMessage(error: unknown): string {
-  if (axios.isAxiosError<{ error?: { message?: string }; requestId?: string }>(error)) {
-    const message = error.response?.data?.error?.message
+  const message = errorMessage(error)
+  if (axios.isAxiosError<{ requestId?: string }>(error)) {
     const requestId = error.response?.data?.requestId
-    if (message) return requestId ? `${message} (Request ID: ${requestId})` : message
+    if (requestId) return `${message} (Mã yêu cầu: ${requestId})`
   }
-  return errorMessage(error)
+  return message
 }
 
 export const NotificationBell: React.FC = () => {
-  const user = useAuthStore((state) => state.user)
+  const owner = useAuthStore((state) => state.user?.id)
+  return owner ? <AccountNotificationBell key={owner} owner={owner} /> : null
+}
+
+function AccountNotificationBell({ owner }: { owner: string }) {
   const accessToken = useAuthStore((state) => state.accessToken)
+  const client = useQueryClient()
+  const queryKey = ['notifications', owner] as const
   const [isOpen, setIsOpen] = useState(false)
-  const [notifications, setNotifications] = useState<NotificationItem[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const seenNotificationIds = useRef(new Set<string>())
-
-  const handleRealtimeNotification = (notification: NotificationItem) => {
-    if (seenNotificationIds.current.has(notification.id)) return
-    seenNotificationIds.current.add(notification.id)
-    setNotifications((prev) => [notification, ...prev])
-    setUnreadCount((count) => count + (notification.read ? 0 : 1))
-    toast.info(notification.message)
+  const handleRealtimeNotification = (item: NotificationItem) => {
+    if (item.userId !== owner) return
+    let added = false
+    client.setQueryData<NotificationListResponse>(queryKey, (current) => {
+      if (!current || current.notifications.some((row) => row.id === item.id)) return current
+      added = true
+      return { ...current, notifications: [item, ...current.notifications], unreadCount: current.unreadCount + (item.read ? 0 : 1) }
+    })
+    if (added) toast.info(item.message)
   }
+  const socketConnected = useNotificationSocket(owner, accessToken ?? undefined, handleRealtimeNotification)
+  const query = useQuery({
+    queryKey,
+    queryFn: ({ signal }) => notificationService.getNotifications(1, 10, signal),
+    gcTime: 0,
+    refetchInterval: socketConnected ? 60000 : 15000
+  })
+  const notifications = query.data?.notifications ?? []
+  const unreadCount = query.data?.unreadCount ?? 0
+  const page = query.data?.pagination.page ?? 1
+  const totalPages = query.data?.pagination.totalPages ?? 1
+  const loading = query.isFetching || loadingMore
+  useEffect(() => { if (query.error) toast.error(notificationErrorMessage(query.error)) }, [query.error])
 
-  const socketConnected = useNotificationSocket(
-    user?.id ? String(user.id) : undefined,
-    accessToken ?? undefined,
-    handleRealtimeNotification
-  )
-
-  const fetchNotifications = useCallback(async (requestedPage = 1, append = false) => {
-    if (!user?.id) return
-    try {
-      setLoading(true)
-      const data = await notificationService.getNotifications(requestedPage, 10)
-      const items = data.notifications || []
-      if (append) {
-        items.forEach((item) => seenNotificationIds.current.add(item.id))
-        setNotifications((prev) => {
-          const knownIds = new Set(prev.map((item) => item.id))
-          return [...prev, ...items.filter((item) => !knownIds.has(item.id))]
-        })
-      } else {
-        seenNotificationIds.current = new Set(items.map((item) => item.id))
-        setNotifications(items)
-      }
-      setUnreadCount(data.unreadCount || 0)
-      setPage(requestedPage)
-      setTotalPages(data.pagination?.totalPages || 1)
-    } catch (error) {
-      toast.error(notificationErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
-  }, [user?.id])
-
-  useEffect(() => {
-    fetchNotifications()
-    const timer = setInterval(fetchNotifications, socketConnected ? 60000 : 15000)
-    return () => clearInterval(timer)
-  }, [fetchNotifications, socketConnected])
-
-  const handleLoadMore = () => {
+  const handleLoadMore = async () => {
     if (loading || page >= totalPages) return
-    void fetchNotifications(page + 1, true)
+    setLoadingMore(true)
+    try {
+      const data = await notificationService.getNotifications(page + 1, 10)
+      if (useAuthStore.getState().user?.id !== owner) return
+      client.setQueryData<NotificationListResponse>(queryKey, (current) => {
+        if (!current) return data
+        const ids = new Set(current.notifications.map((item) => item.id))
+        return { ...data, notifications: [...current.notifications, ...data.notifications.filter((item) => !ids.has(item.id))] }
+      })
+    } catch (error) { toast.error(notificationErrorMessage(error)) }
+    finally { setLoadingMore(false) }
   }
 
   // Đóng dropdown khi click ra ngoài
@@ -112,21 +101,24 @@ export const NotificationBell: React.FC = () => {
     if (currentlyRead) return
     try {
       await notificationService.markRead(id)
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
-      setUnreadCount((c) => Math.max(0, c - 1))
-    } catch (err: any) {
+      if (useAuthStore.getState().user?.id !== owner) return
+      client.setQueryData<NotificationListResponse>(queryKey, (current) => {
+        if (!current || current.notifications.find((n) => n.id === id)?.read) return current
+        return { ...current, notifications: current.notifications.map((n) => n.id === id ? { ...n, read: true } : n), unreadCount: Math.max(0, current.unreadCount - 1) }
+      })
+    } catch (err: unknown) {
       toast.error('Lỗi cập nhật: ' + notificationErrorMessage(err))
     }
   }
 
   const handleMarkAllRead = async () => {
-    if (!user?.id || unreadCount === 0) return
+    if (unreadCount === 0) return
     try {
       await notificationService.markAllRead()
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-      setUnreadCount(0)
+      if (useAuthStore.getState().user?.id !== owner) return
+      client.setQueryData<NotificationListResponse>(queryKey, (current) => current && ({ ...current, notifications: current.notifications.map((n) => ({ ...n, read: true })), unreadCount: 0 }))
       toast.success('Đã đánh dấu đọc tất cả thông báo!')
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Lỗi cập nhật: ' + notificationErrorMessage(err))
     }
   }

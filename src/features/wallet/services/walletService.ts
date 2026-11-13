@@ -15,7 +15,7 @@ export const walletService = {
   /**
    * Nạp tiền vào ví (Credit / Topup)
    */
-  topup: async (userId: string, amount: string | number): Promise<any> => {
+  topup: async (userId: string, amount: string | number): Promise<unknown> => {
     const res = await api.post(`/wallets/${userId}/credit`, {
       amount: String(amount),
       referenceId: `TOPUP-${Date.now()}`,
@@ -27,7 +27,7 @@ export const walletService = {
   /**
    * Trừ tiền ví (Debit)
    */
-  debit: async (userId: string, amount: string | number, referenceId?: string): Promise<any> => {
+  debit: async (userId: string, amount: string | number, referenceId?: string): Promise<unknown> => {
     const res = await api.post(`/wallets/${userId}/debit`, {
       amount: String(amount),
       referenceId: referenceId || `DEBIT-${Date.now()}`,

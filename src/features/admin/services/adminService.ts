@@ -52,7 +52,7 @@ export const adminService = {
   /**
    * Phê duyệt / Từ chối Merchant
    */
-  reviewMerchant: async (merchantId: string, status: 'APPROVED' | 'REJECTED', detail?: string): Promise<any> => {
+  reviewMerchant: async (merchantId: string, status: 'APPROVED' | 'REJECTED', detail?: string): Promise<unknown> => {
     const res = await api.post(`/admin/merchants/${merchantId}/review`, { status, detail })
     return res.data?.data ?? res.data
   },

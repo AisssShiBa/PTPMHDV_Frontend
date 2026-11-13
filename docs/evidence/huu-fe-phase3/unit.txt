@@ -1,0 +1,23 @@
+
+> frontend@0.0.0 test:unit
+> vitest run
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ✓ src/test/format.test.ts (8 tests) 16ms
+ ✓ src/test/apiResponse.test.ts (4 tests) 9ms
+ ✓ src/test/axios.test.ts (4 tests) 79ms
+ ✓ src/test/notificationBell.test.tsx (2 tests) 361ms
+ ✓ src/test/funding.test.tsx (19 tests) 298ms
+ ✓ src/test/transactionSafety.test.tsx (5 tests) 645ms
+ ✓ src/test/topupFlow.test.tsx (14 tests) 776ms
+   ✓ Topup create UI (MSW contract only) > validates custom amount without float coercion and makes no request for invalid input  333ms
+ ✓ src/test/userProfile.test.tsx (12 tests) 812ms
+   ✓ Profile and KYC integration > saves changed profile fields through PUT and reads them again after remount  323ms
+
+ Test Files  8 passed (8)
+      Tests  68 passed (68)
+   Start at  19:59:48
+   Duration  2.95s (transform 661ms, setup 2.11s, collect 3.37s, tests 3.00s, environment 4.21s, prepare 1.15s)
+

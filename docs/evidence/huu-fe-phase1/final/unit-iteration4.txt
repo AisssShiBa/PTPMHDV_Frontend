@@ -1,0 +1,18 @@
+
+> frontend@0.0.0 test:unit
+> vitest run
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ✓ src/test/format.test.ts (8 tests) 24ms
+ ✓ src/test/apiResponse.test.ts (4 tests) 14ms
+ ✓ src/test/axios.test.ts (4 tests) 45ms
+ ✓ src/test/transactionSafety.test.tsx (5 tests) 470ms
+ ✓ src/test/userProfile.test.tsx (12 tests) 686ms
+
+ Test Files  5 passed (5)
+      Tests  33 passed (33)
+   Start at  18:35:21
+   Duration  2.12s (transform 321ms, setup 873ms, collect 1.16s, tests 1.24s, environment 1.71s, prepare 499ms)
+

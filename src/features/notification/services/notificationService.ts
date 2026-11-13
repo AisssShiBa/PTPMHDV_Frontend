@@ -3,9 +3,9 @@ import api from '@/lib/axios'
 import type { NotificationListResponse, NotificationItem } from '../types/notification.types'
 
 export const notificationService = {
-  getNotifications: async (page = 1, limit = 10): Promise<NotificationListResponse> => {
+  getNotifications: async (page = 1, limit = 10, signal?: AbortSignal): Promise<NotificationListResponse> => {
     const res = await api.get('/notifications/me', {
-      params: { page, limit }
+      params: { page, limit }, signal
     })
     return res.data.data
   },

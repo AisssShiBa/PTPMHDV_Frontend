@@ -1,0 +1,23 @@
+{
+  "testedAt": "2026-11-13T03:40:01.063531+00:00",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "node": "v22.23.1",
+  "frontendHead": "ec9e7764224c61cb1421008352be5e07688d3e5e",
+  "backendHead": "1792e65f76cf175700900e21ccabea4c055c6aaf",
+  "workingTree": "uncommitted prior-phase implementation; use source-sha256.json",
+  "qualityGate": "PASS",
+  "vitest": {
+    "passed": 108,
+    "files": 11
+  },
+  "mockBrowser": "PASS: Profile 6, Topup 7, Cashout 6, Merchant 6 groups",
+  "live": "PARTIAL_PASS: Profile/KYC 5, Merchant 5, Merchant tools 5 groups",
+  "npmCi": "NOT_RUN: preserved existing installed dependencies",
+  "realVnpaySandbox": "NOT_RUN",
+  "retestedAt": "2026-11-13T03:48:30.134051+00:00",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "gateway": "http://127.0.0.1:40825",
+  "phase3Live": "FAIL_SETUP_PROFILE_NOT_FOUND",
+  "funding": "BLOCKED: live authenticated 401 and string amount 400",
+  "infrastructure": "Gateway/Postgres/Redis/RabbitMQ/MinIO and dependent services started healthy; see stack.txt"
+}

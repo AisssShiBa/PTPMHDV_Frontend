@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-11-13T09:02:29.232008+00:00",
+  "links": {
+    "checked": 143,
+    "missing": []
+  },
+  "sourceHashes": {
+    "checked": 429,
+    "mismatches": []
+  },
+  "publicEvidenceSecretPatternFindings": [],
+  "secretScanLimit": "limited patterns, not a repository-wide audit; private credentials excluded",
+  "privateCredentials": {
+    "mode": "0o600",
+    "gitIgnored": true
+  },
+  "diffCheckExitCodes": {
+    "frontend": 0,
+    "backend": 0
+  },
+  "runningAcceptanceContainers": [],
+  "video": {
+    "duration": "24.160000",
+    "size": "1183920"
+  },
+  "videoSHA256": "ab5d7e9e89fe182be7557746e4bbda659a97053ec2ce218d04469eba48405f0b"
+}
