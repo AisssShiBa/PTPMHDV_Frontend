@@ -1,0 +1,130 @@
+{
+  "status": "PASS",
+  "mode": "p2p",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "testedAt": "2026-11-13T04:45:05.741Z",
+  "checks": [
+    {
+      "scenario": "ambiguousCapture",
+      "startedAt": "2026-11-13T04:45:01.971Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:45:05.546Z"
+    },
+    {
+      "scenario": "global-ledger-conservation",
+      "status": "PASS"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/bce3d72d-c044-4e4f-8751-aa8e966cc8b3/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/456163f6-1f54-4728-96f7-81de864fceef/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/8af0e73f-5cab-452a-a405-4a7f684ed96f/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/456163f6-1f54-4728-96f7-81de864fceef/credit",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/8af0e73f-5cab-452a-a405-4a7f684ed96f/credit",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/payments/checkout",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/setup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/verify",
+      "status": 200
+    }
+  ],
+  "scope": "Existing week2 Wallet/P2P scenario matrix; not a named K18 suite or active Transfer UI"
+}

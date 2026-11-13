@@ -1,0 +1,71 @@
+N15 - Notification Center (Frontend) - evidence
+================================================
+Date: 2026-11-12 (Asia/Ho_Chi_Minh)
+Repo: PTPMHDV_Frontend, branch: nguyen
+OS: Microsoft Windows 11 Home Single Language (NT 10.0.26200.0)
+Node: v24.21.0
+npm: 11.19.0
+Code SHA (HEAD at test time): e10576d44b2bc594bf15352bd810c3aa335f2567
+Base SHA (merge-base with origin/main): 02a44baa2dcaa5b916e0168f344625059b146749
+
+Scope of change
+---------------
+- Rewrote notification feature to call the real backend contract:
+  GET /api/notifications/me, PATCH /api/notifications/{id}/read,
+  PATCH /api/notifications/me/read-all, GET /api/notifications/socket-ticket.
+- Socket.IO now authenticates with auth: { ticket } (fresh ticket per connect
+  attempt); removed the legacy auth.token fallback.
+- Realtime notification:new events are merged into the TanStack Query cache
+  (dedupe by id, then eventId; unreadCount bumped only on feed page 1 and only
+  for unread notifications).
+- Added NotificationBell (mounted in MainLayout), NotificationCenter,
+  NotificationList; NotificationsPage is now a thin page.
+- Deleted src/features/notification/services/notificationService.ts (legacy routes).
+- Tests: tests/notification.test.ts (node:test, rewritten) +
+  src/test/notification-center.test.tsx (vitest, 4 UI states + unknown type).
+
+Commands and actual results
+---------------------------
+1) npm run typecheck
+   PASS - tsc -b --noEmit exited 0.
+
+2) npm run test   (node --import ./tests/register.mjs --test tests/*.test.ts)
+   PASS - tests 35, pass 35, fail 0, skipped 0, duration ~2.9s.
+   Includes the rewritten notification suite: list/markRead/markAllRead/
+   socket ticket/socket origin/socket auth/error mapping/realtime merge dedupe.
+
+3) npm run test:unit   (vitest run)
+   PASS - Test Files 12 passed (12), Tests 64 passed (64), duration ~20.5s.
+   Includes src/test/notification-center.test.tsx: 5/5 passed (loading, error +
+   retry, empty, success list + unread count, unknown notification type).
+
+4) npm run build   (tsc -b && vite build)
+   PASS - 2467 modules transformed, build finished in ~1.6s.
+   Warnings only (pre-existing): configLoader: 'native' `__dirname` notice and
+   chunk > 500 kB notice.
+
+5) npm run lint   (eslint .)
+   FAIL - 33 errors / 33 warnings, all pre-existing outside this task's files:
+   apps/mobile/App.tsx, src/features/admin/*, src/features/auth/components/
+   PinModal.tsx, src/features/merchant/*, src/features/payment/*,
+   src/features/user/*, src/features/wallet/*, src/hooks/*, src/pages/*,
+   src/test/acceptance-k18.test.tsx.
+   N15 scope check (npx eslint src/features/notification
+   src/test/notification-center.test.tsx src/pages/NotificationsPage.tsx
+   src/layouts/MainLayout.tsx): 0 errors, 6 warnings
+   (3x react-refresh/only-export-components in NotificationList.tsx,
+    2x no-console in useNotificationSocket.ts, 1x ignored-file notice for
+    tests/notification.test.ts).
+
+6) npm run check   (lint + typecheck + test + build)
+   FAIL - stops at the lint step above (exit code 1); typecheck/test/build were
+   therefore run separately and passed (items 1, 2, 3, 4).
+
+Summary
+-------
+PASS: typecheck, node tests (35/35), vitest (64/64), production build.
+FAIL: repo-wide lint (pre-existing errors outside N15); `npm run check` cannot
+      go green in this working tree until those unrelated files are fixed.
+SKIP: none.
+NOT_RUN: real backend/Socket.IO end-to-end (no backend services, PostgreSQL or
+      RabbitMQ running locally); socket behavior is covered by unit tests only.

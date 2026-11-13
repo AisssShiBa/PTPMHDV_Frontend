@@ -1,0 +1,22 @@
+{
+  "package-lock.json": "ed553a23c00055a39a2ef75321e144901e9e7ee020f59d917b8fef14155d3b8c",
+  "package.json": "023d378619649399e9ff909aba69bc8c57a23a0c5855e5bf96fe2b8e5b48b48c",
+  "src/features/auth/index.ts": "ba63e3ab72fbf0d49344465852a2043333b45dffc2eb1eda56237d68e09fb1c0",
+  "src/features/user/api/user.queries.ts": "96cde31c1dbe3079d06c330272780e387ca1eac2dbee0e1862ac53ca40ec5242",
+  "src/features/user/components/KycDocumentViewer.tsx": "fc7a1108a1325c443e77c09bd607a90005d54ea62e1b870d1f016209c7fba340",
+  "src/features/user/components/KycForm.tsx": "57acd04b56373b03f0c7f751f538bec2c656f0a8234376e295c31dc902d8728d",
+  "src/features/user/components/KycStatusBadge.tsx": "9c7e87ebf4805f8bf281c578729203beff08a598f718d397053bdcae12c26f83",
+  "src/features/user/components/KycTierBadge.tsx": "40b6c272c2db440aa1cdd762918b4b9e3d7a15434a102b021e4c09af33003e1c",
+  "src/features/user/components/ProfileForm.tsx": "62ea79a8c222d551f30def53bc11490478ccc203bac005b45557cb3c6e6b2dde",
+  "src/features/user/components/UserProfilePanel.tsx": "cfdd973a0271b48456825d8f66209a4fbe17430a9640eb6462f03e61ab68284d",
+  "src/features/user/hooks/useRecipientLookup.ts": "79f9a0e2b8ec237eecb41e6029eb18860de71b024ac52f19bfb000ad21d83bca",
+  "src/features/user/hooks/useUserProfile.ts": "3ef45d5e4ce37c3abad67fdbae4931be1ab33d7fbc1bdfac712a0762c459a75b",
+  "src/features/user/index.ts": "34719e404694fc3d3aa525799bd965538d5124bec11d76f6e0b1d5816611e407",
+  "src/features/user/schemas/recipient.schema.ts": "7acd4044461f9f16d03ffe435b9765e821692cfc7071fbb706085acbf543758f",
+  "src/features/user/schemas/user.schema.ts": "7ad221b99970cd9df51bbff2d2331ead0475d019acc603e9b7946af491c5cc3d",
+  "src/features/user/services/userService.ts": "ab4948e68e6a75d7e9cf28825717c3262ac4935b70ae5dd1475c4f6243b6f860",
+  "src/features/user/types/user.types.ts": "a1baa5e2d0f6a336f409b61cb609ec5e94b7bd975aab2350089cc36900859a43",
+  "src/pages/ProfilePage.tsx": "b64f145a36ac9bd5eba49ee3e89a80727a784d5cae0383844146f3172fa33f67",
+  "src/test/userProfile.test.tsx": "1024032c599ef85f1160d07f5e0790294f5e954a6149086a757ca466f37ca4b6",
+  "vitest.config.ts": "05a9554b005c864391e80e9f4034563bbdd9be237cab86d2e5e783af446a6369"
+}

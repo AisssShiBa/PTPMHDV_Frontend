@@ -17,7 +17,9 @@ import {
   Wallet
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { formatVnd } from '@/lib/format'
+import { formatVndExact } from '@/lib/format'
+import { useWalletBalance } from '@/features/wallet'
+import { NotificationBell } from '@/features/notification'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -49,6 +51,8 @@ const mainNavItems: NavItem[] = [
 
 export function MainLayout() {
   const { user, signOut } = useAuthStore()
+  const wallet = useWalletBalance()
+  const displayedBalance = wallet.isError ? 'Chưa tải được' : wallet.data ? `${formatVndExact(wallet.data.availableBalance)} ₫` : 'Đang tải…'
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -150,7 +154,7 @@ export function MainLayout() {
                 </Badge>
               </div>
               <p className="mt-1 text-base font-bold text-primary">
-                {formatVnd(user?.balance ?? '0')}
+                {displayedBalance}
               </p>
             </div>
           </div>
@@ -199,7 +203,7 @@ export function MainLayout() {
               {/* Chip Số dư */}
               <div className="hidden sm:flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs">
                 <span className="text-muted-foreground">Số dư:</span>
-                <span className="font-semibold text-primary">{formatVnd(user?.balance ?? '0')}</span>
+                <span className="font-semibold text-primary">{displayedBalance}</span>
               </div>
 
               {/* Chip Cấp KYC */}
@@ -207,24 +211,13 @@ export function MainLayout() {
                 Cấp {user?.kycTier ?? 0}
               </Badge>
 
-              {/* Slot chuông thông báo */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
-                aria-label="Thông báo"
-                onClick={() => navigate('/app/notifications')}
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-600 text-white text-[10px] font-bold shadow-xs">
-                  3
-                </span>
-              </Button>
+              {/* Chuông thông báo thật (socket + unreadCount từ API) */}
+              <NotificationBell />
 
               {/* User Avatar Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                  <Button aria-label="Tài khoản" variant="ghost" className="relative h-9 w-9 rounded-full p-0">
                     <Avatar className="h-9 w-9 border border-border">
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
                         {user?.firstName ? user.firstName[0] : (user?.username?.[0]?.toUpperCase() ?? 'U')}
@@ -246,7 +239,7 @@ export function MainLayout() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/app/notifications')}>
                     <Bell className="mr-2 h-4 w-4" />
-                    <span>Thông báo (3 mới)</span>
+                    <span>Thông báo</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/app/transfer')}>
                     <Send className="mr-2 h-4 w-4" />
@@ -267,9 +260,9 @@ export function MainLayout() {
             <Outlet />
           </main>
 
-          {/* Clean Commercial Footer */}
+          {/* Educational project notice */}
           <footer className="border-t border-border py-4 px-6 text-center text-xs text-muted-foreground bg-card/40">
-            <p>© 2026 FinVault. Nền tảng thanh toán số & Ví điện tử cá nhân. Tất cả các quyền được bảo lưu.</p>
+            <p>FinVault là đồ án học tập mô phỏng ví điện tử, không phải dịch vụ tài chính thật.</p>
           </footer>
         </div>
       </div>

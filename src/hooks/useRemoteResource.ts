@@ -1,38 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-
-type Resource<T> =
-  | { key: string; status: 'loading'; data?: undefined; error?: undefined }
-  | { key: string; status: 'success'; data: T; error?: undefined }
-  | { key: string; status: 'error'; data?: undefined; error: unknown }
+import { useCallback, useId, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 export function useRemoteResource<T>(key: string, load: (key: string, signal: AbortSignal) => Promise<T>) {
+  const owner = useId()
+  const client = useQueryClient()
   const [revision, setRevision] = useState(0)
-  const [state, setState] = useState<Resource<T>>({ key, status: 'loading' })
-  const request = useRef(0)
-  useEffect(() => {
-    const controller = new AbortController()
-    const version = ++request.current
-    setState({ key, status: 'loading' })
-    void load(key, controller.signal).then(
-      (data) => {
-        if (!controller.signal.aborted && request.current === version) setState({ key, status: 'success', data })
-      },
-      (error: unknown) => {
-        if (!controller.signal.aborted && request.current === version) setState({ key, status: 'error', error })
-      }
-    )
-    return () => { controller.abort(); request.current += 1 }
-  }, [key, load, revision])
+  const queryKey = ['remote-resource', owner, key, revision] as const
+  const query = useQuery({ queryKey, queryFn: ({ signal }) => load(key, signal), gcTime: 0, retry: false })
   const reload = useCallback(() => setRevision((value) => value + 1), [])
-  const replace = useCallback((value: T | ((previous: T | undefined) => T)) => {
-    request.current += 1
-    setState((previous) => {
-      const data = typeof value === 'function'
-        ? (value as (previous: T | undefined) => T)(previous.key === key ? previous.data : undefined)
-        : value
-      return { key, status: 'success', data }
-    })
-  }, [key])
-  const current: Resource<T> = state.key === key ? state : { key, status: 'loading' }
-  return { ...current, reload, replace }
+  const replace = (value: T | ((previous: T | undefined) => T)) => {
+    void client.cancelQueries({ queryKey, exact: true })
+    client.setQueryData<T>(queryKey, value)
+  }
+  return { key, status: query.isPending ? 'loading' as const : query.status, data: query.data, error: query.error, reload, replace }
 }

@@ -1,0 +1,92 @@
+
+> frontend@0.0.0 test:cashout:browser
+> node tests/cashout-browser.mjs
+
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:10:25). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+vite v8.2.1 building client environment for production...
+[2Ktransforming...✓ 2247 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                    0.94 kB │ gzip:   0.42 kB
+dist/assets/be-vietnam-pro-vietnamese-400-normal-BuGn0gnm.woff     6.56 kB
+dist/assets/be-vietnam-pro-vietnamese-600-normal-DkpCIyan.woff     6.88 kB
+dist/assets/be-vietnam-pro-vietnamese-500-normal-CfdwVo8-.woff     6.88 kB
+dist/assets/be-vietnam-pro-vietnamese-700-normal-By_5yT39.woff     6.89 kB
+dist/assets/be-vietnam-pro-latin-ext-400-normal-DYBYyMQr.woff      8.90 kB
+dist/assets/be-vietnam-pro-latin-ext-700-normal-4Hjo2OtD.woff      9.18 kB
+dist/assets/be-vietnam-pro-latin-ext-500-normal-CK0UkkKf.woff      9.20 kB
+dist/assets/be-vietnam-pro-latin-ext-600-normal-BeUwKxhG.woff      9.22 kB
+dist/assets/be-vietnam-pro-vietnamese-400-normal-CRcqvyg1.woff2   11.53 kB
+dist/assets/be-vietnam-pro-vietnamese-500-normal-DREgrEoJ.woff2   12.17 kB
+dist/assets/be-vietnam-pro-vietnamese-600-normal-nyU-ZL2p.woff2   12.17 kB
+dist/assets/be-vietnam-pro-vietnamese-700-normal-Csr0PCuG.woff2   12.46 kB
+dist/assets/be-vietnam-pro-latin-ext-400-normal-CiZNW1ec.woff2    13.05 kB
+dist/assets/be-vietnam-pro-latin-ext-500-normal-h0Fp6aX0.woff2    13.54 kB
+dist/assets/be-vietnam-pro-latin-ext-600-normal-BNd8euf0.woff2    13.60 kB
+dist/assets/be-vietnam-pro-latin-ext-700-normal-C8_gqRu2.woff2    13.85 kB
+dist/assets/be-vietnam-pro-latin-400-normal-bXgqVju9.woff         16.43 kB
+dist/assets/be-vietnam-pro-latin-700-normal-C2EtzaOi.woff         16.90 kB
+dist/assets/be-vietnam-pro-latin-500-normal-BJkVuMHw.woff         16.99 kB
+dist/assets/be-vietnam-pro-latin-600-normal-5IO4e7bK.woff         17.01 kB
+dist/assets/be-vietnam-pro-latin-400-normal-PpnXBOrz.woff2        21.16 kB
+dist/assets/be-vietnam-pro-latin-500-normal-B6LVzGNe.woff2        21.89 kB
+dist/assets/be-vietnam-pro-latin-600-normal-BZDkUTrt.woff2        22.03 kB
+dist/assets/be-vietnam-pro-latin-700-normal-DlW1Zbsh.woff2        22.15 kB
+dist/assets/index-BGUEDuub.css                                   156.72 kB │ gzip:  22.59 kB
+dist/assets/arrow-right-D9_fp_Qp.js                                0.15 kB │ gzip:   0.15 kB
+dist/assets/WithdrawPage-BaqPS_sT.js                               0.16 kB │ gzip:   0.15 kB
+dist/assets/TopupPage-JbUHt-9a.js                                  0.16 kB │ gzip:   0.15 kB
+dist/assets/AdminKycPage-TYIBu-aP.js                               0.16 kB │ gzip:   0.15 kB
+dist/assets/AdminTopupPage-CDteV7rk.js                             0.16 kB │ gzip:   0.15 kB
+dist/assets/MerchantPortalPage-BP-N9gA3.js                         0.16 kB │ gzip:   0.15 kB
+dist/assets/NotificationsPage-CYeU8y1C.js                          0.17 kB │ gzip:   0.15 kB
+dist/assets/AdminDashboardPage-WX5Dq4R2.js                         0.17 kB │ gzip:   0.15 kB
+dist/assets/AdminReconciliationPage-2hRE_Lv6.js                    0.17 kB │ gzip:   0.15 kB
+dist/assets/TopupResult-DaYBcjA0.js                                0.17 kB │ gzip:   0.16 kB
+dist/assets/MerchantRegisterPage-BvOWFoTt.js                       0.18 kB │ gzip:   0.16 kB
+dist/assets/smartphone-BtyfY80H.js                                 0.18 kB │ gzip:   0.17 kB
+dist/assets/info-Bi79HauT.js                                       0.19 kB │ gzip:   0.17 kB
+dist/assets/copy-9BXC2Sws.js                                       0.22 kB │ gzip:   0.19 kB
+dist/assets/arrow-right-left-DGW5SUP5.js                           0.23 kB │ gzip:   0.18 kB
+dist/assets/house-CokQp39j.js                                      0.27 kB │ gzip:   0.20 kB
+dist/assets/printer-DjxOEQmt.js                                    0.30 kB │ gzip:   0.22 kB
+dist/assets/sparkles-DYcV6v8D.js                                   0.48 kB │ gzip:   0.27 kB
+dist/assets/input-DGXA7u4l.js                                      0.57 kB │ gzip:   0.36 kB
+dist/assets/payment-Df0s6AVF.js                                    0.60 kB │ gzip:   0.30 kB
+dist/assets/qr-code-BqPYkwLV.js                                    0.64 kB │ gzip:   0.30 kB
+dist/assets/label-CjzsuyT4.js                                      0.64 kB │ gzip:   0.43 kB
+dist/assets/EmptyState-b5AkwuwF.js                                 1.03 kB │ gzip:   0.58 kB
+dist/assets/dist-C5Mja5Hu.js                                       1.24 kB │ gzip:   0.72 kB
+dist/assets/userService-DeNO_scN.js                                1.62 kB │ gzip:   0.87 kB
+dist/assets/auth.schema-CJw87xzI.js                                2.05 kB │ gzip:   0.88 kB
+dist/assets/ForbiddenPage-CtRHgBS3.js                              3.04 kB │ gzip:   1.31 kB
+dist/assets/NotFoundPage-CdYMruCC.js                               4.02 kB │ gzip:   1.45 kB
+dist/assets/dist-KZM-baSC.js                                       7.47 kB │ gzip:   2.83 kB
+dist/assets/SignUpPage-vPd-dNJ9.js                                 7.50 kB │ gzip:   2.44 kB
+dist/assets/QrLoginPage-Do4XOl-C.js                                8.44 kB │ gzip:   2.33 kB
+dist/assets/SignInPage-CwH7vtq2.js                                13.10 kB │ gzip:   3.89 kB
+dist/assets/ProfilePage-CM7rw5DO.js                               14.34 kB │ gzip:   5.02 kB
+dist/assets/DashboardPage-JXoLs6Za.js                             16.38 kB │ gzip:   4.37 kB
+dist/assets/HomePage-CmPvnrWr.js                                  19.97 kB │ gzip:   4.02 kB
+dist/assets/TransactionsPage-CXpFVPVr.js                          20.30 kB │ gzip:   5.42 kB
+dist/assets/funding-BDtLeCUv.js                                   22.28 kB │ gzip:   7.04 kB
+dist/assets/zod-v4weDsJT.js                                       33.00 kB │ gzip:  11.86 kB
+dist/assets/merchant-KuongdpD.js                                  34.02 kB │ gzip:  11.89 kB
+dist/assets/TransferPage-YNzuJXdk.js                              34.25 kB │ gzip:   8.14 kB
+dist/assets/UtilitiesPage-CEF3HKbE.js                             36.28 kB │ gzip:   9.40 kB
+dist/assets/dist-Co7-8tfg.js                                      36.99 kB │ gzip:  10.50 kB
+dist/assets/button-j6UdX4Xb.js                                    42.40 kB │ gzip:  14.40 kB
+dist/assets/dialog-d6gbDKKj.js                                    56.16 kB │ gzip:  19.06 kB
+dist/assets/useAuthStore-DXoOueh_.js                              57.32 kB │ gzip:  21.54 kB
+dist/assets/admin-D_Cbl6ua.js                                     64.53 kB │ gzip:  13.73 kB
+dist/assets/schemas-DqUEwhfT.js                                   66.50 kB │ gzip:  17.84 kB
+dist/assets/index-7HcJ2kfD.js                                    451.84 kB │ gzip: 140.38 kB
+
+✓ built in 499ms
+PASS: Phase 4 cashout production browser, 6 HTTP-fixture groups; live Gateway/ledger NOT_RUN

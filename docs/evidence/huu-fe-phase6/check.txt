@@ -1,0 +1,319 @@
+
+> frontend@0.0.0 check
+> npm run lint && npm run typecheck && npm run test && npm run build
+
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+> frontend@0.0.0 typecheck
+> tsc -b --noEmit
+
+
+> frontend@0.0.0 test
+> node --import ./tests/register.mjs --test tests/*.test.ts
+
+TAP version 13
+# Subtest: signin unwraps backend session and avoids nonexistent /user/me
+ok 1 - signin unwraps backend session and avoids nonexistent /user/me
+  ---
+  duration_ms: 3.945396
+  type: 'test'
+  ...
+# Subtest: failed signin returns false so the form does not navigate
+ok 2 - failed signin returns false so the form does not navigate
+  ---
+  duration_ms: 1.224681
+  type: 'test'
+  ...
+# Subtest: initialization restores the session once even with duplicate mount effects
+ok 3 - initialization restores the session once even with duplicate mount effects
+  ---
+  duration_ms: 11.69239
+  type: 'test'
+  ...
+# Subtest: concurrent 401s share one refresh and replay requests with the new token
+ok 4 - concurrent 401s share one refresh and replay requests with the new token
+  ---
+  duration_ms: 17.357334
+  type: 'test'
+  ...
+# Subtest: 403 does not trigger refresh
+ok 5 - 403 does not trigger refresh
+  ---
+  duration_ms: 0.933248
+  type: 'test'
+  ...
+# Subtest: failed refresh clears the session and does not loop
+ok 6 - failed refresh clears the session and does not loop
+  ---
+  duration_ms: 0.617703
+  type: 'test'
+  ...
+# Subtest: a retried 401 is not refreshed indefinitely
+ok 7 - a retried 401 is not refreshed indefinitely
+  ---
+  duration_ms: 0.669926
+  type: 'test'
+  ...
+# Subtest: logout during refresh cannot restore the old session
+ok 8 - logout during refresh cannot restore the old session
+  ---
+  duration_ms: 0.470675
+  type: 'test'
+  ...
+# Subtest: old account request is never retried with a new account session
+ok 9 - old account request is never retried with a new account session
+  ---
+  duration_ms: 0.462442
+  type: 'test'
+  ...
+# Subtest: KYC service sends both images and idNumber to the current-user endpoint with bearer auth
+ok 10 - KYC service sends both images and idNumber to the current-user endpoint with bearer auth
+  ---
+  duration_ms: 1.04529
+  type: 'test'
+  ...
+# Subtest: admin KYC uses audited endpoints, exact mutation fields and response envelopes
+ok 11 - admin KYC uses audited endpoints, exact mutation fields and response envelopes
+  ---
+  duration_ms: 0.872916
+  type: 'test'
+  ...
+# Subtest: merchant lookup accepts null but never treats 404 as an empty registration
+ok 12 - merchant lookup accepts null but never treats 404 as an empty registration
+  ---
+  duration_ms: 1.277007
+  type: 'test'
+  ...
+# Subtest: recipient lookup uses authenticated exact search, cancellation and only the masked contract
+ok 13 - recipient lookup uses authenticated exact search, cancellation and only the masked contract
+  ---
+  duration_ms: 2.00244
+  type: 'test'
+  ...
+# Subtest: transfer preserves the caller reference when reconciling an uncertain attempt
+ok 14 - transfer preserves the caller reference when reconciling an uncertain attempt
+  ---
+  duration_ms: 0.655286
+  type: 'test'
+  ...
+# Subtest: profile accepts nullable initial values and only updates changed allowed fields
+ok 15 - profile accepts nullable initial values and only updates changed allowed fields
+  ---
+  duration_ms: 3.813302
+  type: 'test'
+  ...
+# Subtest: clearing an existing profile field is rejected instead of silently claiming it was saved
+ok 16 - clearing an existing profile field is rejected instead of silently claiming it was saved
+  ---
+  duration_ms: 1.247687
+  type: 'test'
+  ...
+# Subtest: profile backend length limits and no-change payload
+ok 17 - profile backend length limits and no-change payload
+  ---
+  duration_ms: 0.833826
+  type: 'test'
+  ...
+# Subtest: KYC supports alphanumeric passport and validates actual file selection, type and size
+ok 18 - KYC supports alphanumeric passport and validates actual file selection, type and size
+  ---
+  duration_ms: 7.053594
+  type: 'test'
+  ...
+# Subtest: merchant requires only businessName and omits blank optional fields / ownerId
+ok 19 - merchant requires only businessName and omits blank optional fields / ownerId
+  ---
+  duration_ms: 0.597672
+  type: 'test'
+  ...
+# Subtest: envelope distinguishes explicit empty data from malformed or failed responses
+ok 20 - envelope distinguishes explicit empty data from malformed or failed responses
+  ---
+  duration_ms: 0.25617
+  type: 'test'
+  ...
+# Subtest: recipient lookup preserves exact phone spelling and email while rejecting partial input
+ok 21 - recipient lookup preserves exact phone spelling and email while rejecting partial input
+  ---
+  duration_ms: 1.178792
+  type: 'test'
+  ...
+# Subtest: lookup cooldown respects Retry-After seconds/date and falls back to 60s
+ok 22 - lookup cooldown respects Retry-After seconds/date and falls back to 60s
+  ---
+  duration_ms: 0.331109
+  type: 'test'
+  ...
+# Subtest: notification list uses authenticated /me route and unwraps paginated data
+ok 23 - notification list uses authenticated /me route and unwraps paginated data
+  ---
+  duration_ms: 4.089965
+  type: 'test'
+  ...
+# Subtest: mark all read uses the authenticated /me route
+ok 24 - mark all read uses the authenticated /me route
+  ---
+  duration_ms: 0.716952
+  type: 'test'
+  ...
+# Subtest: mark read encodes the notification id and returns the updated notification
+ok 25 - mark read encodes the notification id and returns the updated notification
+  ---
+  duration_ms: 0.4396
+  type: 'test'
+  ...
+# Subtest: socket ticket is fetched through the authenticated route and validated
+ok 26 - socket ticket is fetched through the authenticated route and validated
+  ---
+  duration_ms: 0.477299
+  type: 'test'
+  ...
+# Subtest: socket ticket rejects a malformed success response
+ok 27 - socket ticket rejects a malformed success response
+  ---
+  duration_ms: 0.994583
+  type: 'test'
+  ...
+# Subtest: notification failures preserve backend 404 error and requestId details
+ok 28 - notification failures preserve backend 404 error and requestId details
+  ---
+  duration_ms: 1.045045
+  type: 'test'
+  ...
+# Subtest: socket origin follows an absolute API base URL
+ok 29 - socket origin follows an absolute API base URL
+  ---
+  duration_ms: 0.264848
+  type: 'test'
+  ...
+# Subtest: relative API base URL uses the current page origin
+ok 30 - relative API base URL uses the current page origin
+  ---
+  duration_ms: 0.111145
+  type: 'test'
+  ...
+# Subtest: socket auth obtains a fresh ticket every time Socket.IO requests auth
+ok 31 - socket auth obtains a fresh ticket every time Socket.IO requests auth
+  ---
+  duration_ms: 0.30662
+  type: 'test'
+  ...
+# Subtest: socket auth reports ticket failures and does not send an empty token
+ok 32 - socket auth reports ticket failures and does not send an empty token
+  ---
+  duration_ms: 0.384506
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 738.404935
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:10:25). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+vite v8.2.1 building client environment for production...
+[2Ktransforming...✓ 2176 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                    1.57 kB │ gzip:   0.55 kB
+dist/assets/be-vietnam-pro-vietnamese-400-normal-BuGn0gnm.woff     6.56 kB
+dist/assets/be-vietnam-pro-vietnamese-600-normal-DkpCIyan.woff     6.88 kB
+dist/assets/be-vietnam-pro-vietnamese-500-normal-CfdwVo8-.woff     6.88 kB
+dist/assets/be-vietnam-pro-vietnamese-700-normal-By_5yT39.woff     6.89 kB
+dist/assets/be-vietnam-pro-latin-ext-400-normal-DYBYyMQr.woff      8.90 kB
+dist/assets/be-vietnam-pro-latin-ext-700-normal-4Hjo2OtD.woff      9.18 kB
+dist/assets/be-vietnam-pro-latin-ext-500-normal-CK0UkkKf.woff      9.20 kB
+dist/assets/be-vietnam-pro-latin-ext-600-normal-BeUwKxhG.woff      9.22 kB
+dist/assets/be-vietnam-pro-vietnamese-400-normal-CRcqvyg1.woff2   11.53 kB
+dist/assets/be-vietnam-pro-vietnamese-500-normal-DREgrEoJ.woff2   12.17 kB
+dist/assets/be-vietnam-pro-vietnamese-600-normal-nyU-ZL2p.woff2   12.17 kB
+dist/assets/be-vietnam-pro-vietnamese-700-normal-Csr0PCuG.woff2   12.46 kB
+dist/assets/be-vietnam-pro-latin-ext-400-normal-CiZNW1ec.woff2    13.05 kB
+dist/assets/be-vietnam-pro-latin-ext-500-normal-h0Fp6aX0.woff2    13.54 kB
+dist/assets/be-vietnam-pro-latin-ext-600-normal-BNd8euf0.woff2    13.60 kB
+dist/assets/be-vietnam-pro-latin-ext-700-normal-C8_gqRu2.woff2    13.85 kB
+dist/assets/be-vietnam-pro-latin-400-normal-bXgqVju9.woff         16.43 kB
+dist/assets/be-vietnam-pro-latin-700-normal-C2EtzaOi.woff         16.90 kB
+dist/assets/be-vietnam-pro-latin-500-normal-BJkVuMHw.woff         16.99 kB
+dist/assets/be-vietnam-pro-latin-600-normal-5IO4e7bK.woff         17.01 kB
+dist/assets/be-vietnam-pro-latin-400-normal-PpnXBOrz.woff2        21.16 kB
+dist/assets/be-vietnam-pro-latin-500-normal-B6LVzGNe.woff2        21.89 kB
+dist/assets/be-vietnam-pro-latin-600-normal-BZDkUTrt.woff2        22.03 kB
+dist/assets/be-vietnam-pro-latin-700-normal-DlW1Zbsh.woff2        22.15 kB
+dist/assets/index-CxFPI6Me.css                                   144.32 kB │ gzip:  21.16 kB
+dist/assets/queryOptions-Dfvzj6n2.js                               0.03 kB │ gzip:   0.05 kB
+dist/assets/TopupResult-DnDouUC2.js                                0.14 kB │ gzip:   0.14 kB
+dist/assets/arrow-right-D9_fp_Qp.js                                0.15 kB │ gzip:   0.15 kB
+dist/assets/clock-fDD2RJ4i.js                                      0.15 kB │ gzip:   0.15 kB
+dist/assets/WithdrawPage-DqzvX1fW.js                               0.16 kB │ gzip:   0.15 kB
+dist/assets/TopupPage-BaZ_aRzP.js                                  0.16 kB │ gzip:   0.15 kB
+dist/assets/trending-up-BF5ZAgXw.js                                0.16 kB │ gzip:   0.16 kB
+dist/assets/MerchantPortalPage-sjQhgesW.js                         0.16 kB │ gzip:   0.15 kB
+dist/assets/MerchantRegisterPage-Bbizhs05.js                       0.18 kB │ gzip:   0.16 kB
+dist/assets/smartphone-BtyfY80H.js                                 0.18 kB │ gzip:   0.17 kB
+dist/assets/info-Bi79HauT.js                                       0.19 kB │ gzip:   0.17 kB
+dist/assets/lock-Bdz6225q.js                                       0.19 kB │ gzip:   0.18 kB
+dist/assets/circle-x-CFTKgA9f.js                                   0.19 kB │ gzip:   0.16 kB
+dist/assets/dollar-sign-D36yGtfV.js                                0.20 kB │ gzip:   0.18 kB
+dist/assets/download-1ikjtnVb.js                                   0.22 kB │ gzip:   0.18 kB
+dist/assets/copy-9BXC2Sws.js                                       0.22 kB │ gzip:   0.19 kB
+dist/assets/arrow-right-left-DGW5SUP5.js                           0.23 kB │ gzip:   0.18 kB
+dist/assets/circle-alert-DDqCZTRN.js                               0.24 kB │ gzip:   0.17 kB
+dist/assets/triangle-alert-Bj84k5nH.js                             0.25 kB │ gzip:   0.20 kB
+dist/assets/house-CokQp39j.js                                      0.27 kB │ gzip:   0.20 kB
+dist/assets/badge-check-B3Ciff48.js                                0.30 kB │ gzip:   0.20 kB
+dist/assets/shield-check-BP0tcuyk.js                               0.31 kB │ gzip:   0.24 kB
+dist/assets/refresh-cw-B-KOtKGA.js                                 0.31 kB │ gzip:   0.21 kB
+dist/assets/shield-alert-CCKwUNcx.js                               0.34 kB │ gzip:   0.25 kB
+dist/assets/rotate-ccw-DqJETvuW.js                                 0.45 kB │ gzip:   0.29 kB
+dist/assets/sparkles-DYcV6v8D.js                                   0.48 kB │ gzip:   0.27 kB
+dist/assets/format-mbz6FBlG.js                                     0.54 kB │ gzip:   0.32 kB
+dist/assets/input-DGXA7u4l.js                                      0.57 kB │ gzip:   0.36 kB
+dist/assets/eye-BUuxQZRr.js                                        0.62 kB │ gzip:   0.33 kB
+dist/assets/qr-code-BqPYkwLV.js                                    0.64 kB │ gzip:   0.30 kB
+dist/assets/label-DC0VJQyC.js                                      0.64 kB │ gzip:   0.43 kB
+dist/assets/dist-EJi3cMjp.js                                       0.66 kB │ gzip:   0.45 kB
+dist/assets/card-C_5uhItP.js                                       1.02 kB │ gzip:   0.38 kB
+dist/assets/QueryBoundary-gM2MMUKn.js                              1.58 kB │ gzip:   0.77 kB
+dist/assets/auth.schema-BwnY4zEi.js                                2.05 kB │ gzip:   0.88 kB
+dist/assets/ForbiddenPage-RWtk7JnD.js                              2.80 kB │ gzip:   1.18 kB
+dist/assets/NotFoundPage-DBh32niu.js                               4.06 kB │ gzip:   1.47 kB
+dist/assets/dist-KZM-baSC.js                                       7.47 kB │ gzip:   2.83 kB
+dist/assets/SignUpPage-rPZYmU_n.js                                 7.60 kB │ gzip:   2.49 kB
+dist/assets/PinModal-D1Mrbnqf.js                                   7.88 kB │ gzip:   3.03 kB
+dist/assets/QrLoginPage-CidsndRZ.js                                8.62 kB │ gzip:   2.40 kB
+dist/assets/SignInPage-Q1O8qJbo.js                                12.98 kB │ gzip:   3.93 kB
+dist/assets/NotificationsPage-CQ8ouOKS.js                         14.35 kB │ gzip:   3.84 kB
+dist/assets/DashboardPage-BekeL4di.js                             14.61 kB │ gzip:   3.69 kB
+dist/assets/AdminReconciliationPage-oSAEULnH.js                   15.46 kB │ gzip:   4.36 kB
+dist/assets/ProfilePage-DMTsXV0u.js                               15.69 kB │ gzip:   5.45 kB
+dist/assets/AdminKycPage-Bvv-Cml4.js                              19.32 kB │ gzip:   4.92 kB
+dist/assets/AdminTopupPage-52VSr0pZ.js                            19.54 kB │ gzip:   4.81 kB
+dist/assets/HomePage-DH1_ZqYm.js                                  20.11 kB │ gzip:   4.07 kB
+dist/assets/TransactionsPage-DiAxXXt0.js                          21.02 kB │ gzip:   5.58 kB
+dist/assets/AdminDashboardPage-C11z1Ili.js                        21.29 kB │ gzip:   4.93 kB
+dist/assets/TransferPage-CspjzWL3.js                              22.18 kB │ gzip:   5.09 kB
+dist/assets/funding-Dv9w3jnA.js                                   22.36 kB │ gzip:   7.11 kB
+dist/assets/auth-DPCfwU1r.js                                      22.77 kB │ gzip:   7.60 kB
+dist/assets/UtilitiesPage-CDTE2niw.js                             26.34 kB │ gzip:   5.91 kB
+dist/assets/dialog-0T9rI0Iz.js                                    30.29 kB │ gzip:  10.57 kB
+dist/assets/merchant-zPIcg-B7.js                                  34.20 kB │ gzip:  11.95 kB
+dist/assets/dist-Co7-8tfg.js                                      36.99 kB │ gzip:  10.50 kB
+dist/assets/button-j6UdX4Xb.js                                    42.40 kB │ gzip:  14.40 kB
+dist/assets/useAuthStore-DlUdIQQp.js                              56.98 kB │ gzip:  21.38 kB
+dist/assets/zod-BPZZBKLR.js                                       99.74 kB │ gzip:  29.40 kB
+dist/assets/index-DmzI4N-u.js                                    379.14 kB │ gzip: 118.94 kB
+
+✓ built in 460ms

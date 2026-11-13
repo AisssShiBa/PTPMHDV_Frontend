@@ -1,0 +1,5 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+sh: line 1: eslint: command not found

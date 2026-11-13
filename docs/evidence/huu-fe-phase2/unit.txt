@@ -1,0 +1,23 @@
+
+> frontend@0.0.0 test:unit
+> vitest run
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ✓ src/test/format.test.ts (8 tests) 23ms
+ ✓ src/test/apiResponse.test.ts (4 tests) 21ms
+ ✓ src/test/axios.test.ts (4 tests) 306ms
+ ✓ src/test/funding.test.tsx (19 tests) 295ms
+ ✓ src/test/notificationBell.test.tsx (2 tests) 521ms
+   ✓ decrements the unread count once when the same notification is clicked twice  410ms
+ ✓ src/test/transactionSafety.test.tsx (5 tests) 972ms
+   ✓ Transaction PIN > cannot issue a fake token when the caller has no bound order  508ms
+ ✓ src/test/userProfile.test.tsx (12 tests) 1194ms
+   ✓ Profile and KYC integration > saves changed profile fields through PUT and reads them again after remount  548ms
+
+ Test Files  7 passed (7)
+      Tests  54 passed (54)
+   Start at  19:23:14
+   Duration  4.16s (transform 930ms, setup 2.19s, collect 4.53s, tests 3.33s, environment 4.98s, prepare 1.35s)
+

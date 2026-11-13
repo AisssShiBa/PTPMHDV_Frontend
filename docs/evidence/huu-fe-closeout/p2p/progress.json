@@ -1,0 +1,71 @@
+[
+  {
+    "scenario": "a4",
+    "startedAt": "2026-11-13T04:36:34.363Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:36:36.297Z"
+  },
+  {
+    "scenario": "s4",
+    "startedAt": "2026-11-13T04:36:36.298Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:36:37.884Z"
+  },
+  {
+    "scenario": "s5",
+    "startedAt": "2026-11-13T04:36:37.885Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:36:39.234Z"
+  },
+  {
+    "scenario": "a9",
+    "startedAt": "2026-11-13T04:36:39.235Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:36:41.706Z"
+  },
+  {
+    "scenario": "s6",
+    "startedAt": "2026-11-13T04:36:41.706Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:37:36.661Z"
+  },
+  {
+    "scenario": "s15",
+    "startedAt": "2026-11-13T04:37:36.661Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:37:38.372Z"
+  },
+  {
+    "scenario": "concurrentConfirm",
+    "startedAt": "2026-11-13T04:37:38.373Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:37:39.924Z"
+  },
+  {
+    "scenario": "ambiguousCapture",
+    "startedAt": "2026-11-13T04:37:39.924Z",
+    "status": "FAIL",
+    "error": "Container scenario command failed; inspect protected runtime diagnostics",
+    "finishedAt": "2026-11-13T04:37:42.112Z"
+  },
+  {
+    "scenario": "s8",
+    "startedAt": "2026-11-13T04:37:42.113Z",
+    "status": "FAIL",
+    "error": "Capture failure did not recover",
+    "finishedAt": "2026-11-13T04:38:19.375Z"
+  },
+  {
+    "scenario": "s16",
+    "startedAt": "2026-11-13T04:38:19.376Z",
+    "status": "FAIL",
+    "error": "Expected values to be strictly equal:",
+    "finishedAt": "2026-11-13T04:38:38.618Z"
+  },
+  {
+    "scenario": "realtime",
+    "startedAt": "2026-11-13T04:38:38.619Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:38:45.560Z"
+  }
+]

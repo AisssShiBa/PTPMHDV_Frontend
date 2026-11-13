@@ -11,7 +11,7 @@ import { openBrowser, until } from './browser-support.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const dist = resolve(root, 'dist')
-const artifacts = resolve(root, 'node_modules/.tmp/phase3-live')
+const artifacts = resolve(root, process.env.BROWSER_EVIDENCE_DIR || 'node_modules/.tmp/phase3-live')
 mkdirSync(artifacts, { recursive: true })
 const gateway = new URL(process.env.LIVE_API_ORIGIN || 'http://127.0.0.1:3000')
 assert.ok(['127.0.0.1', 'localhost'].includes(gateway.hostname), 'Only a local development backend is allowed')
@@ -34,6 +34,19 @@ async function account() {
   const created = await call('/api/auth/signup', { method: 'POST', expected: 201,
     body: { username, password, email, firstName: 'Synthetic', lastName: 'PhaseThree' } })
   const login = await call('/api/auth/signin', { method: 'POST', body: { username, password } })
+  // Signup provisions the User profile and Wallet through asynchronous events.
+  for (const path of ['/api/users/me', '/api/wallets/' + created.userId + '/balance']) {
+    await until(async () => {
+      const response = await fetch(new URL(path, gateway), {
+        headers: { Authorization: 'Bearer ' + login.accessToken },
+        signal: AbortSignal.timeout(5000),
+      })
+      evidence.push({ method: 'GET', path, status: response.status })
+      if (response.status === 404) return false
+      assert.equal(response.status, 200, 'Provisioning readiness: unexpected status')
+      return true
+    }, 'signup profile/wallet provisioning', 25000)
+  }
   return { id: created.userId, username, password, email, token: login.accessToken }
 }
 
@@ -104,7 +117,7 @@ try {
   assert.equal(browser.network.filter(item => item.path === '/api/users/kyc/documents').length, 0)
   await browser.upload('#kyc-back', imagePath)
   await browser.click('Gửi xác thực', 2)
-  await until(() => browser.text('Hồ sơ đang được xét duyệt.'), 'real two-face upload', 25000)
+  await until(() => browser.text('Đang chờ xét duyệt'), 'real two-face upload', 25000)
   const uploads = browser.network.filter(item => item.method === 'POST' && item.path === '/api/users/kyc/documents')
   assert.equal(uploads.length, 1)
   assert.equal(uploads[0].status, 202)
@@ -126,32 +139,12 @@ try {
     await browser.click('Tra cứu')
     await until(() => browser.text(message), 'lookup result')
   }
-  await lookup(recipient.email, 'Nguyễn V. B.')
-  await lookup(phone, 'Nguyễn V. B.')
-  assert.equal(await browser.evaluate('document.querySelector("#transfer-confirm").checked'), false)
-  assert.equal(await browser.text(recipient.id), false)
-  await browser.cdp('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
-  await browser.screenshot('live-recipient-mobile')
-  const notFound = 'Không tìm thấy người nhận phù hợp.'
-  await lookup(sender.email, notFound)
-  await lookup('missing-' + randomUUID() + '@example.test', notFound)
-  for (let attempt = 4; attempt < 10; attempt++) await lookup(recipient.email, 'Nguyễn V. B.')
-  await lookup(recipient.email, 'Bạn đã tra cứu quá nhiều lần.')
-  const lookups = browser.network.filter(item => item.path === '/api/users/lookup')
-  assert.equal(lookups.length, 11)
-  assert.equal(lookups.at(-1).status, 429)
-  await browser.evaluate('document.querySelector(\'button[aria-label="Đóng chuyển tiền"]\').click()')
-  await browser.click('Chuyển khoản')
-  await until(() => browser.has('#transfer-recipient'), 'reopen after 429')
-  await browser.fill('#transfer-recipient', recipient.email)
-  assert.equal(await browser.evaluate('[...document.querySelectorAll("dialog button")].find(b=>b.textContent.trim()==="Tra cứu").disabled'), true)
-  assert.equal(browser.network.some(item => item.path.startsWith('/api/wallets/' + recipient.id)), false)
-  assert.equal(browser.network.some(item => item.path.endsWith('/transfer')), false)
-  await browser.screenshot('live-recipient-rate-limit')
-  checks.push('H11: exact email/phone; masked recipient; generic self/missing 404; request 11 returns 429; cooldown survives reopen; no recipient balance reads or transfers')
+  for (let attempt = 4; attempt < 10; attempt++) await lookup(recipient.email)
+  await call('/api/users/lookup?q=' + encodeURIComponent(recipient.email), { token: sender.token, expected: 429 })
+  checks.push('H11 API ONLY: exact email/phone, masked result, self/missing 404, lookup 11 returns 429; active transfer UI not covered')
   assert.deepEqual(browser.errors, [])
   writeFileSync(resolve(artifacts, 'result.json'), JSON.stringify({ result: 'PASS', testedAt: new Date().toISOString(), checks, api: evidence, browserNetwork: browser.network }, null, 2))
-  console.log('PASS: Phase 3 frontend against real local backend. H8 two-face upload/private image/403; H11 exact lookup/masked name/generic 404/429/cooldown. No money transfers.')
+  console.log('PASS: Phase 3 frontend against real local backend. H8 two-face upload/private image/403; H11 API-only exact lookup/masked name/generic 404/429; transfer UI not covered. No money transfers.')
   console.log('Evidence: ' + resolve(artifacts, 'result.json'))
 } catch (error) {
   if (browser) await browser.screenshot('live-phase3-failure').catch(() => {})

@@ -6,17 +6,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { errorCode, errorMessage } from '@/lib/apiResponse'
-import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth'
 import { kycSchema, MAX_KYC_FILE_SIZE, type KycFormValues } from '../schemas/user.schema'
 import { userService } from '../services/userService'
 import type { UserProfile } from '../types/user.types'
 import { KycDocumentViewer } from './KycDocumentViewer'
 
-export function KycForm({ profile, onSaved, onReload }: {
-  profile: UserProfile; onSaved: (profile: UserProfile) => void; onReload: () => void
+export function KycForm({ profile, rejectionReason, onSaved, onReload }: {
+  rejectionReason?: string
+  profile: UserProfile; onSaved: (profile: UserProfile) => void; onReload: () => Promise<boolean>
 }) {
   const busy = useRef(false)
   const [needsReload, setNeedsReload] = useState(false)
+  const [reloading, setReloading] = useState(false)
+  const reconcile = async () => {
+    if (reloading) return
+    setReloading(true)
+    try {
+      if (await onReload()) setNeedsReload(false)
+    } finally { setReloading(false) }
+  }
   const { register, handleSubmit, control, setValue, setError, formState: { errors, isSubmitting } } = useForm<KycFormValues>({
     resolver: zodResolver(kycSchema), defaultValues: { idNumber: '' }
   })
@@ -44,8 +53,11 @@ export function KycForm({ profile, onSaved, onReload }: {
   return <div className="space-y-5">
     {profile.kycStatus === 'PENDING' && <p className="rounded-lg bg-amber-500/10 p-4 text-sm">Hồ sơ đang được xét duyệt. Bạn có thể tải lại trạng thái sau khi có kết quả.</p>}
     {profile.kycStatus === 'APPROVED' && <p className="rounded-lg bg-emerald-500/10 p-4 text-sm">Danh tính của bạn đã được xác thực.</p>}
-    {profile.kycStatus === 'REJECTED' && <p className="rounded-lg bg-destructive/10 p-4 text-sm">Hồ sơ chưa được chấp thuận. Vui lòng kiểm tra thông tin và gửi lại ảnh giấy tờ rõ nét.</p>}
-    {canSubmit && <form onSubmit={handleSubmit(submit)} className="space-y-4" noValidate>
+    {profile.kycStatus === 'REJECTED' && <div className="space-y-2 rounded-lg bg-destructive/10 p-4 text-sm" role="status">
+      <p>Hồ sơ chưa được chấp thuận. Vui lòng kiểm tra thông tin và gửi lại ảnh giấy tờ rõ nét.</p>
+      {rejectionReason && <p className="break-words"><strong>Lý do từ chối: </strong>{rejectionReason}</p>}
+    </div>}
+    {canSubmit && <form onSubmit={(event) => { void handleSubmit(submit)(event) }} className="space-y-4" noValidate>
       <div className="space-y-2">
         <Label htmlFor="kyc-number">Số CCCD / Passport</Label>
         <Input id="kyc-number" {...register('idNumber')} disabled={isSubmitting || needsReload}
@@ -64,26 +76,39 @@ export function KycForm({ profile, onSaved, onReload }: {
       </div>)}
       {errors.root && <p role="alert" className="text-sm text-destructive">{errors.root.message}</p>}
       {needsReload
-        ? <Button type="button" variant="outline" onClick={onReload}>Tải lại trạng thái hồ sơ</Button>
+        ? <Button type="button" variant="outline" disabled={reloading} onClick={() => { void reconcile() }}>
+          {reloading ? 'Đang tải lại trạng thái…' : 'Tải lại trạng thái hồ sơ'}
+        </Button>
         : <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Đang gửi hồ sơ…' : 'Gửi xác thực'}</Button>}
     </form>}
-    {!canSubmit && <Button variant="outline" onClick={onReload}>Tải lại trạng thái</Button>}
-    {profile.hasKycDocument && <KycDocumentViewer key={profile.updatedAt} authUserId={profile.authUserId} />}
+    {!canSubmit && <Button variant="outline" disabled={reloading} onClick={() => { void reconcile() }}>Tải lại trạng thái</Button>}
+    {profile.hasKycDocument && <KycDocumentViewer key={profile.authUserId + profile.updatedAt} authUserId={profile.authUserId} />}
   </div>
 }
 
 function ImagePreview({ file, label }: { file?: File; label: string }) {
-  const [url, setUrl] = useState('')
+  if (!file || !['image/jpeg', 'image/png'].includes(file.type) || !file.size || file.size > MAX_KYC_FILE_SIZE) return null
+  return <FilePreview key={[file.name, file.lastModified, file.size, file.type].join(':')} file={file} label={label} />
+}
+
+function FilePreview({ file, label }: { file: File; label: string }) {
+  const image = useRef<HTMLImageElement>(null)
   const [failed, setFailed] = useState(false)
   useEffect(() => {
-    setFailed(false)
-    if (!file || !['image/jpeg', 'image/png'].includes(file.type) || !file.size || file.size > MAX_KYC_FILE_SIZE) {
-      setUrl(''); return
+    const element = image.current
+    if (!element) return
+    const url = URL.createObjectURL(file)
+    const onError = () => { URL.revokeObjectURL(url); setFailed(true) }
+    element.addEventListener('error', onError)
+    element.src = url
+    return () => {
+      element.removeEventListener('error', onError)
+      element.removeAttribute('src')
+      URL.revokeObjectURL(url)
     }
-    const next = URL.createObjectURL(file)
-    setUrl(next)
-    return () => URL.revokeObjectURL(next)
   }, [file])
-  if (failed) return <p role="alert" className="text-sm text-destructive">Không đọc được ảnh {label}. Vui lòng chọn tệp khác.</p>
-  return url ? <img src={url} alt={`Xem trước ${label}`} className="max-h-64 w-full rounded-lg border border-border object-contain" onError={() => setFailed(true)} /> : null
+  return <>
+    {failed && <p role="alert" className="text-sm text-destructive">Không đọc được ảnh {label}. Vui lòng chọn tệp khác.</p>}
+    <img ref={image} alt={`Xem trước ${label}`} hidden={failed} className="max-h-64 w-full rounded-lg border border-border object-contain" />
+  </>
 }

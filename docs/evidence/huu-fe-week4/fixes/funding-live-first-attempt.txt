@@ -1,0 +1,8 @@
+Waiting for the per-user cashout rate-limit window before FAILED
+Waiting for the per-user cashout rate-limit window before PAYOUT_PENDING
+HU-F05: authenticated string create; alias/legacy concurrent retries one UUID/URL/DB row; changed payload 422; foreign 403; no early credit
+HU-F07: forged HMAC rejected; signed browser return stays PENDING and never credits
+HU-F06: 2 then 20 duplicate IPNs: one credit and one balanced ledger transaction
+HU-F08/F09/F10/F11: SUCCEEDED through Gateway/PIN; owner isolation, idempotent create, real hold/ledger/balance and token replay 409
+HU-F08/F09/F10/F11: FAILED through Gateway/PIN; owner isolation, idempotent create, real hold/ledger/balance and token replay 409
+FAIL: Expected values to be strictly equal:

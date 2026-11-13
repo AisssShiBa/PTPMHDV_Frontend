@@ -1,0 +1,135 @@
+[
+  {
+    "command": [
+      "npm",
+      "run",
+      "check"
+    ],
+    "timestamp": "2026-11-12T05:28:04.993165+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "check.txt"
+  },
+  {
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "timestamp": "2026-11-12T05:28:05.288128+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "lint.txt"
+  },
+  {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "timestamp": "2026-11-12T05:28:05.435292+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "typecheck.txt"
+  },
+  {
+    "command": [
+      "npm",
+      "test"
+    ],
+    "timestamp": "2026-11-12T05:28:05.584446+00:00",
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "evidence": "test-node.txt"
+  },
+  {
+    "command": [
+      "npm",
+      "run",
+      "test:unit",
+      "--",
+      "src/test/userProfile.test.tsx"
+    ],
+    "timestamp": "2026-11-12T05:28:05.932786+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "test-profile.txt"
+  },
+  {
+    "command": [
+      "npm",
+      "run",
+      "test:unit"
+    ],
+    "timestamp": "2026-11-12T05:28:06.080289+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "test-unit.txt"
+  },
+  {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "timestamp": "2026-11-12T05:28:06.228492+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "build.txt"
+  },
+  {
+    "command": [
+      "env",
+      "BROWSER_PATH=/home/nguyenhuu/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome",
+      "npm",
+      "run",
+      "test:browser"
+    ],
+    "timestamp": "2026-11-12T05:28:06.380731+00:00",
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "evidence": "test-browser.txt"
+  },
+  {
+    "command": [
+      "env",
+      "BROWSER_PATH=/home/nguyenhuu/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome",
+      "npm",
+      "run",
+      "test:phase3:live"
+    ],
+    "timestamp": "2026-11-12T05:28:06.661425+00:00",
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "evidence": "test-phase3-live.txt"
+  },
+  {
+    "command": [
+      "docker",
+      "ps",
+      "--format",
+      "{{.Names}} {{.Status}}"
+    ],
+    "timestamp": "2026-11-12T05:28:06.930358+00:00",
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "evidence": "docker.txt"
+  },
+  {
+    "command": [
+      "curl",
+      "--max-time",
+      "5",
+      "-sS",
+      "-o",
+      "/tmp/huu-acceptance-health.json",
+      "-w",
+      "%{http_code}",
+      "http://127.0.0.1:3000/health"
+    ],
+    "timestamp": "2026-11-12T05:28:06.944241+00:00",
+    "exitCode": 7,
+    "status": "BLOCKED",
+    "evidence": "gateway-health.txt"
+  }
+]

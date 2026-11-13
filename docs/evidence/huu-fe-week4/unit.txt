@@ -1,0 +1,34 @@
+
+> frontend@0.0.0 test:unit
+> vitest run
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ✓ src/test/format.test.ts (8 tests) 25ms
+ ✓ src/test/apiResponse.test.ts (4 tests) 21ms
+ ✓ src/test/axios.test.ts (4 tests) 98ms
+ ✓ src/test/notificationBell.test.tsx (2 tests) 730ms
+   ✓ decrements the unread count once when the same notification is clicked twice  481ms
+ ✓ src/test/funding.test.tsx (19 tests) 407ms
+ ✓ src/test/topupFlow.test.tsx (14 tests) 888ms
+ ✓ src/test/merchantOnboarding.test.tsx (13 tests) 1142ms
+ ✓ src/test/userProfile.test.tsx (12 tests) 1608ms
+   ✓ Profile and KYC integration > saves changed profile fields through PUT and reads them again after remount  550ms
+ ✓ src/test/transactionSafety.test.tsx (5 tests) 1546ms
+   ✓ Transaction PIN > cannot issue a fake token when the caller has no bound order  779ms
+   ✓ Transaction PIN > uses the real API adapter with the exact order and amount  312ms
+ ✓ src/test/merchantTools.test.tsx (12 tests) 2223ms
+ ✓ src/test/cashoutFlow.test.tsx (15 tests) 4184ms
+   ✓ Cashout UI contract (MSW, no live bank) > rejects decimal/zero inputs without creating an order  572ms
+   ✓ Cashout UI contract (MSW, no live bank) > binds PIN to server order and amount, confirms once and only prints after server SUCCEEDED  671ms
+   ✓ Cashout UI contract (MSW, no live bank) > keeps payout UNKNOWN pending and reads status instead of replaying token  574ms
+   ✓ Cashout UI contract (MSW, no live bank) > allows fresh PIN only after explicit token expiry and REQUESTED GET  375ms
+   ✓ Cashout UI contract (MSW, no live bank) > does not unlock a second confirm for TXN_TOKEN_MISMATCH  302ms
+   ✓ Cashout UI contract (MSW, no live bank) > invalid PIN never reaches confirm and clears entered digits  369ms
+
+ Test Files  11 passed (11)
+      Tests  108 passed (108)
+   Start at  10:45:12
+   Duration  7.59s (transform 1.94s, setup 5.59s, collect 10.90s, tests 12.87s, environment 8.48s, prepare 2.50s)
+

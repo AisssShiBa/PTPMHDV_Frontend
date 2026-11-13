@@ -1,0 +1,65 @@
+[
+  {
+    "command": "npm run lint",
+    "timestamp": "2026-11-12T05:02:19.776811+00:00",
+    "exitCode": 127,
+    "log": "lint.txt",
+    "status": "BLOCKED",
+    "reason": "Missing dependencies"
+  },
+  {
+    "command": "npm run typecheck",
+    "timestamp": "2026-11-12T05:02:19.908603+00:00",
+    "exitCode": 127,
+    "log": "typecheck.txt",
+    "status": "BLOCKED",
+    "reason": "Missing dependencies"
+  },
+  {
+    "command": "npm test",
+    "timestamp": "2026-11-12T05:02:20.033131+00:00",
+    "exitCode": 1,
+    "log": "test.txt",
+    "status": "BLOCKED",
+    "reason": "Missing dependencies"
+  },
+  {
+    "command": "npm run build",
+    "timestamp": "2026-11-12T05:02:20.330799+00:00",
+    "exitCode": 127,
+    "log": "build.txt",
+    "status": "BLOCKED",
+    "reason": "Missing dependencies"
+  },
+  {
+    "command": "npm run test:unit",
+    "timestamp": "2026-11-12T05:02:20.465420+00:00",
+    "exitCode": 127,
+    "log": "test-unit.txt",
+    "status": "BLOCKED",
+    "reason": "Missing dependencies"
+  },
+  {
+    "command": "npm run test:browser",
+    "timestamp": "2026-11-12T05:02:20.595450+00:00",
+    "exitCode": 1,
+    "log": "test-browser.txt",
+    "status": "BLOCKED",
+    "reason": "Chromium unavailable"
+  },
+  {
+    "command": "npm run test:phase3:live",
+    "timestamp": "2026-11-12T05:02:20.837212+00:00",
+    "exitCode": 1,
+    "log": "test-phase3-live.txt",
+    "status": "BLOCKED",
+    "reason": "Production build unavailable; no live requests sent"
+  },
+  {
+    "command": "npm run check",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "log": "check.txt",
+    "reason": "eslint unavailable; subsequent gates did not execute within check"
+  }
+]

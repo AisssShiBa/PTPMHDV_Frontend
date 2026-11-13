@@ -1,0 +1,82 @@
+[
+  {
+    "command": "npm run check",
+    "evidence": "check.txt",
+    "status": "PASS",
+    "detail": "lint 0 errors/0 warnings, typecheck, Node 32/32, production build",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T12:00:06.265574+00:00"
+  },
+  {
+    "command": "npm run test:unit",
+    "evidence": "unit.txt",
+    "status": "PASS",
+    "detail": "6 files, 35/35 tests; Profile/KYC 12/12",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T12:00:09.148819+00:00"
+  },
+  {
+    "command": "npm run test:browser",
+    "evidence": "browser.txt",
+    "status": "PASS",
+    "detail": "6 groups on current Auth/Profile/KYC routes; synthetic HTTP API",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T12:06:09.557556+00:00"
+  },
+  {
+    "command": "node tests/profile-live.mjs with LIVE_ACCEPTANCE_RUN_FILE and DOCKER_HOST",
+    "evidence": "live-run.txt",
+    "status": "PASS",
+    "detail": "HU-F01/F02/F03/F04/F15 on isolated Gateway/Auth/User/Admin/MinIO",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T11:58:23.973821+00:00"
+  },
+  {
+    "command": "npm run typecheck --workspace @finvault/mobile",
+    "evidence": "mobile-typecheck.txt",
+    "status": "PASS",
+    "detail": "Mobile effects compile",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T12:00:09.437628+00:00"
+  },
+  {
+    "command": "node node_modules/typescript/bin/tsc --noEmit (Backend/gateway)",
+    "evidence": "gateway-typecheck.txt",
+    "status": "PASS",
+    "detail": "Gateway with installed declared dependencies",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T11:58:13.241637+00:00"
+  },
+  {
+    "command": "node --test services/wallet-service/tests/system-wallet-migration.test.cjs",
+    "evidence": "wallet-migration.txt",
+    "status": "PASS",
+    "detail": "3 real PostgreSQL migration cases, all rolled back",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T11:49:20.432203+00:00"
+  },
+  {
+    "command": "node --test services/auth-service/tests/session-migration.test.cjs",
+    "evidence": "auth-migration.txt",
+    "status": "PASS",
+    "detail": "2 real PostgreSQL migration cases, all rolled back",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T11:54:44.054329+00:00"
+  },
+  {
+    "command": "node --test tests/acceptance/week2/reporting.test.mjs tests/acceptance/week2/host-ready.test.mjs",
+    "evidence": "backend-runner.txt",
+    "status": "PASS",
+    "detail": "4 acceptance runner regressions",
+    "exitCode": 0,
+    "logUpdatedAt": "2026-11-12T11:53:35.172467+00:00"
+  },
+  {
+    "command": "node --test tests/acceptance/week2/prepare.test.mjs",
+    "evidence": "backend-prepare.txt",
+    "status": "PASS",
+    "exitCode": 0,
+    "detail": "2 setup isolation/rootless/secret permission regression cases",
+    "logUpdatedAt": "2026-11-12T12:04:18.872549+00:00"
+  }
+]

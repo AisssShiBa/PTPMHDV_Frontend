@@ -1,0 +1,65 @@
+[
+  {
+    "suite": "profile-browser",
+    "command": "npm run test:browser",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:18:22.515935+00:00",
+    "finishedAt": "2026-11-13T04:18:34.380023+00:00"
+  },
+  {
+    "suite": "topup-browser",
+    "command": "npm run test:topup:browser",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:18:34.380506+00:00",
+    "finishedAt": "2026-11-13T04:18:44.820876+00:00"
+  },
+  {
+    "suite": "cashout-browser",
+    "command": "npm run test:cashout:browser",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:18:44.825472+00:00",
+    "finishedAt": "2026-11-13T04:18:55.410895+00:00"
+  },
+  {
+    "suite": "merchant-browser",
+    "command": "npm run test:merchant:browser",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:18:55.411686+00:00",
+    "finishedAt": "2026-11-13T04:19:05.855705+00:00"
+  },
+  {
+    "suite": "profile-live",
+    "command": "npm run test:profile:live",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:19:05.858923+00:00",
+    "finishedAt": "2026-11-13T04:19:13.672279+00:00"
+  },
+  {
+    "suite": "phase3-live",
+    "command": "npm run test:phase3:live",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:20:15.673678+00:00",
+    "finishedAt": "2026-11-13T04:20:19.682665+00:00"
+  },
+  {
+    "suite": "merchant-live",
+    "command": "npm run test:merchant:live",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:21:21.683376+00:00",
+    "finishedAt": "2026-11-13T04:21:36.949292+00:00"
+  },
+  {
+    "suite": "merchant-tools-live",
+    "command": "npm run test:merchant:tools:live",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:22:38.955280+00:00",
+    "finishedAt": "2026-11-13T04:22:50.914328+00:00"
+  },
+  {
+    "suite": "funding-live",
+    "command": "npm run test:funding:live",
+    "exitCode": 0,
+    "startedAt": "2026-11-13T04:23:52.915420+00:00",
+    "finishedAt": "2026-11-13T04:26:01.245839+00:00"
+  }
+]

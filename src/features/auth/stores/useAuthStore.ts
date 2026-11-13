@@ -23,6 +23,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setSession: (session: AuthSession) => {
+    generation += 1
     set({
       accessToken: session.accessToken,
       user: session.user,

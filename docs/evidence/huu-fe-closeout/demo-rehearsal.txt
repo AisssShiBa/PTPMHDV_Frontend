@@ -1,0 +1,5 @@
+
+> frontend@0.0.0 test:huu:demo:rehearse
+> node tests/huu-demo-rehearsal.mjs
+
+PASS: live synthetic demo rehearsal and labeled video

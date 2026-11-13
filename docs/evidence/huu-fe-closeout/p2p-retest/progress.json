@@ -1,0 +1,21 @@
+[
+  {
+    "scenario": "ambiguousCapture",
+    "startedAt": "2026-11-13T04:41:33.022Z",
+    "status": "FAIL",
+    "error": "The expression evaluated to a falsy value:",
+    "finishedAt": "2026-11-13T04:41:35.035Z"
+  },
+  {
+    "scenario": "s8",
+    "startedAt": "2026-11-13T04:41:35.036Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:41:53.322Z"
+  },
+  {
+    "scenario": "s16",
+    "startedAt": "2026-11-13T04:41:53.322Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:42:01.375Z"
+  }
+]

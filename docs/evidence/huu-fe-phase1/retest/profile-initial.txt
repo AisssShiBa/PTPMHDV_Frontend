@@ -1,0 +1,611 @@
+
+> frontend@0.0.0 test:unit
+> vitest run src/test/userProfile.test.tsx
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ❯ src/test/userProfile.test.tsx (11 tests | 1 failed) 1493ms
+   ✓ Profile and KYC integration > saves changed profile fields through PUT and reads them again after remount 186ms
+   ✓ Profile and KYC integration > reads rejection reason and tier from the owner status API 23ms
+   ✓ Profile and KYC integration > disables submission when server returns PENDING 24ms
+   ✓ Profile and KYC integration > disables submission when server returns APPROVED 22ms
+   × Profile and KYC integration > requires both images, sends multipart once on double submit and reconciles PENDING 1053ms
+     → Unable to find an element with the text: Đang chờ xét duyệt. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"mx-auto max-w-6xl space-y-6 pb-12"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"flex flex-col justify-between gap-4 sm:flex-row sm:items-center"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-shield-check h-4 w-4"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 12 2 2 4-4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m Bảo mật & định danh[0m
+          [36m</p>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-2xl font-bold tracking-tight sm:text-3xl"[39m
+          [36m>[39m
+            [0mHồ sơ & Xác minh danh tính (KYC)[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mt-1 text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mQuản lý thông tin cá nhân và theo dõi hồ sơ xác thực.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 cursor-pointer border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-refresh-cw h-4 w-4"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 3v5h-5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M8 16H3v5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Làm mới trạng thái[0m
+        [36m</button>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid gap-6 lg:grid-cols-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-xl border bg-card text-card-foreground shadow-sm h-fit lg:col-span-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex flex-col space-y-1.5 p-6"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-semibold tracking-tight text-lg"[39m
+            [36m>[39m
+              [0mThông tin cá nhân[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mEmail đăng nhập và thông tin liên hệ của bạn.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-6 pt-0"[39m
+          [36m>[39m
+            [36m<form[39m
+              [33mclass[39m=[32m"space-y-5"[39m
+              [33mnovalidate[39m=[32m""[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-2"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                  [33mfor[39m=[32m"profile-email"[39m
+                [36m>[39m
+                  [0mEmail[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33maria-describedby[39m=[32m"email-help"[39m
+                  [33mclass[39m=[32m"flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"[39m
+                  [33mid[39m=[32m"profile-email"[39m
+                  [33mreadonly[39m=[32m""[39m
+                  [33mtype[39m=[32m"email"[39m
+                  [33mvalue[39m=[32m"synthetic@example.test"[39m
+                [36m/>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-muted-foreground"[39m
+                  [33mid[39m=[32m"email-help"[39m
+                [36m>[39m
+                  [0mEmail đăng nhập không thể thay đổi tại đây.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-2"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                  [33mfor[39m=[32m"profile-fullName"[39m
+                [36m>[39m
+                  [0mHọ và tên[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33maria-invalid[39m=[32m"false"[39m
+                  [33mautocomplete[39m=[32m"na...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"mx-auto max-w-6xl space-y-6 pb-12"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"flex flex-col justify-between gap-4 sm:flex-row sm:items-center"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-shield-check h-4 w-4"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 12 2 2 4-4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m Bảo mật & định danh[0m
+          [36m</p>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-2xl font-bold tracking-tight sm:text-3xl"[39m
+          [36m>[39m
+            [0mHồ sơ & Xác minh danh tính (KYC)[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mt-1 text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mQuản lý thông tin cá nhân và theo dõi hồ sơ xác thực.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 cursor-pointer border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-refresh-cw h-4 w-4"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 3v5h-5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M8 16H3v5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Làm mới trạng thái[0m
+        [36m</button>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid gap-6 lg:grid-cols-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-xl border bg-card text-card-foreground shadow-sm h-fit lg:col-span-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex flex-col space-y-1.5 p-6"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-semibold tracking-tight text-lg"[39m
+            [36m>[39m
+              [0mThông tin cá nhân[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mEmail đăng nhập và thông tin liên hệ của bạn.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-6 pt-0"[39m
+          [36m>[39m
+            [36m<form[39m
+              [33mclass[39m=[32m"space-y-5"[39m
+              [33mnovalidate[39m=[32m""[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-2"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                  [33mfor[39m=[32m"profile-email"[39m
+                [36m>[39m
+                  [0mEmail[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33maria-describedby[39m=[32m"email-help"[39m
+                  [33mclass[39m=[32m"flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"[39m
+                  [33mid[39m=[32m"profile-email"[39m
+                  [33mreadonly[39m=[32m""[39m
+                  [33mtype[39m=[32m"email"[39m
+                  [33mvalue[39m=[32m"synthetic@example.test"[39m
+                [36m/>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-muted-foreground"[39m
+                  [33mid[39m=[32m"email-help"[39m
+                [36m>[39m
+                  [0mEmail đăng nhập không thể thay đổi tại đây.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-2"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                  [33mfor[39m=[32m"profile-fullName"[39m
+                [36m>[39m
+                  [0mHọ và tên[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33maria-invalid[39m=[32m"false"[39m
+                  [33mautocomplete[39m=[32m"na...
+   ✓ Profile and KYC integration > only unlocks an uncertain upload after successful reconciliation and never retries it automatically 41ms
+   ✓ Profile and KYC integration > drops late account A data and its form draft when account B becomes active 75ms
+   ✓ Profile and KYC integration > renders loading and explicit empty states without exposing a fake profile 14ms
+   ✓ Profile and KYC integration > shows a safe error with retry and then loads the status 34ms
+   ✓ Signed document lifecycle > hides the URL on TTL expiry and requests a new one when reopened 11ms
+   ✓ Signed document lifecycle > removes an already opened image immediately when the owner changes 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/userProfile.test.tsx > Profile and KYC integration > requires both images, sends multipart once on double submit and reconciles PENDING
+TestingLibraryElementError: Unable to find an element with the text: Đang chờ xét duyệt. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"mx-auto max-w-6xl space-y-6 pb-12"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"flex flex-col justify-between gap-4 sm:flex-row sm:items-center"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-shield-check h-4 w-4"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 12 2 2 4-4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m Bảo mật & định danh[0m
+          [36m</p>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-2xl font-bold tracking-tight sm:text-3xl"[39m
+          [36m>[39m
+            [0mHồ sơ & Xác minh danh tính (KYC)[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mt-1 text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mQuản lý thông tin cá nhân và theo dõi hồ sơ xác thực.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 cursor-pointer border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-refresh-cw h-4 w-4"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 3v5h-5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M8 16H3v5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Làm mới trạng thái[0m
+        [36m</button>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid gap-6 lg:grid-cols-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-xl border bg-card text-card-foreground shadow-sm h-fit lg:col-span-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex flex-col space-y-1.5 p-6"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-semibold tracking-tight text-lg"[39m
+            [36m>[39m
+              [0mThông tin cá nhân[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mEmail đăng nhập và thông tin liên hệ của bạn.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-6 pt-0"[39m
+          [36m>[39m
+            [36m<form[39m
+              [33mclass[39m=[32m"space-y-5"[39m
+              [33mnovalidate[39m=[32m""[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-2"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                  [33mfor[39m=[32m"profile-email"[39m
+                [36m>[39m
+                  [0mEmail[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33maria-describedby[39m=[32m"email-help"[39m
+                  [33mclass[39m=[32m"flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"[39m
+                  [33mid[39m=[32m"profile-email"[39m
+                  [33mreadonly[39m=[32m""[39m
+                  [33mtype[39m=[32m"email"[39m
+                  [33mvalue[39m=[32m"synthetic@example.test"[39m
+                [36m/>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-muted-foreground"[39m
+                  [33mid[39m=[32m"email-help"[39m
+                [36m>[39m
+                  [0mEmail đăng nhập không thể thay đổi tại đây.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-2"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                  [33mfor[39m=[32m"profile-fullName"[39m
+                [36m>[39m
+                  [0mHọ và tên[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33maria-invalid[39m=[32m"false"[39m
+                  [33mautocomplete[39m=[32m"na...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"mx-auto max-w-6xl space-y-6 pb-12"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"flex flex-col justify-between gap-4 sm:flex-row sm:items-center"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-shield-check h-4 w-4"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9 12 2 2 4-4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0m Bảo mật & định danh[0m
+          [36m</p>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-2xl font-bold tracking-tight sm:text-3xl"[39m
+          [36m>[39m
+            [0mHồ sơ & Xác minh danh tính (KYC)[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mt-1 text-sm text-muted-foreground"[39m
+          [36m>[39m
+            [0mQuản lý thông tin cá nhân và theo dõi hồ sơ xác thực.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 cursor-pointer border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-refresh-cw h-4 w-4"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 3v5h-5"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M8 16H3v5"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Làm mới trạng thái[0m
+        [36m</button>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid gap-6 lg:grid-cols-3"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"rounded-xl border bg-card text-card-foreground shadow-sm h-fit lg:col-span-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex flex-col space-y-1.5 p-6"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-semibold tracking-tight text-lg"[39m
+            [36m>[39m
+              [0mThông tin cá nhân[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0mEmail đăng nhập và thông tin liên hệ của bạn.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"p-6 pt-0"[39m
+          [36m>[39m
+            [36m<form[39m
+              [33mclass[39m=[32m"space-y-5"[39m
+              [33mnovalidate[39m=[32m""[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-2"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                  [33mfor[39m=[32m"profile-email"[39m
+                [36m>[39m
+                  [0mEmail[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33maria-describedby[39m=[32m"email-help"[39m
+                  [33mclass[39m=[32m"flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"[39m
+                  [33mid[39m=[32m"profile-email"[39m
+                  [33mreadonly[39m=[32m""[39m
+                  [33mtype[39m=[32m"email"[39m
+                  [33mvalue[39m=[32m"synthetic@example.test"[39m
+                [36m/>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-xs text-muted-foreground"[39m
+                  [33mid[39m=[32m"email-help"[39m
+                [36m>[39m
+                  [0mEmail đăng nhập không thể thay đổi tại đây.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-2"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"[39m
+                  [33mfor[39m=[32m"profile-fullName"[39m
+                [36m>[39m
+                  [0mHọ và tên[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33maria-invalid[39m=[32m"false"[39m
+                  [33mautocomplete[39m=[32m"na...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/test/userProfile.test.tsx:116:18
+    114|     fireEvent.click(button)
+    115|     fireEvent.click(button)
+    116|     await screen.findByText('Đang chờ xét duyệt')
+       |                  ^
+    117|     expect(uploads).toBe(1)
+    118|     expect(screen.queryByRole('button', { name: 'Gửi xác thực' })).not…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  12:35:49
+   Duration  2.65s (transform 151ms, setup 139ms, collect 336ms, tests 1.49s, environment 220ms, prepare 46ms)
+

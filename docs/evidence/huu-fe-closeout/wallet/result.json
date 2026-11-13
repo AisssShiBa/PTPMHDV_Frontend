@@ -1,0 +1,437 @@
+{
+  "status": "FAIL",
+  "mode": "wallet",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "testedAt": "2026-11-13T04:40:18.309Z",
+  "checks": [
+    {
+      "scenario": "walletA9",
+      "startedAt": "2026-11-13T04:40:00.912Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:40:02.878Z"
+    },
+    {
+      "scenario": "walletS6",
+      "startedAt": "2026-11-13T04:40:02.878Z",
+      "status": "FAIL",
+      "error": "POST /wallets/6e857653-51b0-433b-b835-b0bc21fe08ea/hold: unexpected status (no code)",
+      "finishedAt": "2026-11-13T04:40:04.199Z"
+    },
+    {
+      "scenario": "s7",
+      "startedAt": "2026-11-13T04:40:04.199Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:40:10.340Z"
+    },
+    {
+      "scenario": "inlineExpiry",
+      "startedAt": "2026-11-13T04:40:10.340Z",
+      "status": "FAIL",
+      "error": "Unexpected token 'R', \"[RabbitMQ:w\"... is not valid JSON",
+      "finishedAt": "2026-11-13T04:40:12.227Z"
+    },
+    {
+      "scenario": "s10",
+      "startedAt": "2026-11-13T04:40:12.228Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:40:18.308Z"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/7960bb5b-2a0b-4fd2-932d-2e00be52b11a/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/9a6cf817-03d7-41fc-af5b-663892b76a35/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/0a3c84da-a145-4f9f-8566-599427b501ac/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/0a3c84da-a145-4f9f-8566-599427b501ac/credit",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/0a3c84da-a145-4f9f-8566-599427b501ac/credit",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/0a3c84da-a145-4f9f-8566-599427b501ac/transfer",
+      "status": 422,
+      "code": "LIMIT_EXCEEDED"
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/0a3c84da-a145-4f9f-8566-599427b501ac/transfer",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/0a3c84da-a145-4f9f-8566-599427b501ac/transfer",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/0a3c84da-a145-4f9f-8566-599427b501ac/transfer",
+      "status": 422,
+      "code": "LIMIT_EXCEEDED"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/ec7c6c8f-0aaa-4369-b314-6c92fcbeb6c8/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/6e857653-51b0-433b-b835-b0bc21fe08ea/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/6e857653-51b0-433b-b835-b0bc21fe08ea/credit",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/6e857653-51b0-433b-b835-b0bc21fe08ea/hold",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/c7014619-d545-4996-ae45-546e347be151/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/credit",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/hold",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/capture",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/hold",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/release",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/release",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/hold",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/eff523fd-0f93-4c6d-b581-99225b12e4c3/release",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/d8ccf0cb-f5ef-4a2a-b448-5e02eab1e32e/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/3df82118-af7c-4270-9eff-a69f7fc4d238/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/3df82118-af7c-4270-9eff-a69f7fc4d238/credit",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/3df82118-af7c-4270-9eff-a69f7fc4d238/hold",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/622cf0f7-e2c1-422b-9530-7ea77568278d/balance",
+      "status": 200
+    }
+  ],
+  "scope": "Existing week2 Wallet/P2P scenario matrix; not a named K18 suite or active Transfer UI"
+}

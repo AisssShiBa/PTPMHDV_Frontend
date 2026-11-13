@@ -1,0 +1,21 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/features/auth/components/PinModal.tsx
+  163:16  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/features/auth/components/PinModal.tsx:163:16
+  161 |         if (!active.current) return
+  162 |         const deadline = status.lockedUntil ? Date.parse(status.lockedUntil) : NaN
+> 163 |         setNow(Date.now())
+      |                ^^^^^^^^^^ Cannot call impure function
+  164 |         setLockedUntil(status.isLocked && Number.isFinite(deadline) ? deadline : null)
+  165 |       } catch { /* Preserve the original verification error. */ }
+  166 |       inputRefs.current[0]?.focus()  react-hooks/purity
+
+✖ 1 problem (1 error, 0 warnings)
+

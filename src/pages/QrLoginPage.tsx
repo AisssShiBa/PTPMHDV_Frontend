@@ -68,7 +68,6 @@ export function QrLoginPage() {
     if (isLoading || isExpired || isRejected) return
 
     if (countdown <= 0) {
-      setIsExpired(true)
       return
     }
 

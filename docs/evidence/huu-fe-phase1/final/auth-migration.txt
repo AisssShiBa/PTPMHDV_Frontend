@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: adds rotation fields on a fresh schema and supports the current session insert
+ok 1 - adds rotation fields on a fresh schema and supports the current session insert
+  ---
+  duration_ms: 102.346183
+  type: 'test'
+  ...
+# Subtest: backfills old sessions without changing token hashes or expiry and preserves an existing family on replay
+ok 2 - backfills old sessions without changing token hashes or expiry and preserves an existing family on replay
+  ---
+  duration_ms: 69.946932
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 272.945744
