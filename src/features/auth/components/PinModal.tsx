@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
+import { useState, useRef, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,10 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, Lock, AlertTriangle, Eye, EyeOff, Delete } from 'lucide-react'
-import { formatVnd } from '@/lib/format'
+import { useAuthStore } from '../stores/useAuthStore'
 import { authApi } from '../api/auth.api'
 import { errorMessage } from '@/lib/apiResponse'
+import { formatVndExact } from '@/lib/format'
 
 export interface PinModalProps {
   open: boolean
@@ -24,13 +25,18 @@ export interface PinModalProps {
   onCancel?: () => void
 }
 
-export function PinModal({
+export function PinModal(props: PinModalProps) {
+  const owner = useAuthStore((state) => state.user?.id)
+  return props.open ? <PinModalSession key={[owner, props.paymentId, props.amount].join(':')} {...props} /> : null
+}
+
+function PinModalSession({
   open,
   onOpenChange,
   title = 'Xác thực mã PIN giao dịch',
   description = 'Vui lòng nhập mã PIN bảo mật 6 số để tiếp tục giao dịch.',
-  paymentId,
   amount,
+  paymentId,
   onSuccess,
   onCancel
 }: PinModalProps) {
@@ -38,43 +44,18 @@ export function PinModal({
   const [showPin, setShowPin] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [, setAttemptsRemaining] = useState(5)
-  const [isLocked, setIsLocked] = useState(false)
-  const [lockCountdown, setLockCountdown] = useState(300)
-
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  // Reset trạng thái khi mở modal
+  const active = useRef(true)
+  const verifying = useRef(false)
+  const lockCountdown = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0
+  const isLocked = lockCountdown > 0
+  useEffect(() => { active.current = true; return () => { active.current = false } }, [])
   useEffect(() => {
-    if (open) {
-      setPin(Array(6).fill(''))
-      setErrorMsg(null)
-      setIsLoading(false)
-      // Focus vào ô đầu tiên sau khi modal mở
-      setTimeout(() => {
-        inputRefs.current[0]?.focus()
-      }, 100)
-    }
-  }, [open])
-
-  // Đếm ngược khi bị khóa mã PIN (PIN_LOCKED)
-  useEffect(() => {
-    if (!isLocked) return
-
-    if (lockCountdown <= 0) {
-      setIsLocked(false)
-      setAttemptsRemaining(5)
-      setLockCountdown(300)
-      setErrorMsg(null)
-      return
-    }
-
-    const timer = setInterval(() => {
-      setLockCountdown((prev) => prev - 1)
-    }, 1000)
-
+    const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
-  }, [isLocked, lockCountdown])
+  }, [])
 
   // Xử lý khi gõ ký tự vào từng ô
   const handleDigitChange = (index: number, value: string) => {
@@ -156,71 +137,42 @@ export function PinModal({
     }
   }
 
-  // Hàm xác thực mã PIN qua backend API
+  // Only the Auth API can issue a transaction token for this order.
   const verifyPin = async (inputPin: string) => {
+    if (verifying.current || isLocked) return
+    if (!paymentId || !amount) {
+      setErrorMsg('Giao dịch chưa sẵn sàng để xác thực mã PIN.')
+      setPin(Array(6).fill(''))
+      return
+    }
+    verifying.current = true
     setIsLoading(true)
     setErrorMsg(null)
-
     try {
-      const res = await authApi.verifyPin({
-        pin: inputPin,
-        paymentId: paymentId || 'default',
-        amount: amount || '0'
-      })
-
-      // Xóa mã PIN khỏi state ngay sau khi gửi thành công
+      const result = await authApi.verifyPin({ pin: inputPin, paymentId, amount })
+      if (!active.current) return
       setPin(Array(6).fill(''))
-      onSuccess(res.transactionToken)
+      onSuccess(result.transactionToken)
       onOpenChange?.(false)
-    } catch (err: unknown) {
-      // Xóa mã PIN khỏi state ngay lập tức vì lý do bảo mật
+    } catch (error) {
+      if (!active.current) return
+      const details = axios.isAxiosError(error) ? error.response?.data?.error : undefined
+      const remaining = details?.details?.remainingAttempts ?? details?.remainingAttempts ?? details?.details?.attemptsRemaining
+      if (['INVALID_PIN', 'PIN_INVALID'].includes(details?.code) && typeof remaining === 'number' && Number.isInteger(remaining) && remaining >= 0 && remaining <= 5) {
+        setErrorMsg(`Mã PIN không chính xác. Bạn còn ${remaining} lần thử.`)
+      } else setErrorMsg(errorMessage(error))
       setPin(Array(6).fill(''))
-
-      if (axios.isAxiosError(err)) {
-        const errorData = err.response?.data?.error || err.response?.data
-        const code = errorData?.code
-        const details = errorData?.details || errorData
-
-        if (code === 'PIN_LOCKED') {
-          setIsLocked(true)
-          const remainingSec =
-            details?.remainingSeconds ||
-            (details?.lockedUntil
-              ? Math.max(1, Math.round((new Date(details.lockedUntil).getTime() - Date.now()) / 1000))
-              : 300)
-          setLockCountdown(remainingSec)
-          setErrorMsg(errorData?.message || 'Tài khoản bị tạm khóa giao dịch do nhập sai mã PIN quá 5 lần.')
-          return
-        }
-
-        if (code === 'INVALID_PIN' || code === 'PIN_INVALID') {
-          const remaining = details?.remainingAttempts ?? details?.attemptsRemaining ?? details?.attemptsLeft
-          if (typeof remaining === 'number') {
-            setAttemptsRemaining(remaining)
-            setErrorMsg(`Mã PIN không chính xác. Bạn còn ${remaining} lần thử.`)
-          } else {
-            setErrorMsg(errorData?.message || 'Mã PIN không chính xác.')
-          }
-          setTimeout(() => {
-            inputRefs.current[0]?.focus()
-          }, 50)
-          return
-        }
-
-        if (code === 'PIN_NOT_SETUP' || code === 'PIN_NOT_SET') {
-          setErrorMsg('Bạn chưa thiết lập mã PIN giao dịch. Vui lòng cài đặt mã PIN trong Cài đặt.')
-          return
-        }
-
-        setErrorMsg(errorData?.message || errorMessage(code) || 'Xác thực mã PIN thất bại. Vui lòng thử lại.')
-      } else {
-        setErrorMsg('Không thể kết nối đến máy chủ. Vui lòng thử lại.')
-      }
-      setTimeout(() => {
-        inputRefs.current[0]?.focus()
-      }, 50)
+      try {
+        const status = await authApi.getPinStatus()
+        if (!active.current) return
+        const deadline = status.lockedUntil ? Date.parse(status.lockedUntil) : NaN
+        setNow(() => Date.now())
+        setLockedUntil(status.isLocked && Number.isFinite(deadline) ? deadline : null)
+      } catch { /* Preserve the original verification error. */ }
+      inputRefs.current[0]?.focus()
     } finally {
-      setIsLoading(false)
+      verifying.current = false
+      if (active.current) setIsLoading(false)
     }
   }
 
@@ -256,7 +208,7 @@ export function PinModal({
           <div className="p-3 rounded-xl bg-muted/40 border border-border/60 flex items-center justify-between text-xs">
             <span className="text-muted-foreground font-medium">Số tiền thanh toán:</span>
             <span className="font-extrabold text-primary text-base tracking-tight">
-              {formatVnd(amount)}
+              {formatVndExact(amount)} ₫
             </span>
           </div>
         )}
@@ -282,6 +234,8 @@ export function PinModal({
                     ref={(el) => {
                       inputRefs.current[index] = el
                     }}
+                    autoFocus={index === 0}
+                    aria-label={`Chữ số PIN ${index + 1}`}
                     type={showPin ? 'text' : 'password'}
                     inputMode="numeric"
                     maxLength={1}
@@ -310,7 +264,7 @@ export function PinModal({
             <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
               <div className="flex items-center gap-1">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Mã hóa bảo mật 2 lớp</span>
+                <span>Xác thực PIN qua hệ thống</span>
               </div>
               <button
                 type="button"
@@ -375,7 +329,7 @@ export function PinModal({
             onClick={handleClose}
             className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
           >
-            Hủy bỏ giao dịch
+            Đóng xác thực
           </Button>
         </div>
       </DialogContent>

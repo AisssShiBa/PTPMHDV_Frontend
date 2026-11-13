@@ -1,0 +1,10 @@
+
+> frontend@0.0.0 test:huu:wallet:live
+> node tests/huu-closeout-live.mjs wallet
+
+Waiting for a fresh Gateway rate-limit window before bulk synthetic accounts
+walletA9: PASS
+walletS6: FAIL
+s7: PASS
+inlineExpiry: FAIL
+s10: PASS

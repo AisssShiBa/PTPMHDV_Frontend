@@ -1,0 +1,117 @@
+{
+  "status": "PASS",
+  "mode": "wallet",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "testedAt": "2026-11-13T04:46:10.354Z",
+  "checks": [
+    {
+      "scenario": "inlineExpiry",
+      "startedAt": "2026-11-13T04:46:08.172Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:46:10.353Z"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/ae56a629-2539-411c-85e4-05ee823fe5f9/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/e10583c0-c5a1-49e2-9f97-161daa459aec/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/6d46e0a6-d0fa-4c94-afd9-d6e3194d9b2b/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/6d46e0a6-d0fa-4c94-afd9-d6e3194d9b2b/credit",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/6d46e0a6-d0fa-4c94-afd9-d6e3194d9b2b/hold",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/wallets/6d46e0a6-d0fa-4c94-afd9-d6e3194d9b2b/capture",
+      "status": 409,
+      "code": "HOLD_EXPIRED"
+    }
+  ],
+  "scope": "Existing week2 Wallet/P2P scenario matrix; not a named K18 suite or active Transfer UI"
+}

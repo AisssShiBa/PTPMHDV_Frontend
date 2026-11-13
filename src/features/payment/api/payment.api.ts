@@ -71,4 +71,3 @@ export const paymentApi = {
     return unwrap(res.data)
   }
 }
-

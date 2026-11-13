@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { useAuthStore, MOCK_USER } from '@/features/auth/stores/useAuthStore'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -7,6 +8,8 @@ import { server } from '@/mocks/server'
 import { UtilitiesWorkspace } from '@/features/utilities'
 import type { UtilityOrderView } from '@/features/utilities'
 import { formatVnd } from '@/lib/format'
+
+beforeEach(() => { useAuthStore.setState({ user: MOCK_USER, accessToken: 'synthetic', initialized: true }) })
 
 const wallet = {
   id: 'wallet-utilities-1',

@@ -1,0 +1,98 @@
+[
+  {
+    "command": "npm run test:unit",
+    "exitCode": 0,
+    "status": "PASS",
+    "evidence": "unit-final.txt",
+    "detail": "4 files, 28/28 tests; Profile/KYC 12/12",
+    "logUpdatedAt": "2026-11-12T05:41:20.638087+00:00"
+  },
+  {
+    "command": "npm run typecheck",
+    "exitCode": 0,
+    "status": "PASS",
+    "evidence": "typecheck-final.txt",
+    "detail": "TypeScript 6.0.3",
+    "logUpdatedAt": "2026-11-12T05:41:19.491068+00:00"
+  },
+  {
+    "command": "npm run build",
+    "exitCode": 0,
+    "status": "PASS",
+    "evidence": "build-final.txt",
+    "detail": "production bundle generated",
+    "logUpdatedAt": "2026-11-12T05:41:48.120556+00:00"
+  },
+  {
+    "command": "node_modules/.bin/eslint src/features/user src/pages/ProfilePage.tsx src/features/auth/index.ts src/test/userProfile.test.tsx",
+    "exitCode": 0,
+    "status": "PASS",
+    "evidence": "lint-profile-final.txt",
+    "detail": "no errors/warnings in Phase 1 scope",
+    "logUpdatedAt": "2026-11-12T05:41:24.218148+00:00"
+  },
+  {
+    "command": "node --import ./tests/register.mjs --test tests/contracts.test.ts",
+    "exitCode": 0,
+    "status": "PASS",
+    "evidence": "contracts-final.txt",
+    "detail": "Node contract test file passed",
+    "logUpdatedAt": "2026-11-12T05:40:47.198517+00:00"
+  },
+  {
+    "command": "node --import ./tests/register.mjs --test --test-name-pattern='KYC service' tests/auth-api.test.ts",
+    "exitCode": 0,
+    "status": "PASS",
+    "evidence": "kyc-node.txt",
+    "detail": "KYC adapter test selected; not whole auth suite",
+    "logUpdatedAt": "2026-11-12T05:40:46.536505+00:00"
+  },
+  {
+    "command": "npm run check",
+    "exitCode": 1,
+    "status": "FAIL",
+    "evidence": "check-final.txt",
+    "detail": "stops at lint: 29 pre-existing errors, 28 warnings",
+    "logUpdatedAt": "2026-11-12T05:40:50.627575+00:00"
+  },
+  {
+    "command": "npm test",
+    "exitCode": 1,
+    "status": "FAIL",
+    "evidence": "node-initial.txt",
+    "detail": "2 test files pass, auth-api.test.ts fails; also fails at baseline HEAD",
+    "logUpdatedAt": "2026-11-12T05:35:59.837748+00:00"
+  },
+  {
+    "command": "BROWSER_PATH=<cached Chromium> npm run test:browser",
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "evidence": "browser-original.txt",
+    "detail": "localhost listen EPERM; no browser assertions executed",
+    "logUpdatedAt": "2026-11-12T05:39:14.666944+00:00"
+  },
+  {
+    "command": "curl http://127.0.0.1:3000/health --max-time 3",
+    "exitCode": 7,
+    "status": "BLOCKED",
+    "evidence": "gateway-health.txt",
+    "detail": "Gateway not reachable; no live test",
+    "logUpdatedAt": "2026-11-12T05:42:09.189908+00:00"
+  },
+  {
+    "command": "docker ps",
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "evidence": "docker.txt",
+    "detail": "Docker socket permission denied",
+    "logUpdatedAt": "2026-11-12T05:42:09.201916+00:00"
+  },
+  {
+    "command": "git diff --check",
+    "exitCode": 0,
+    "status": "PASS",
+    "evidence": "diff-check.txt",
+    "detail": "whitespace only",
+    "logUpdatedAt": "2026-11-12T05:42:09.202916+00:00"
+  }
+]

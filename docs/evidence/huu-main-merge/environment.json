@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-11-13T09:27:42.547069+00:00",
+  "frontend": {
+    "head": "1a98b6359ffab69bb3328b63b74101ef078f9666",
+    "main": "6692cc30e37a482b3afa57e4460c61392e91cb82",
+    "backup": "backup/huu-before-main-20261113-091236"
+  },
+  "backend": {
+    "head": "1792e65f76cf175700900e21ccabea4c055c6aaf",
+    "main": "95366ab5cc7b8a497bd3d6fe41bb63ea4ba231e9",
+    "backup": "backup/huu-before-main-20261113-091236",
+    "stash": "c7d647dde18c7dc72c335814a2cf1933666d021f"
+  },
+  "gitOperations": "Frontend merge commit; Backend fast-forward plus restored unstaged local work. No push.",
+  "frontendVitest": "207/207, 28 files",
+  "backendTopupCashout": "34/34 fake-store unit, source+Prisma mounted into cached image; build PASS",
+  "browser": "HTTP fixtures only",
+  "liveStack": "NOT_RUN after merge"
+}

@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth'
 import { errorMessage } from '@/lib/apiResponse'
 import { buildProfileUpdate, createProfileSchema, profileDefaults, type ProfileFormValues } from '../schemas/user.schema'
 import { userService } from '../services/userService'
@@ -32,7 +32,7 @@ export function ProfileForm({ profile, onSaved }: { profile: UserProfile; onSave
       if (useAuthStore.getState().user?.id === profile.authUserId) setError('root', { message: errorMessage(error) })
     } finally { busy.current = false }
   }
-  return <form onSubmit={handleSubmit(submit)} className="space-y-5" noValidate>
+  return <form onSubmit={(event) => { void handleSubmit(submit)(event) }} className="space-y-5" noValidate>
     <div className="space-y-2">
       <Label htmlFor="profile-email">Email</Label>
       <Input id="profile-email" type="email" value={profile.email} readOnly aria-describedby="email-help" />

@@ -6,12 +6,13 @@ import {
   type InfiniteData,
   type QueryClient
 } from '@tanstack/react-query'
+import { useAuthStore } from '@/features/auth'
 import { notificationApi } from './notification.api'
 import type { NotificationItem, NotificationListResponse } from '../types/notification.types'
 
 export const notificationKeys = {
   all: ['notifications'] as const,
-  lists: () => [...notificationKeys.all, 'list'] as const,
+  lists: (owner = useAuthStore.getState().user?.id ?? '') => [...notificationKeys.all, 'list', owner] as const,
   list: (page: number, limit: number) =>
     [...notificationKeys.lists(), 'page', { page, limit }] as const,
   infinite: (limit: number) => [...notificationKeys.lists(), 'infinite', { limit }] as const
@@ -105,16 +106,19 @@ export function applyRealtimeNotification(
 
 /** Bell dropdown: one page of the newest notifications. */
 export function useNotificationList(page = 1, limit = 8, options?: { enabled?: boolean }) {
+  const owner = useAuthStore(state => state.user?.id)
   return useQuery<NotificationListResponse, Error>({
     queryKey: notificationKeys.list(page, limit),
     queryFn: () => notificationApi.getNotifications(page, limit),
     staleTime: 15_000,
-    enabled: options?.enabled !== false
+    gcTime: 0,
+    enabled: Boolean(owner) && options?.enabled !== false
   })
 }
 
 /** Full page: keeps loading pages while `pagination.totalPages` is not reached. */
 export function useNotificationFeed(limit = 10, options?: { enabled?: boolean }) {
+  const owner = useAuthStore(state => state.user?.id)
   return useInfiniteQuery<NotificationListResponse, Error, NotificationFeed, readonly unknown[], number>({
     queryKey: notificationKeys.infinite(limit),
     queryFn: ({ pageParam }) => notificationApi.getNotifications(pageParam, limit),
@@ -124,7 +128,8 @@ export function useNotificationFeed(limit = 10, options?: { enabled?: boolean })
         ? lastPage.pagination.page + 1
         : undefined,
     staleTime: 15_000,
-    enabled: options?.enabled !== false
+    gcTime: 0,
+    enabled: Boolean(owner) && options?.enabled !== false
   })
 }
 

@@ -1,52 +1,10 @@
-import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { MainLayout } from '@/layouts/MainLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { RequireAuth, RequireRole, RedirectIfAuthed } from './guards'
-import { Loader2 } from 'lucide-react'
-
-// Lazy load các trang
-const HomePage = lazy(() => import('@/pages/HomePage'))
-const SignInPage = lazy(() => import('@/pages/SignInPage'))
-const SignUpPage = lazy(() => import('@/pages/SignUpPage'))
-const QrLoginPage = lazy(() => import('@/pages/QrLoginPage'))
-
-const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
-const TransferPage = lazy(() => import('@/pages/TransferPage'))
-const TopupPage = lazy(() => import('@/pages/TopupPage'))
-const WithdrawPage = lazy(() => import('@/pages/WithdrawPage'))
-const TransactionsPage = lazy(() => import('@/pages/TransactionsPage'))
-const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
-const UtilitiesPage = lazy(() => import('@/pages/UtilitiesPage'))
-const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
-
-const MerchantPortalPage = lazy(() => import('@/pages/MerchantPortalPage'))
-const MerchantRegisterPage = lazy(() => import('@/pages/MerchantRegisterPage'))
-
-const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'))
-const AdminKycPage = lazy(() => import('@/pages/AdminKycPage'))
-const AdminReconciliationPage = lazy(() => import('@/pages/AdminReconciliationPage'))
-const AdminTopupPage = lazy(() => import('@/pages/AdminTopupPage'))
-
-const ForbiddenPage = lazy(() => import('@/pages/ForbiddenPage'))
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
-
-function PageFallback() {
-  return (
-    <div className="flex h-64 w-full items-center justify-center" role="status">
-      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-    </div>
-  )
-}
-
-function withSuspense(Component: React.ComponentType) {
-  return (
-    <Suspense fallback={<PageFallback />}>
-      <Component />
-    </Suspense>
-  )
-}
+import { RoutePage } from './RoutePage'
+import { TopupResult, HomePage, SignInPage, SignUpPage, QrLoginPage, DashboardPage, TransferPage, TopupPage, WithdrawPage, TransactionsPage, ProfilePage, UtilitiesPage, NotificationsPage, MerchantPortalPage, MerchantRegisterPage, AdminDashboardPage, AdminKycPage, AdminReconciliationPage, AdminTopupPage, ForbiddenPage, NotFoundPage } from './routePages'
 
 export const router = createBrowserRouter([
   // 1. Công khai (Landing Page)
@@ -54,7 +12,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: (
       <RedirectIfAuthed>
-        {withSuspense(HomePage)}
+        <RoutePage page={HomePage} />
       </RedirectIfAuthed>
     )
   },
@@ -67,9 +25,9 @@ export const router = createBrowserRouter([
       </RedirectIfAuthed>
     ),
     children: [
-      { path: 'sign-in', element: withSuspense(SignInPage) },
-      { path: 'sign-up', element: withSuspense(SignUpPage) },
-      { path: 'qr-login', element: withSuspense(QrLoginPage) }
+      { path: 'sign-in', element: <RoutePage page={SignInPage} /> },
+      { path: 'sign-up', element: <RoutePage page={SignUpPage} /> },
+      { path: 'qr-login', element: <RoutePage page={QrLoginPage} /> }
     ]
   },
 
@@ -82,14 +40,15 @@ export const router = createBrowserRouter([
       </RequireAuth>
     ),
     children: [
-      { index: true, element: withSuspense(DashboardPage) },
-      { path: 'transfer', element: withSuspense(TransferPage) },
-      { path: 'topup', element: withSuspense(TopupPage) },
-      { path: 'withdraw', element: withSuspense(WithdrawPage) },
-      { path: 'transactions', element: withSuspense(TransactionsPage) },
-      { path: 'profile', element: withSuspense(ProfilePage) },
-      { path: 'utilities', element: withSuspense(UtilitiesPage) },
-      { path: 'notifications', element: withSuspense(NotificationsPage) }
+      { index: true, element: <RoutePage page={DashboardPage} /> },
+      { path: 'transfer', element: <RoutePage page={TransferPage} /> },
+      { path: 'topup', element: <RoutePage page={TopupPage} /> },
+      { path: 'topup/result', element: <RoutePage page={TopupResult} /> },
+      { path: 'withdraw', element: <RoutePage page={WithdrawPage} /> },
+      { path: 'transactions', element: <RoutePage page={TransactionsPage} /> },
+      { path: 'profile', element: <RoutePage page={ProfilePage} /> },
+      { path: 'utilities', element: <RoutePage page={UtilitiesPage} /> },
+      { path: 'notifications', element: <RoutePage page={NotificationsPage} /> }
     ]
   },
 
@@ -102,8 +61,8 @@ export const router = createBrowserRouter([
       </RequireAuth>
     ),
     children: [
-      { index: true, element: withSuspense(MerchantPortalPage) },
-      { path: 'register', element: withSuspense(MerchantRegisterPage) }
+      { index: true, element: <RoutePage page={MerchantPortalPage} /> },
+      { path: 'register', element: <RoutePage page={MerchantRegisterPage} /> }
     ]
   },
 
@@ -118,21 +77,21 @@ export const router = createBrowserRouter([
       </RequireAuth>
     ),
     children: [
-      { index: true, element: withSuspense(AdminDashboardPage) },
-      { path: 'kyc', element: withSuspense(AdminKycPage) },
-      { path: 'reconciliation', element: withSuspense(AdminReconciliationPage) },
-      { path: 'topups', element: withSuspense(AdminTopupPage) }
+      { index: true, element: <RoutePage page={AdminDashboardPage} /> },
+      { path: 'kyc', element: <RoutePage page={AdminKycPage} /> },
+      { path: 'reconciliation', element: <RoutePage page={AdminReconciliationPage} /> },
+      { path: 'topups', element: <RoutePage page={AdminTopupPage} /> }
     ]
   },
 
   // 6. Lỗi quyền và không tìm thấy trang
   {
     path: '403',
-    element: withSuspense(ForbiddenPage)
+    element: <RoutePage page={ForbiddenPage} />
   },
   {
     path: '404',
-    element: withSuspense(NotFoundPage)
+    element: <RoutePage page={NotFoundPage} />
   },
   {
     path: '*',

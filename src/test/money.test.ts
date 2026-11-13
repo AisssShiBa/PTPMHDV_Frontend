@@ -137,4 +137,3 @@ describe('src/lib/money.ts - FinVault Money Utility Specification', () => {
     })
   })
 })
-

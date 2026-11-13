@@ -1,0 +1,6 @@
+
+> frontend@0.0.0 test:huu:demo:seed
+> node tests/huu-closeout-live.mjs demo
+
+Waiting for a fresh Gateway rate-limit window before bulk synthetic accounts
+Demo fixture created; credentials saved only in ignored private acceptance directory.

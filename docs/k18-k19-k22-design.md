@@ -43,35 +43,35 @@
 ```mermaid
 stateDiagram-v2
     [*] --> RecipientInput: Khởi tạo luồng chuyển tiền\n(Sinh Idempotency-Key UUID mới)
-    
+
     RecipientInput --> Quoting: Nhập query -> useRecipientLookup thành công (maskedName)\nNhập số tiền hợp lệ + ghi chú -> Bấm tiếp tục
     RecipientInput --> RecipientInput: 404 (Không tìm thấy) / 429 (Cooldown 60s)
-    
+
     Quoting --> QuoteReview: POST /api/payments/p2p/quote thành công\n(Trả { amount, fee: 0, expiresAt: 60s })
     Quoting --> RecipientInput: 422 LIMIT_EXCEEDED (Hiển thị remaining theo PER_TXN/DAY/MONTH)
-    
+
     QuoteReview --> Quoting: Hết hạn báo giá 60s -> Yêu cầu lấy báo giá mới
     QuoteReview --> CheckoutInFlight: Bấm "Xác nhận chuyển tiền"\n(Khóa nút, gửi header Idempotency-Key)
-    
+
     CheckoutInFlight --> CheckoutInFlight: Timeout / Mạng rớt\n(Hiển thị "Đang xử lý", retry CÙNG Idempotency-Key)
     CheckoutInFlight --> RecipientInput: 422 INSUFFICIENT_FUNDS / LIMIT_EXCEEDED
     CheckoutInFlight --> PinVerification: 201 Created { paymentId, status: PENDING, holdExpiresAt }\nhoặc replayed: true
-    
+
     PinVerification --> PinVerification: 401 PIN_INVALID (Giảm attemptsLeft, xóa PIN)
     PinVerification --> PinLocked: 423 PIN_LOCKED (Đếm ngược tới lockedUntil)
     PinVerification --> PinNotSet: 409 PIN_NOT_SET (Dẫn tới cài đặt PIN)
     PinVerification --> ConfirmInFlight: Nhập đúng PIN -> Nhận transactionToken 60s\n(Xóa PIN khỏi state ngay lập tức)
-    
+
     ConfirmInFlight --> PinVerification: 401 TXN_TOKEN_EXPIRED\n(Mở lại PinModal nhập lại PIN, GIỮ paymentId)
     ConfirmInFlight --> RecipientInput: 410 PAYMENT_EXPIRED (Hold quá hạn)\n(Thông báo hết hạn, sinh Idempotency-Key mới)
     ConfirmInFlight --> PollingPaymentStatus: Timeout / Mạng rớt khi Confirm\n(TUYỆT ĐỐI KHÔNG confirm lại bằng token cũ!)
     ConfirmInFlight --> SuccessReceipt: 200 OK { status: 'SUCCESS' }
     ConfirmInFlight --> TransferFailed: 409 PAYMENT_NOT_PENDING / Lỗi xác định khác
-    
+
     PollingPaymentStatus --> SuccessReceipt: GET /api/payments/:id trả status: SUCCESS
     PollingPaymentStatus --> TransferFailed: GET /api/payments/:id trả status: FAILED / EXPIRED / CANCELLED
     PollingPaymentStatus --> PollingStalled: Vượt trần thời gian 30s vẫn PENDING\n(Giữ "Đang xử lý", nút "Kiểm tra lại", link Lịch sử)
-    
+
     SuccessReceipt --> [*]: Vô hiệu hóa cache số dư & sổ cái
     TransferFailed --> [*]: Bắt đầu lại giao dịch mới
     PinLocked --> [*]

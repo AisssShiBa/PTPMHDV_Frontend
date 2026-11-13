@@ -1,6 +1,10 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 
+declare module 'axios' {
+  interface AxiosRequestConfig { fundingNoReplay?: boolean }
+}
+
 export interface SessionRequest extends InternalAxiosRequestConfig {
   _retried?: boolean
   _owner?: string
@@ -31,6 +35,7 @@ api.interceptors.response.use(
     const original = error.config as SessionRequest | undefined
     if (
       !original ||
+      original.fundingNoReplay ||
       original.signal?.aborted ||
       original.url?.startsWith('/auth/') ||
       error.response?.status !== 401 ||

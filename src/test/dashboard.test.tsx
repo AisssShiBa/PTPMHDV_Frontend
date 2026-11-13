@@ -1,3 +1,4 @@
+import { useAuthStore, MOCK_USER } from '@/features/auth/stores/useAuthStore'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -26,6 +27,7 @@ function renderWithClient(ui: React.ReactElement) {
 describe('DashboardPage - K18-2', () => {
   beforeEach(() => {
     server.resetHandlers()
+    useAuthStore.setState({ user: MOCK_USER, accessToken: 'synthetic', initialized: true })
   })
 
   it('render đúng số tiền định dạng từ chuỗi lớn từ GET /api/wallets/me', async () => {
@@ -148,4 +150,3 @@ describe('DashboardPage - K18-2', () => {
     })
   })
 })
-

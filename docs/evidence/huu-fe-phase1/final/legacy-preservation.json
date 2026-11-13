@@ -1,0 +1,8 @@
+{
+  "preservedFrom": "ec9e7764224c61cb1421008352be5e07688d3e5e:tests/browser-smoke.mjs",
+  "preservedAs": "tests/browser-smoke-legacy.mjs",
+  "sha256": "65a6924356e971cbd9ffdd0feda7ac0a9016f3783b525e6df60d16ea85bd8e45",
+  "assertionsChanged": false,
+  "currentStatus": "DEFERRED_ROUTE_MIGRATION",
+  "command": "BROWSER_PATH=<path> npm run test:browser:legacy"
+}

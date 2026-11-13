@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge'
 
 export function QrLoginPage() {
   const [countdown, setCountdown] = useState(180)
-  const [isExpired, setIsExpired] = useState(false)
+  const isExpired = countdown <= 0
   const [isScanning, setIsScanning] = useState(false)
   const { signIn } = useAuthStore()
   const navigate = useNavigate()
@@ -27,7 +27,6 @@ export function QrLoginPage() {
   // Bộ đếm thời gian hiệu lực của mã QR (180 giây)
   useEffect(() => {
     if (countdown <= 0) {
-      setIsExpired(true)
       return
     }
 
@@ -41,7 +40,6 @@ export function QrLoginPage() {
   // Hàm làm mới mã QR
   const handleRefreshQr = () => {
     setCountdown(180)
-    setIsExpired(false)
     toast.info('Đã tạo mã QR đăng nhập mới')
   }
 

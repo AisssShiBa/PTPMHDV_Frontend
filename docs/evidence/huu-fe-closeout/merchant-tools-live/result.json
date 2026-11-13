@@ -1,0 +1,357 @@
+{
+  "status": "LIVE_MERCHANT_TOOLS_PASS",
+  "testedAt": "2026-11-13T04:22:49.903Z",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "checks": [
+    "M02 PENDING/REJECTED create is 409; APPROVED UI tools require server approval",
+    "M01/M04/M08 one UI create, real pagination, duplicate 409, version +1 and one matching DB outbox event",
+    "M05 exact server token encoded in SVG; backend signature/tamper/scope verification; real browser PDF contains standee only",
+    "M03/M06/M07 cross-owner 403/404; one-time server key, DB hash, no storage/view-again, explicit revoke and replay without secret",
+    "Mobile 390px without horizontal overflow; refresh cannot recover raw key"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/9c0da800-bee1-40e8-b911-6bce2f985fce/balance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 304
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets/be7012f5-efb5-49b3-907b-21f3bde14370/qr",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/api-keys",
+      "status": 201
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/api-keys/1186b1bc-711f-4852-b083-63028836e17f",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/9c0da800-bee1-40e8-b911-6bce2f985fce/balance",
+      "status": 304
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 304
+    }
+  ],
+  "apiChecks": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/9c0da800-bee1-40e8-b911-6bce2f985fce/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/6e868830-197b-41ce-803c-184427574512/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/c6660feb-d4c7-40d3-a53e-acb24eb69a30/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/register",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/register",
+      "status": 201
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/f463a426-77ae-4a95-9772-bea3e6434b97/status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/f463a426-77ae-4a95-9772-bea3e6434b97/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 409,
+      "code": "MERCHANT_NOT_APPROVED"
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/api-keys",
+      "status": 409,
+      "code": "MERCHANT_NOT_APPROVED"
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets/faf635ec-a973-49b5-aa3d-5cbd16871f4f/qr",
+      "status": 409,
+      "code": "MERCHANT_NOT_APPROVED"
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 409,
+      "code": "MERCHANT_NOT_APPROVED"
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/status",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/status",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 409,
+      "code": "DUPLICATE_RESOURCE"
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets/be7012f5-efb5-49b3-907b-21f3bde14370/qr",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/outlets/faf635ec-a973-49b5-aa3d-5cbd16871f4f/qr",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/api-keys",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "DELETE",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/api-keys/1186b1bc-711f-4852-b083-63028836e17f",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "DELETE",
+      "path": "/merchants/12e35690-99f1-4d01-85ea-de95dd4fb306/api-keys/1186b1bc-711f-4852-b083-63028836e17f",
+      "status": 200
+    }
+  ]
+}

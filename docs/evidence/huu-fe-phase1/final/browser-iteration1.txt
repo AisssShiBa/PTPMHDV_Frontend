@@ -1,0 +1,13 @@
+
+> frontend@0.0.0 test:browser
+> node tests/browser-smoke.mjs
+
+file:///home/nguyenhuu/Hoc%20Tap/HDV/PTPMHDV_Frontend/tests/browser-support.mjs:9
+  throw new Error('Timed out: ' + label)
+        ^
+
+Error: Timed out: profile API after refresh
+    at until (file:///home/nguyenhuu/Hoc%20Tap/HDV/PTPMHDV_Frontend/tests/browser-support.mjs:9:9)
+    at async file:///home/nguyenhuu/Hoc%20Tap/HDV/PTPMHDV_Frontend/tests/browser-smoke.mjs:97:3
+
+Node.js v22.23.1

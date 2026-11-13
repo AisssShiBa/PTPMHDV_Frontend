@@ -48,6 +48,8 @@ const QUICK_AMOUNTS = [
   { label: '1.000.000 ₫', value: '1000000' }
 ]
 
+const paymentClockNow = () => Date.now()
+
 export function TransferPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
@@ -138,7 +140,6 @@ export function TransferPage() {
   useEffect(() => {
     if (currentStep !== 2 || !quote) return
 
-    setQuoteCountdown(60)
     const timer = setInterval(() => {
       setQuoteCountdown((prev) => {
         if (prev <= 1) {
@@ -189,6 +190,7 @@ export function TransferPage() {
         destinationUserId: recipient.authUserId,
         amount
       })
+      setQuoteCountdown(60)
       setQuote(quoteRes)
       setCurrentStep(2)
       toast.success('Báo giá giao dịch thành công (có hiệu lực trong 60 giây).')
@@ -235,9 +237,9 @@ export function TransferPage() {
         destinationUserId: recipient.authUserId,
         amount
       })
-      setQuote(quoteRes)
       setQuoteCountdown(60)
-      setPaymentId(null)
+      setQuote(quoteRes)
+        setPaymentId(null)
       toast.success('Đã cập nhật báo giá giao dịch mới (60 giây).')
     } catch {
       toast.error('Không thể làm mới báo giá. Vui lòng quay lại Bước 1.')
@@ -264,9 +266,9 @@ export function TransferPage() {
   const pollPaymentStatus = async (
     targetPaymentId: string,
     attempt = 0,
-    startTime = Date.now()
+    startTime = paymentClockNow()
   ) => {
-    const elapsed = Date.now() - startTime
+    const elapsed = paymentClockNow() - startTime
     // Nếu quá trần 30 giây mà trạng thái vẫn PENDING: giữ "Đang xử lý", hiển thị nút "Kiểm tra lại" và link sang Lịch sử
     if (elapsed >= 30000) {
       setProcessingState({
@@ -338,7 +340,7 @@ export function TransferPage() {
       // Vẫn PENDING -> tiếp tục nhịp sau
       await pollPaymentStatus(targetPaymentId, attempt + 1, startTime)
     } catch {
-      if (Date.now() - startTime < 30000) {
+      if (paymentClockNow() - startTime < 30000) {
         await pollPaymentStatus(targetPaymentId, attempt + 1, startTime)
       } else {
         setProcessingState({
@@ -471,7 +473,7 @@ export function TransferPage() {
       if (isNetworkOrTimeout(err)) {
         // Confirm timeout/mạng: KHÔNG gọi confirm lại bằng token cũ
         // Chuyển sang poll GET /payments/:id
-        await pollPaymentStatus(paymentId, 0, Date.now())
+        await pollPaymentStatus(paymentId, 0, paymentClockNow())
         return
       }
 
@@ -1009,7 +1011,7 @@ export function TransferPage() {
                       <>
                         <Button
                           size="sm"
-                          onClick={() => pollPaymentStatus(processingState.paymentId, 0, Date.now())}
+                          onClick={() => pollPaymentStatus(processingState.paymentId, 0, paymentClockNow())}
                           disabled={isConfirming}
                           className="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
                         >

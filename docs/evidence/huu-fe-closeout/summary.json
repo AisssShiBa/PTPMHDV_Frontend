@@ -1,0 +1,134 @@
+{
+  "testedAt": "2026-11-13T04:47:55.040529+00:00",
+  "regressionSuites": 9,
+  "regressionStatus": "PASS",
+  "latestWalletP2PCases": {
+    "a4": {
+      "scenario": "a4",
+      "startedAt": "2026-11-13T04:36:34.363Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:36:36.297Z"
+    },
+    "s4": {
+      "scenario": "s4",
+      "startedAt": "2026-11-13T04:36:36.298Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:36:37.884Z"
+    },
+    "s5": {
+      "scenario": "s5",
+      "startedAt": "2026-11-13T04:36:37.885Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:36:39.234Z"
+    },
+    "a9": {
+      "scenario": "a9",
+      "startedAt": "2026-11-13T04:36:39.235Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:36:41.706Z"
+    },
+    "s6": {
+      "scenario": "s6",
+      "startedAt": "2026-11-13T04:36:41.706Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:37:36.661Z"
+    },
+    "s15": {
+      "scenario": "s15",
+      "startedAt": "2026-11-13T04:37:36.661Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:37:38.372Z"
+    },
+    "concurrentConfirm": {
+      "scenario": "concurrentConfirm",
+      "startedAt": "2026-11-13T04:37:38.373Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:37:39.924Z"
+    },
+    "ambiguousCapture": {
+      "scenario": "ambiguousCapture",
+      "startedAt": "2026-11-13T04:45:01.971Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:45:05.546Z"
+    },
+    "s8": {
+      "scenario": "s8",
+      "startedAt": "2026-11-13T04:41:35.036Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:41:53.322Z"
+    },
+    "s16": {
+      "scenario": "s16",
+      "startedAt": "2026-11-13T04:41:53.322Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:42:01.375Z"
+    },
+    "realtime": {
+      "scenario": "realtime",
+      "startedAt": "2026-11-13T04:38:38.619Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:38:45.560Z"
+    },
+    "global-ledger-conservation": {
+      "scenario": "global-ledger-conservation",
+      "status": "PASS"
+    },
+    "walletA9": {
+      "scenario": "walletA9",
+      "startedAt": "2026-11-13T04:40:00.912Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:40:02.878Z"
+    },
+    "walletS6": {
+      "scenario": "walletS6",
+      "startedAt": "2026-11-13T04:43:05.503Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:43:08.456Z"
+    },
+    "s7": {
+      "scenario": "s7",
+      "startedAt": "2026-11-13T04:40:04.199Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:40:10.340Z"
+    },
+    "inlineExpiry": {
+      "scenario": "inlineExpiry",
+      "startedAt": "2026-11-13T04:46:08.172Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:46:10.353Z"
+    },
+    "s10": {
+      "scenario": "s10",
+      "startedAt": "2026-11-13T04:40:12.228Z",
+      "status": "PASS",
+      "finishedAt": "2026-11-13T04:40:18.308Z"
+    }
+  },
+  "caseEvidence": {
+    "a4": "p2p/result.json",
+    "s4": "p2p/result.json",
+    "s5": "p2p/result.json",
+    "a9": "p2p/result.json",
+    "s6": "p2p/result.json",
+    "s15": "p2p/result.json",
+    "concurrentConfirm": "p2p/result.json",
+    "ambiguousCapture": "p2p-capture-retest/result.json",
+    "s8": "p2p-retest/result.json",
+    "s16": "p2p-retest/result.json",
+    "realtime": "p2p/result.json",
+    "global-ledger-conservation": "p2p-capture-retest/result.json",
+    "walletA9": "wallet/result.json",
+    "walletS6": "wallet-retest/result.json",
+    "s7": "wallet/result.json",
+    "inlineExpiry": "wallet-expiry-retest/result.json",
+    "s10": "wallet/result.json"
+  },
+  "initialFailuresRetained": true,
+  "realVnpaySandbox": "NOT_RUN",
+  "activeTransferUI": "BLOCKED_OWNER_INTEGRATION",
+  "namedK18Mapping": "MANUAL_PENDING",
+  "productSourceChangedInCloseout": false,
+  "syntheticDemo": "PASS",
+  "rehearsal": "LIVE_REHEARSAL_PASS",
+  "gitCommitPushMerge": "NOT_DONE"
+}

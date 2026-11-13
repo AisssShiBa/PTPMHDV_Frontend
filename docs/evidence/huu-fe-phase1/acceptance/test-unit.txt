@@ -1,0 +1,5 @@
+
+> frontend@0.0.0 test:unit
+> vitest run
+
+sh: line 1: vitest: command not found

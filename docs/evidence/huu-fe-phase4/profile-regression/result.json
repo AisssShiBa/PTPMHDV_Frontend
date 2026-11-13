@@ -1,0 +1,139 @@
+{
+  "status": "MOCK_HTTP_BROWSER_PASS",
+  "testedAt": "2026-11-12T13:23:52.637Z",
+  "checks": [
+    "Profile GET/PUT/reload, real AuthStore refresh against fixture API, email readonly",
+    "Two-sided real HTTP multipart to synthetic server; required back, one POST after double click, draft retained",
+    "PENDING/APPROVED/REJECTED from status API, reason and tier, document viewer TTL",
+    "1280px screenshot, 390px no overflow screenshot and keyboard form navigation",
+    "Error/retry, unauthorized guard, failed login and successful API login",
+    "Account B reload has no account A draft/image; no token in storage, no IPN, no JS exceptions"
+  ],
+  "uploads": 1,
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me/kyc"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me/kyc"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users/kyc/documents"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me/kyc"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001/kyc/document"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me/kyc"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me/kyc"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me/kyc"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me/kyc"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000002/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/by-auth/10000000-0000-4000-8000-000000000002"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me/kyc"
+    }
+  ]
+}

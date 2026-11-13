@@ -21,11 +21,8 @@ const numberFormatter = new Intl.NumberFormat('vi-VN', {
  * - Chỉ gồm các chữ số 0-9
  * - Không chứa dấu âm, dấu chấm, dấu phẩy, chữ cái, khoảng trắng
  */
-export function isValidMoneyInput(value: string): boolean {
-  if (typeof value !== 'string') return false
-  const trimmed = value.trim()
-  if (!trimmed) return false
-  return /^\d+$/.test(trimmed)
+export function isValidMoneyInput(value: unknown): value is string {
+  return typeof value === 'string' && /^(0|[1-9]\d{0,17})$/.test(value)
 }
 
 /**
@@ -204,3 +201,12 @@ export function validateTransferAmount(
  */
 export const toBigIntSafe = parseVndToBigInt
 
+
+export function normalizeVnd(value: string): string {
+  if (!/^(0|[1-9]\d{0,17})(\.0+)?$/.test(value))
+    throw new Error('Số tiền phản hồi không hợp lệ.')
+  return BigInt(value.split('.')[0]).toString()
+}
+export function formatVndExact(value: string): string {
+  return new Intl.NumberFormat('vi-VN').format(BigInt(normalizeVnd(value)))
+}

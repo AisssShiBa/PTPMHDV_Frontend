@@ -1,14 +1,16 @@
-import { useQuery, useInfiniteQuery, type QueryClient } from '@tanstack/react-query'
+import { queryOptions, useQuery, useInfiniteQuery, type QueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/features/auth'
 import { walletApi } from './wallet.api'
 import type { WalletMe, LedgerPage, LedgerFilterParams } from '../types/wallet.types'
 
 export const walletKeys = {
   all: ['wallets'] as const,
-  me: () => [...walletKeys.all, 'me'] as const,
+  me: (owner = useAuthStore.getState().user?.id ?? '') => [...walletKeys.all, 'me', owner] as const,
+  balance: (owner: string, refreshTrigger = 0) => refreshTrigger ? [...walletKeys.me(owner), refreshTrigger] as const : walletKeys.me(owner),
   ledger: (cursor?: string | null, limit?: number, filters?: LedgerFilterParams) =>
-    [...walletKeys.all, 'ledger', { cursor: cursor ?? null, limit: limit ?? 20, ...filters }] as const,
+    [...walletKeys.all, 'ledger', useAuthStore.getState().user?.id ?? '', { cursor: cursor ?? null, limit: limit ?? 20, ...filters }] as const,
   infiniteLedger: (limit?: number, filters?: LedgerFilterParams) =>
-    [...walletKeys.all, 'ledger', 'infinite', { limit: limit ?? 20, ...filters }] as const
+    [...walletKeys.all, 'ledger', 'infinite', useAuthStore.getState().user?.id ?? '', { limit: limit ?? 20, ...filters }] as const
 }
 
 /**
@@ -16,11 +18,13 @@ export const walletKeys = {
  * Endpoint: GET /api/wallets/me
  */
 export function useMyWallet(options?: { enabled?: boolean }) {
+  const owner = useAuthStore(state => state.user?.id) ?? ''
   return useQuery<WalletMe, Error>({
-    queryKey: walletKeys.me(),
+    queryKey: walletKeys.me(owner),
     queryFn: ({ signal }) => walletApi.getMyWallet(signal),
     staleTime: 10_000,
-    enabled: options?.enabled !== false
+    gcTime: 0,
+    enabled: Boolean(owner) && options?.enabled !== false
   })
 }
 
@@ -34,6 +38,7 @@ export function useMyLedger(
   params?: { cursor?: string | null; limit?: number } & LedgerFilterParams,
   options?: { enabled?: boolean }
 ) {
+  const owner = useAuthStore(state => state.user?.id) ?? ''
   return useQuery<LedgerPage, Error>({
     queryKey: walletKeys.ledger(params?.cursor, params?.limit, {
       startDate: params?.startDate,
@@ -42,7 +47,8 @@ export function useMyLedger(
     }),
     queryFn: ({ signal }) => walletApi.getMyLedger(params, signal),
     staleTime: 15_000,
-    enabled: options?.enabled !== false
+    gcTime: 0,
+    enabled: Boolean(owner) && options?.enabled !== false
   })
 }
 
@@ -57,6 +63,7 @@ export function useInfiniteMyLedger(
   filters?: LedgerFilterParams,
   options?: { enabled?: boolean }
 ) {
+  const owner = useAuthStore(state => state.user?.id) ?? ''
   return useInfiniteQuery<LedgerPage, Error>({
     queryKey: walletKeys.infiniteLedger(limit, filters),
     queryFn: ({ pageParam, signal }) =>
@@ -67,7 +74,8 @@ export function useInfiniteMyLedger(
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
     staleTime: 15_000,
-    enabled: options?.enabled !== false
+    gcTime: 0,
+    enabled: Boolean(owner) && options?.enabled !== false
   })
 }
 
@@ -81,4 +89,19 @@ export function invalidateWalletQueries(queryClient: QueryClient) {
     queryClient.invalidateQueries({ queryKey: walletKeys.me() }),
     queryClient.invalidateQueries({ queryKey: [...walletKeys.all, 'ledger'] })
   ])
+}
+
+/** Funding shares the authenticated Wallet Me API/cache with K18. */
+export const walletQueries = {
+  balance: (owner: string, refreshTrigger = 0) => queryOptions({
+    queryKey: walletKeys.balance(owner, refreshTrigger),
+    queryFn: ({ signal }) => walletApi.getWalletMe(signal),
+    enabled: Boolean(owner),
+    staleTime: 0,
+    gcTime: 0,
+  }),
+}
+export function useWalletBalance(refreshTrigger = 0) {
+  const owner = useAuthStore(state => state.user?.id) ?? ''
+  return useQuery(walletQueries.balance(owner, refreshTrigger))
 }

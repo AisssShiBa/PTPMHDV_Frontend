@@ -126,6 +126,7 @@ describe('Nghiệm thu K18: Kịch bản A1, A2, A9 qua giao diện Web', () => 
     )
 
     const results = await Promise.all(parallelRequests)
+    expect(rejectedCount).toBe(19)
 
     // Kiểm chứng kết quả A1:
     const successes = results.filter((r) => r === 'SUCCESS')

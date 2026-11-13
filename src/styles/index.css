@@ -196,3 +196,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+@media print {
+  html:has([data-merchant-print]), body:has([data-merchant-print]) { background: white !important; }
+  body:has([data-merchant-print]) * { visibility: hidden !important; }
+  body:has([data-merchant-print]) [data-merchant-print], body:has([data-merchant-print]) [data-merchant-print] * { visibility: visible !important; }
+  body:has([data-merchant-print]) [data-merchant-print] { position: fixed !important; inset: 0 !important; margin: auto !important; width: 90mm !important; height: fit-content !important; background: white !important; color: black !important; }
+}

@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: M06 the raw secret appears once at creation and only its hash is stored
+ok 1 - M06 the raw secret appears once at creation and only its hash is stored
+  ---
+  duration_ms: 25.598559
+  type: 'test'
+  ...
+# Subtest: M07 revoke is idempotent, hides the secret and blocks verification
+ok 2 - M07 revoke is idempotent, hides the secret and blocks verification
+  ---
+  duration_ms: 0.885635
+  type: 'test'
+  ...
+# Subtest: a non-matching secret never verifies and never marks lastUsedAt
+ok 3 - a non-matching secret never verifies and never marks lastUsedAt
+  ---
+  duration_ms: 0.299221
+  type: 'test'
+  ...
+# Subtest: issueApiKey derives keyId and hash server-side
+ok 4 - issueApiKey derives keyId and hash server-side
+  ---
+  duration_ms: 0.307767
+  type: 'test'
+  ...
+# Subtest: M03 another owner cannot issue or revoke keys
+ok 5 - M03 another owner cannot issue or revoke keys
+  ---
+  duration_ms: 12.671159
+  type: 'test'
+  ...
+# Subtest: revoking an unknown key answers 404 without leaking anything
+ok 6 - revoking an unknown key answers 404 without leaking anything
+  ---
+  duration_ms: 13.860299
+  type: 'test'
+  ...
+# Subtest: M01 approved owner creates an outlet and lists only that merchant
+ok 7 - M01 approved owner creates an outlet and lists only that merchant
+  ---
+  duration_ms: 44.2729
+  type: 'test'
+  ...
+# Subtest: M02 outlets and API keys are refused unless the merchant is APPROVED
+ok 8 - M02 outlets and API keys are refused unless the merchant is APPROVED
+  ---
+  duration_ms: 24.326822
+  type: 'test'
+  ...
+# Subtest: M03 another owner is denied; ADMIN is allowed by contract
+ok 9 - M03 another owner is denied; ADMIN is allowed by contract
+  ---
+  duration_ms: 10.148811
+  type: 'test'
+  ...
+# Subtest: M05 QR signature covers every field and cannot be replayed for another merchant
+ok 10 - M05 QR signature covers every field and cannot be replayed for another merchant
+  ---
+  duration_ms: 3.319627
+  type: 'test'
+  ...
+# Subtest: an outletId from another merchant does not resolve
+ok 11 - an outletId from another merchant does not resolve
+  ---
+  duration_ms: 2.424029
+  type: 'test'
+  ...
+# Subtest: outlet codes reject characters that would break the canonical QR form
+ok 12 - outlet codes reject characters that would break the canonical QR form
+  ---
+  duration_ms: 6.484969
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1290.90775

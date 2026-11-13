@@ -42,7 +42,7 @@ export function RequireAuth({ children }: GuardProps) {
   }
 
   if (!accessToken || !user) {
-    return <Navigate to="/sign-in" state={{ from: location.pathname }} replace />
+    return <Navigate to="/sign-in" state={{ from: location.pathname + location.search }} replace />
   }
 
   return children ? <>{children}</> : <Outlet />

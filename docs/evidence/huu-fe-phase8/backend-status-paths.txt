@@ -1,0 +1,19 @@
+ M gateway/package.json
+ M gateway/src/config/redis.ts
+ M gateway/src/middlewares/authenticate.ts
+ M services/payment-service/prisma/schema.prisma
+ M services/payment-service/src/controllers/topup.controller.ts
+ M services/payment-service/src/services/topup.service.ts
+ M services/payment-service/src/validations/topup.validation.ts
+ M services/wallet-service/prisma/migrations/20261106120000_rename_topup_pool_add_settlement/migration.sql
+ M tests/acceptance/week2/runtime.mjs
+?? docs/handover/
+?? gateway/tests/funding-auth.test.ts
+?? services/auth-service/prisma/migrations/20261112120000_session_refresh_rotation/
+?? services/auth-service/tests/session-migration.test.cjs
+?? services/payment-service/prisma/migrations/20261113090000_topup_idempotency/
+?? services/payment-service/tests/topup-create.test.ts
+?? services/wallet-service/tests/system-wallet-migration.test.cjs
+?? tests/acceptance/demo-seed.mjs
+?? tests/acceptance/demo-seed.verify.mjs
+?? tests/acceptance/week2/prepare.test.mjs

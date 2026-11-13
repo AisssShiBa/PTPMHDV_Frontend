@@ -44,8 +44,8 @@ describe('TransferPage Bước 2 - Checkout, PIN, Confirm [K19-2]', () => {
 
   it('luồng chuyển tiền thành công trọn vẹn: quote -> checkout (Idempotency-Key) -> PIN -> confirm (X-Transaction-Token) -> biên lai', async () => {
     let capturedIdempotencyKey: string | null = null
-    let capturedCheckoutBody: any = null
-    let capturedPinBody: any = null
+    let capturedCheckoutBody: unknown = null
+    let capturedPinBody: unknown = null
     let capturedConfirmToken: string | null = null
     let capturedConfirmPaymentId: string | null = null
 

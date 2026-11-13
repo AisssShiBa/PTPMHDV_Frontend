@@ -1,0 +1,17 @@
+{
+  "PTPMHDV_Backend/gateway/src/middlewares/authenticate.ts": "76741cd95a355181d3b8916793afcb163d5b9d80dddacad4a122fbd93da72079",
+  "PTPMHDV_Backend/gateway/tests/funding-auth.test.ts": "9885479663bf255243bca41a95e76f1a1f19f5f1afa20ce52f0ffd1c6b826eb6",
+  "PTPMHDV_Backend/services/payment-service/src/controllers/topup.controller.ts": "ef43adf001dd452084e64ade2179cf7c0b6703a0e03b5b162cd7fbceeddd2e82",
+  "PTPMHDV_Backend/services/payment-service/src/services/topup.service.ts": "5f602ba586e77b0d183b220a664989cc93cf9011a29a9bb87150a15e75c57ddd",
+  "PTPMHDV_Backend/services/payment-service/src/validations/topup.validation.ts": "7e2f83f5fa88b21d264b21371e87186c81cea4c22c59962c4479f225a7bf5729",
+  "PTPMHDV_Backend/services/payment-service/prisma/schema.prisma": "8145386544b19109f0423e3917525b3366b7651effad21ac34e18d7f511e73b1",
+  "PTPMHDV_Backend/services/payment-service/prisma/migrations/20261113090000_topup_idempotency/migration.sql": "196669077e2cf2d501b6322f2af0cff7af5a3fbc3777059fe60885b3fcde5742",
+  "PTPMHDV_Backend/services/payment-service/tests/topup-create.test.ts": "1052c4653d12ea60be4f370e9ec86ae51d3305c618aedd973a0ce16acacdb859",
+  "PTPMHDV_Frontend/src/features/funding/api/funding.api.ts": "53eb95e0da7ba26f6dd86e17e7945ca14c1ac5f189db12d79301ba3e73aa5331",
+  "PTPMHDV_Frontend/src/test/funding.test.tsx": "40c650dd383683a7af0a93ae537926b0f8f38f9a0062ca3569bebef88e2293c3",
+  "PTPMHDV_Frontend/tests/phase3-live.mjs": "61407759698e2613cb14081a992c79e64459a8b7b53f2e1af68b54277447ffb1",
+  "PTPMHDV_Frontend/tests/topup-browser.mjs": "5fb2a1866f412f634e6a3986a2d3a3fa90cfe393f8ac186f152d0c004bb930ba",
+  "PTPMHDV_Frontend/tests/funding-live.mjs": "6196f829c78bfcf64758673f45659db3434be232024c2add077204017d865901",
+  "PTPMHDV_Frontend/package.json": "e54249c2243dc795a298bc81312aca64800065acb5c26339bcda1f32dd92b66c",
+  "PTPMHDV_Frontend/packages/api-contract/openapi.yaml": "2e19418a5d97485789229e52a1f0cb7c620682b4234658199513a39d3b1afb0f"
+}

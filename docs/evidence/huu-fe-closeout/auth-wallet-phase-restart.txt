@@ -1,0 +1,2 @@
+ Container finvault-acceptance-dadc7eef7537-auth-service-1 Restarting 
+ Container finvault-acceptance-dadc7eef7537-auth-service-1 Started 

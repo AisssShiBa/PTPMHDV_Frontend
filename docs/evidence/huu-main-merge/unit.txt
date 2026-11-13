@@ -1,0 +1,111 @@
+
+> frontend@0.0.0 test:unit
+> vitest run
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ✓ src/test/transactions.test.tsx (5 tests) 1185ms
+   ✓ TransactionsPage - Cursor Pagination & Ledger [K22-1] > phân trang cursor: tải 2 trang, ghép đúng thứ tự, không trùng lặp, hết trang nút tải thêm biến mất  714ms
+ ✓ src/test/topupFlow.test.tsx (14 tests) 1877ms
+   ✓ Topup create UI (MSW contract only) > validates custom amount without float coercion and makes no request for invalid input  523ms
+ ✓ src/test/userProfile.test.tsx (12 tests) 2156ms
+   ✓ Profile and KYC integration > saves changed profile fields through PUT and reads them again after remount  705ms
+   ✓ Profile and KYC integration > requires both images, sends multipart once on double submit and reconciles PENDING  376ms
+ ✓ src/test/merchantOnboarding.test.tsx (13 tests) 2070ms
+   ✓ Merchant onboarding and status > only explicit null opens an empty registration form  374ms
+   ✓ Merchant onboarding and status > portal with null links to registration instead of inventing a merchant  335ms
+   ✓ Merchant onboarding and status > does not create twice after an ambiguous POST outcome; checks me explicitly  306ms
+ ✓ src/test/acceptance-k18.test.tsx (4 tests) 2211ms
+   ✓ Nghiệm thu K18: Kịch bản A1, A2, A9 qua giao diện Web > A1: 20 request song song trên ví 100.000đ -> đúng 1 thành công, 19 bị từ chối, số dư còn 40.000đ  512ms
+   ✓ Nghiệm thu K18: Kịch bản A1, A2, A9 qua giao diện Web > A2: gửi hai lần liên tiếp cùng Idempotency-Key -> chỉ 1 payment, lần 2 trả replayed: true, UI an toàn  793ms
+   ✓ Nghiệm thu K18: Kịch bản A1, A2, A9 qua giao diện Web > A9 (a): Chuyển 600.000đ vượt hạn mức PER_TXN (200.000đ) -> 422 LIMIT_EXCEEDED, hiển thị đúng còn lại, số dư không đổi  397ms
+   ✓ Nghiệm thu K18: Kịch bản A1, A2, A9 qua giao diện Web > A9 (b): Chuyển 2 lần 200.000đ thành công, lần thứ 3 bị 422 LIMIT_EXCEEDED (PER_DAY)  499ms
+ ✓ src/test/transfer-step1.test.tsx (6 tests) 2365ms
+   ✓ TransferPage Bước 1 - K19-1 > tra cứu người nhận thành công: hiển thị maskedName  495ms
+   ✓ TransferPage Bước 1 - K19-1 > gọi quote thành công chuyển sang Bước 2 (xác nhận, phí 0đ, đếm ngược 60s)  518ms
+   ✓ TransferPage Bước 1 - K19-1 > xử lý 422 LIMIT_EXCEEDED cho cả 3 limitType (PER_TXN, PER_DAY, PER_MONTH) với số tiền chuỗi lớn  768ms
+stderr | src/test/transfer-step2.test.tsx > TransferPage Bước 2 - Checkout, PIN, Confirm [K19-2] > xử lý nhập sai mã PIN: hiển thị số lần thử còn lại và không lộ PIN
+[MSW] Error: intercepted a request without a matching request handler:
+
+  • GET /api/auth/pin/status
+
+If you still wish to intercept this unhandled request, please create a request handler for it.
+Read more: https://mswjs.io/docs/http/intercepting-requests
+
+ ✓ src/test/admin.test.tsx (12 tests) 2662ms
+   ✓ Admin KYC UI [N17] > hiển thị đủ 4 trạng thái danh sách KYC  634ms
+   ✓ Admin KYC UI [N17] > mở hồ sơ, chặn từ chối thiếu lý do rồi gửi đúng body khi có lý do  650ms
+   ✓ Admin Topups UI [N17] > hiển thị 4 trạng thái và số tiền dạng chuỗi  322ms
+   ✓ Admin Topups UI [N17] > duyệt lệnh nạp hiển thị lỗi NOT_ALLOWED bằng tiếng Việt  426ms
+ ✓ src/test/transactionSafety.test.tsx (5 tests) 2632ms
+   ✓ Transaction PIN > cannot issue a fake token when the caller has no bound order  1347ms
+   ✓ Transaction PIN > uses the real API adapter with the exact order and amount  543ms
+   ✓ Transaction PIN > does not deliver a delayed token after the modal is closed  445ms
+ ✓ src/test/acceptance-k19.test.tsx (5 tests) 2777ms
+   ✓ Nghiệm thu K19: Kịch bản A1, A2, A9 và chuyển An sang Bình qua giao diện Web [K19-4] > Chuyển An sang Bình 60.000đ trên Web: số dư đổi đúng ở cả hai bên  1399ms
+   ✓ Nghiệm thu K19: Kịch bản A1, A2, A9 và chuyển An sang Bình qua giao diện Web [K19-4] > A2: gửi hai lần liên tiếp cùng Idempotency-Key -> chỉ 1 payment, lần 2 trả replayed: true, UI an toàn  522ms
+   ✓ Nghiệm thu K19: Kịch bản A1, A2, A9 và chuyển An sang Bình qua giao diện Web [K19-4] > A9 (b): Chuyển 2 lần 200.000đ thành công, lần thứ 3 bị 422 LIMIT_EXCEEDED (PER_DAY)  305ms
+ ✓ src/test/transfer-step2.test.tsx (3 tests) 3537ms
+   ✓ TransferPage Bước 2 - Checkout, PIN, Confirm [K19-2] > luồng chuyển tiền thành công trọn vẹn: quote -> checkout (Idempotency-Key) -> PIN -> confirm (X-Transaction-Token) -> biên lai  1695ms
+   ✓ TransferPage Bước 2 - Checkout, PIN, Confirm [K19-2] > xử lý nhập sai mã PIN: hiển thị số lần thử còn lại và không lộ PIN  745ms
+   ✓ TransferPage Bước 2 - Checkout, PIN, Confirm [K19-2] > xử lý TXN_TOKEN_EXPIRED (401 khi confirm): giữ nguyên paymentId và mở lại PinModal  1083ms
+ ✓ src/test/reconciliation.test.tsx (10 tests) 4345ms
+   ✓ Reconciliation page states and reports [N18] > hiển thị loading, lỗi và rỗng của danh sách báo cáo  532ms
+   ✓ Reconciliation page states and reports [N18] > hiển thị đủ 4 loại anomaly, loại lạ mặc định và trạng thái isBalanced  509ms
+   ✓ Reconciliation page states and reports [N18] > gọi đúng endpoint và query mode khi chạy đối soát  535ms
+   ✓ Reconciliation adjustment [N18] > gửi đúng body điều chỉnh và đóng hộp thoại khi thành công  654ms
+   ✓ Reconciliation adjustment [N18] > chặn số tiền không hợp lệ trước khi gọi API  572ms
+   ✓ Reconciliation adjustment [N18] > 409 ALREADY_ADJUSTED báo đã điều chỉnh và làm mới dữ liệu  516ms
+   ✓ Reconciliation adjustment [N18] > 503 ADJUST_OUTCOME_UNKNOWN báo chưa rõ kết quả và KHÔNG tự thử lại  591ms
+   ✓ Reconciliation adjustment [N18] > double-click chỉ gửi một request điều chỉnh  416ms
+ ✓ src/test/merchantTools.test.tsx (12 tests) 4528ms
+   ✓ Merchant tools sensitive workflows > does not offer outlet/QR/key create for PENDING  456ms
+   ✓ Merchant tools sensitive workflows > validates outlet code before HTTP and shows server-backed list pagination  467ms
+   ✓ Merchant tools sensitive workflows > renders server QR, supports print, then removes it without caching the token  438ms
+   ✓ Merchant tools sensitive workflows > keeps the raw key only in the open modal, never storage/cache, with no view-again feature  456ms
+   ✓ Merchant tools sensitive workflows > removes an already displayed key immediately on account switch  391ms
+   ✓ Merchant tools sensitive workflows > ignores an API-key response after the modal is closed  377ms
+   ✓ Merchant tools sensitive workflows > does not retry key creation on error and does not retain a signed-in account key after switch  498ms
+   ✓ Merchant tools sensitive workflows > revokes by metadata keyId only, with explicit confirmation and idempotent user retry  504ms
+ ✓ src/test/transactions-filters.test.tsx (4 tests) 517ms
+ ✓ src/test/money.test.ts (13 tests) 30ms
+ ✓ src/test/ledger-reconciliation.test.ts (6 tests) 18ms
+ ✓ src/test/format.test.ts (8 tests) 38ms
+ ✓ src/test/axios.test.ts (4 tests) 138ms
+ ✓ src/test/notificationBell.test.tsx (2 tests) 661ms
+   ✓ reconciles duplicate mark-read responses to the server unread count only once  413ms
+ ✓ src/test/static-money-rules.test.ts (5 tests) 11ms
+ ✓ src/test/funding.test.tsx (18 tests) 270ms
+ ✓ src/test/notification-center.test.tsx (5 tests) 578ms
+ ✓ src/test/dashboard.test.tsx (4 tests) 496ms
+   ✓ DashboardPage - K18-2 > render đúng số tiền định dạng từ chuỗi lớn từ GET /api/wallets/me  303ms
+ ✓ src/test/transfer-timeout.test.tsx (4 tests) 5921ms
+   ✓ TransferPage Timeout & Safe Retry - K19-3 > checkout bị timeout: hiển thị "Đang xử lý, vui lòng không thực hiện lại" và bấm Thử lại giữ CÙNG Idempotency-Key  1080ms
+   ✓ TransferPage Timeout & Safe Retry - K19-3 > confirm bị timeout: KHÔNG gọi confirm lại, poll GET /payments/:id ra SUCCESS -> hiển thị thành công  2490ms
+   ✓ TransferPage Timeout & Safe Retry - K19-3 > confirm bị timeout: poll ra FAILED -> hiển thị màn thất bại và lý do  1306ms
+   ✓ TransferPage Timeout & Safe Retry - K19-3 > confirm bị timeout và poll vượt quá trần thời gian: giữ trạng thái "Giao dịch đang xử lý", hiển thị nút "Kiểm tra lại" và link Lịch sử  1038ms
+ ✓ src/test/apiResponse.test.ts (4 tests) 9ms
+ ✓ src/test/wallet-api.test.ts (4 tests) 12ms
+ ✓ src/test/utilities.test.tsx (8 tests) 6423ms
+   ✓ Utilities page states [N16] > hiển thị đủ loading, lỗi, rỗng và thành công  625ms
+   ✓ Utilities top-up checkout [N16] > gửi đúng body/header, xác thực PIN rồi theo dõi đơn đến SUCCESS  1071ms
+   ✓ Utilities top-up checkout [N16] > timeout khi tạo đơn: bấm Thử lại giữ CÙNG Idempotency-Key  461ms
+   ✓ Utilities top-up checkout [N16] > đổi nội dung form thì sinh Idempotency-Key mới  372ms
+   ✓ Utilities top-up checkout [N16] > double-click chỉ gửi một request tạo đơn  317ms
+   ✓ Utilities top-up checkout [N16] > hiển thị rõ trạng thái REFUNDED và dừng theo dõi ở trạng thái cuối  3078ms
+   ✓ Utilities bill payment [N16] > tra cứu hóa đơn rồi thanh toán đúng amount từ lookup  307ms
+ ✓ src/test/wallet-cleanup.test.tsx (2 tests) 68ms
+ ✓ src/test/cashoutFlow.test.tsx (15 tests) 7021ms
+   ✓ Cashout UI contract (MSW, no live bank) > rejects decimal/zero inputs without creating an order  697ms
+   ✓ Cashout UI contract (MSW, no live bank) > creates only once for two submits and never treats REQUESTED as paid  395ms
+   ✓ Cashout UI contract (MSW, no live bank) > binds PIN to server order and amount, confirms once and only prints after server SUCCEEDED  1199ms
+   ✓ Cashout UI contract (MSW, no live bank) > keeps payout UNKNOWN pending and reads status instead of replaying token  1225ms
+   ✓ Cashout UI contract (MSW, no live bank) > allows fresh PIN only after explicit token expiry and REQUESTED GET  1239ms
+   ✓ Cashout UI contract (MSW, no live bank) > does not unlock a second confirm for TXN_TOKEN_REUSED  712ms
+   ✓ Cashout UI contract (MSW, no live bank) > does not unlock a second confirm for TXN_TOKEN_MISMATCH  458ms
+
+ Test Files  28 passed (28)
+      Tests  207 passed (207)
+   Start at  16:25:18
+   Duration  11.07s (transform 4.74s, setup 11.23s, collect 31.77s, tests 54.56s, environment 26.56s, prepare 6.40s)

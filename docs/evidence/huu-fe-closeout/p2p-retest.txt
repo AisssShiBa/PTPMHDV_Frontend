@@ -1,0 +1,4 @@
+Waiting for a fresh Gateway rate-limit window before bulk synthetic accounts
+ambiguousCapture: FAIL
+s8: PASS
+s16: PASS

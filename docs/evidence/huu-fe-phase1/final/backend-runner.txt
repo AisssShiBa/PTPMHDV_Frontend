@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: host readiness waits for HTTP readiness even with an accepting TCP listener
+ok 1 - host readiness waits for HTTP readiness even with an accepting TCP listener
+  ---
+  duration_ms: 528.563679
+  type: 'test'
+  ...
+# Subtest: unreachable host ports fail explicitly before seed or DB migration
+ok 2 - unreachable host ports fail explicitly before seed or DB migration
+  ---
+  duration_ms: 505.677901
+  type: 'test'
+  ...
+# Subtest: fetch connection failures retain their nested network code
+ok 3 - fetch connection failures retain their nested network code
+  ---
+  duration_ms: 1.116076
+  type: 'test'
+  ...
+# Subtest: process failures never serialize secrets from messages, arguments or output
+ok 4 - process failures never serialize secrets from messages, arguments or output
+  ---
+  duration_ms: 0.179851
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1166.008483

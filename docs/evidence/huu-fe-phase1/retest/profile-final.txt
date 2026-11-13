@@ -1,0 +1,14 @@
+
+> frontend@0.0.0 test:unit
+> vitest run src/test/userProfile.test.tsx
+
+
+ RUN  v3.2.7 /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend
+
+ ✓ src/test/userProfile.test.tsx (11 tests) 544ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  12:39:15
+   Duration  1.67s (transform 174ms, setup 128ms, collect 342ms, tests 544ms, environment 213ms, prepare 61ms)
+

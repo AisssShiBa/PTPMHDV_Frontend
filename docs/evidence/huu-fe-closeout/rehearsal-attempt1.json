@@ -1,0 +1,19 @@
+{
+  "status": "FAIL",
+  "testedAt": "2026-11-13T04:33:19.016Z",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "checks": [
+    "Profile save and reload from real API, no credential filmed",
+    "Real FE string create, double click one order, safe redirect guard, pending before synthetic server IPN and APPROVED receipt after polling; not VNPAY sandbox",
+    "Read-only live cashout reload: SUCCEEDED",
+    "Read-only live cashout reload: FAILED",
+    "Read-only live cashout reload: PAYOUT_PENDING",
+    {
+      "status": "FAIL",
+      "error": "TypeError: Cannot read properties of undefined (reading 'click')"
+    }
+  ],
+  "realVnpaySandbox": "NOT_RUN",
+  "transferUI": "NOT_RUN",
+  "note": "CDP screencast segments after authentication; cuts exclude credentials/PIN/raw keys. Synthetic IPN and simulated payout, no sandbox bank visit."
+}

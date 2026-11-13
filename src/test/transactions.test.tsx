@@ -1,3 +1,4 @@
+import { useAuthStore, MOCK_USER } from '@/features/auth/stores/useAuthStore'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -24,11 +25,12 @@ function renderWithProviders(ui: React.ReactElement) {
 describe('TransactionsPage - Cursor Pagination & Ledger [K22-1]', () => {
   beforeEach(() => {
     server.resetHandlers()
+    useAuthStore.setState({ user: MOCK_USER, accessToken: 'synthetic', initialized: true })
   })
 
   it('phân trang cursor: tải 2 trang, ghép đúng thứ tự, không trùng lặp, hết trang nút tải thêm biến mất', async () => {
     let callCount = 0
-    let requestedCursors: (string | null)[] = []
+    const requestedCursors: (string | null)[] = []
 
     server.use(
       http.get('*/api/wallets/me/ledger', ({ request }) => {

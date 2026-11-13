@@ -1,0 +1,53 @@
+TAP version 13
+# Subtest: another owner cannot read or change banking details
+ok 1 - another owner cannot read or change banking details
+  ---
+  duration_ms: 54.188988
+  type: 'test'
+  ...
+# Subtest: owner ID in the body cannot impersonate another owner
+ok 2 - owner ID in the body cannot impersonate another owner
+  ---
+  duration_ms: 7.711288
+  type: 'test'
+  ...
+# Subtest: ordinary owner cannot approve merchant
+ok 3 - ordinary owner cannot approve merchant
+  ---
+  duration_ms: 7.588191
+  type: 'test'
+  ...
+# Subtest: me resolves the verified owner and ignores spoofed owner identity
+ok 4 - me resolves the verified owner and ignores spoofed owner identity
+  ---
+  duration_ms: 19.826963
+  type: 'test'
+  ...
+# Subtest: me returns explicit null when owner has no active record
+ok 5 - me returns explicit null when owner has no active record
+  ---
+  duration_ms: 8.513363
+  type: 'test'
+  ...
+# Subtest: me requires a valid token
+ok 6 - me requires a valid token
+  ---
+  duration_ms: 9.270569
+  type: 'test'
+  ...
+# {"requestId":"28c5612b-1c67-4e79-898e-6c88dc2289ff","method":"GET","code":"INTERNAL_SERVER_ERROR","status":500}
+# Subtest: me does not turn a database outage into no registration
+ok 7 - me does not turn a database outage into no registration
+  ---
+  duration_ms: 3.346578
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1155.226747

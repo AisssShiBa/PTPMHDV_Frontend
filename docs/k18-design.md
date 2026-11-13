@@ -1,7 +1,7 @@
 # TÀI LIỆU THIẾT KẾ KIẾN TRÚC K18: VÍ, CHUYỂN TIỀN P2P & LỊCH SỬ SỔ CÁI
 
-> **Mã nhiệm vụ:** K18 (Frontend Web)  
-> **Dự án:** Ví điện tử FinVault  
+> **Mã nhiệm vụ:** K18 (Frontend Web)\
+> **Dự án:** Ví điện tử FinVault\
 > **Nguồn sự thật:** OpenAPI spec (`packages/api-contract/openapi.yaml`) & Backend Gateway endpoints (`/api`)
 
 ---
@@ -11,35 +11,35 @@
 ```mermaid
 stateDiagram-v2
     [*] --> RecipientInput: Bắt đầu giao dịch mới\n(Sinh Idempotency-Key mới)
-    
+
     RecipientInput --> Quoting: Tra cứu người nhận thành công\n(maskedName) + Nhập số tiền hợp lệ + Ghi chú
     RecipientInput --> RecipientInput: 404 (Không tìm thấy) / 429 (Quá tần suất)
-    
+
     Quoting --> QuoteConfirmation: POST /api/payments/p2p/quote thành công\n(Trả { amount, fee: '0', expiresAt: 60s })
     Quoting --> RecipientInput: 422 LIMIT_EXCEEDED\n(Hiển thị còn được chuyển X)
-    
+
     QuoteConfirmation --> Quoting: Hết hạn 60s\n(Yêu cầu lấy báo giá mới)
     QuoteConfirmation --> CheckoutInFlight: Bấm "Xác nhận chuyển tiền"\n(Khóa nút, gửi header Idempotency-Key)
-    
+
     CheckoutInFlight --> CheckoutInFlight: Timeout / Lỗi mạng\n(Hiển thị "Đang xử lý", retry CÙNG Idempotency-Key)
     CheckoutInFlight --> RecipientInput: 422 INSUFFICIENT_FUNDS / LIMIT_EXCEEDED
     CheckoutInFlight --> PinVerification: 201 Created (status: PENDING, holdExpiresAt: 5 phút)\nhoặc replayed: true
-    
+
     PinVerification --> PinVerification: 401 PIN_INVALID\n(Giảm attemptsLeft, cho nhập lại)
     PinVerification --> PinLocked: 423 PIN_LOCKED\n(Đếm ngược tới lockedUntil)
     PinVerification --> SetupPinRedirect: 409 PIN_NOT_SET
     PinVerification --> ConfirmInFlight: POST /api/auth/pin/verify thành công\n(Nhận transactionToken 60s, xóa PIN khỏi state)
-    
+
     ConfirmInFlight --> PinVerification: 401 TRANSACTION_TOKEN_EXPIRED\n(Mở lại PinModal nhập lại PIN, GIỮ paymentId)
     ConfirmInFlight --> RecipientInput: 410 PAYMENT_EXPIRED (Hold 5p hết hạn)\n(Báo hết hạn, sinh Idempotency-Key mới)
     ConfirmInFlight --> PollingPaymentStatus: Timeout / Lỗi mạng khi Confirm\n(KHÔNG gọi lại confirm bằng token cũ!)
     ConfirmInFlight --> TransferSuccess: 200 OK { status: 'SUCCESS' }
     ConfirmInFlight --> TransferFailed: 409 / 400 Lỗi xác định từ server
-    
+
     PollingPaymentStatus --> TransferSuccess: GET /api/payments/:id trả status: SUCCESS
     PollingPaymentStatus --> TransferFailed: GET /api/payments/:id trả status: FAILED / EXPIRED / CANCELLED
     PollingPaymentStatus --> PollingPaymentStatus: Quá trần 30s vẫn PENDING\n(Giữ "Đang xử lý", nút "Kiểm tra lại", dẫn tới Lịch sử)
-    
+
     TransferSuccess --> [*]: Cập nhật số dư ví Dashboard\n(Invalidate queries)
     TransferFailed --> [*]: Bắt đầu giao dịch mới
     PinLocked --> [*]
@@ -137,4 +137,3 @@ stateDiagram-v2
     - `useP2pQuote()`: Hook tính toán báo giá chuyển tiền `POST /api/payments/p2p/quote`.
     - `useP2pTransfer()`: Hook quản lý toàn bộ cỗ máy trạng thái chuyển tiền, quản lý `Idempotency-Key`, timeout polling.
 - Mobile (React Native ở `apps/mobile`) có thể import trực tiếp các client và hook này mà không bị lỗi môi trường trình duyệt.
-

@@ -1,6 +1,6 @@
 import api from '@/lib/axios'
 import { unwrap, type ApiResponse } from '@/lib/apiResponse'
-import type { WalletMe, LedgerPage, LedgerFilterParams } from '../types/wallet.types'
+import type { WalletMe, LedgerPage, LedgerFilterParams, LedgerItem } from '../types/wallet.types'
 
 export const walletApi = {
   /**
@@ -27,7 +27,7 @@ export const walletApi = {
     params?: { cursor?: string | null; limit?: number } & LedgerFilterParams,
     signal?: AbortSignal
   ): Promise<LedgerPage> {
-    const res = await api.get<ApiResponse<{ items?: any[]; entries?: any[]; nextCursor: string | null }>>(
+    const res = await api.get<ApiResponse<{ items?: LedgerItem[]; entries?: LedgerItem[]; nextCursor: string | null }>>(
       '/wallets/me/ledger',
       {
         params: {

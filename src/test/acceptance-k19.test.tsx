@@ -273,6 +273,7 @@ describe('Nghiệm thu K19: Kịch bản A1, A2, A9 và chuyển An sang Bình q
     )
 
     const results = await Promise.all(parallelRequests)
+    expect(rejectedCount).toBe(19)
 
     // Kiểm chứng kết quả A1:
     const successes = results.filter((r) => r === 'SUCCESS')

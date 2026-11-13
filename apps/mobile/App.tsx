@@ -87,12 +87,9 @@ export default function App() {
   const [retryRestore, setRetryRestore] = useState(false)
   const mountedRef = useRef(true)
 
-  const restoreSession = useCallback(async () => {
-    setLoading(true)
-    setErrorMessage('')
-    setRetryRestore(false)
+  const restoreSession = useCallback(async (stored?: string | null) => {
     try {
-      const storedRefreshToken = await SecureStore.getItemAsync(refreshTokenKey)
+      const storedRefreshToken = stored === undefined ? await SecureStore.getItemAsync(refreshTokenKey) : stored
       if (!storedRefreshToken) return
       refreshToken = storedRefreshToken
       const restored = await api.auth.refresh<MobileSession>()
@@ -121,22 +118,26 @@ export default function App() {
     mountedRef.current = true
     sessionExpiredHandler = () => {
       setSession(null)
+      setUnreadCount(null)
       setErrorMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
       setRetryRestore(false)
     }
 
-    void restoreSession()
+    let active = true
+    void SecureStore.getItemAsync(refreshTokenKey).then((stored) => {
+      if (active) void restoreSession(stored)
+    }, () => {
+      if (active) { setLoading(false); setRetryRestore(true); setErrorMessage('Không thể khôi phục phiên đăng nhập. Vui lòng thử lại.') }
+    })
     return () => {
+      active = false
       mountedRef.current = false
       sessionExpiredHandler = undefined
     }
   }, [restoreSession])
 
   useEffect(() => {
-    if (!session) {
-      setUnreadCount(null)
-      return
-    }
+    if (!session) return
 
     let active = true
     void api.notifications.list<NotificationList>()
@@ -160,6 +161,7 @@ export default function App() {
       const signedIn = await api.auth.signIn<MobileSession>({ username, password })
       await persistRefreshToken
       if (storageError) throw storageError
+      setUnreadCount(null)
       setSession(signedIn)
       setPassword('')
     } catch (error) {
@@ -181,6 +183,7 @@ export default function App() {
       await persistRefreshToken
       if (storageError) throw storageError
       setSession(null)
+      setUnreadCount(null)
     } catch (error) {
       await persistRefreshToken
       setErrorMessage(storageError?.message ?? toVietnameseError(error))
@@ -237,7 +240,7 @@ export default function App() {
         {retryRestore ? (
           <TouchableOpacity
             disabled={loading}
-            onPress={() => void restoreSession()}
+            onPress={() => { setLoading(true); setErrorMessage(''); setRetryRestore(false); void restoreSession() }}
             style={[styles.button, loading && styles.disabled]}
           >
             <Text style={styles.buttonText}>{loading ? 'Đang thử lại...' : 'Thử lại'}</Text>

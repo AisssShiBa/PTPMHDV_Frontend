@@ -36,7 +36,7 @@ export function useNotificationSocket(
   onNotification: (notification: NotificationItem) => void
 ): boolean {
   const handlerRef = useRef(onNotification)
-  const [connected, setConnected] = useState(false)
+  const [connection, setConnection] = useState({ userId, accessToken, connected: false })
 
   useEffect(() => {
     handlerRef.current = onNotification
@@ -45,35 +45,35 @@ export function useNotificationSocket(
   useEffect(() => {
     if (!userId || !accessToken || useMock) return
 
+    let active = true
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined
     const socket = io(resolveSocketOrigin(apiBaseUrl, window.location.origin), {
       path: '/socket.io',
       auth: createSocketAuth(
         async () => (await notificationApi.getSocketTicket()).ticket,
-        (error) => console.error('Failed to fetch notification socket ticket', error)
+        () => { if (active) setConnection({ userId, accessToken, connected: false }) }
       )
     })
 
-    socket.on('connect', () => setConnected(true))
-    socket.on('connect_error', (error) => {
-      console.error('Notification socket connection failed', error)
-    })
+    socket.on('connect', () => { if (active) setConnection({ userId, accessToken, connected: true }) })
+    socket.on('connect_error', () => { if (active) setConnection({ userId, accessToken, connected: false }) })
     socket.on('disconnect', (reason) => {
-      setConnected(false)
-      if (reason === 'io server disconnect') {
+      if (active) setConnection({ userId, accessToken, connected: false })
+      if (active && reason === 'io server disconnect') {
         reconnectTimer = setTimeout(() => socket.connect(), 1000)
       }
     })
     socket.on('notification:new', (payload: unknown) => {
       const notification = parseRealtimeNotification(payload)
-      if (notification) handlerRef.current(notification)
+      if (active && notification?.userId === userId) handlerRef.current(notification)
     })
 
     return () => {
+      active = false
       if (reconnectTimer) clearTimeout(reconnectTimer)
       socket.disconnect()
     }
   }, [userId, accessToken])
 
-  return connected
+  return Boolean(userId && accessToken && connection.userId === userId && connection.accessToken === accessToken && connection.connected)
 }

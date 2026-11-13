@@ -70,7 +70,7 @@ export async function openBrowser(directory, label, origin) {
     return result.result.value
   }
   const has = (selector) => evaluate('!!document.querySelector(' + JSON.stringify(selector) + ')')
-  const text = (value) => evaluate('document.body.innerText.includes(' + JSON.stringify(value) + ')')
+  const text = (value) => evaluate('document.body?.innerText.includes(' + JSON.stringify(value) + ') ?? false')
   const fill = (selector, value) => evaluate('(() => { const input = document.querySelector(' + JSON.stringify(selector) + '); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, ' + JSON.stringify(value) + '); input.dispatchEvent(new Event("input", { bubbles: true })); input.dispatchEvent(new Event("change", { bubbles: true })); })()')
   const click = (label, times = 1) => evaluate('(() => { const button = [...document.querySelectorAll("button")].find(el => el.textContent.trim() === ' + JSON.stringify(label) + '); if (!button) throw new Error("Missing button: " + ' + JSON.stringify(label) + '); for (let i=0;i<' + times + ';i++) button.click(); })()')
   const screenshot = async (label) => {

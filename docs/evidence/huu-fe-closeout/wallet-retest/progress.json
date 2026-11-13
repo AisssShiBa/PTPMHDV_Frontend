@@ -1,0 +1,15 @@
+[
+  {
+    "scenario": "walletS6",
+    "startedAt": "2026-11-13T04:43:05.503Z",
+    "status": "PASS",
+    "finishedAt": "2026-11-13T04:43:08.456Z"
+  },
+  {
+    "scenario": "inlineExpiry",
+    "startedAt": "2026-11-13T04:43:08.457Z",
+    "status": "FAIL",
+    "error": "Expected values to be strictly equal:",
+    "finishedAt": "2026-11-13T04:43:10.448Z"
+  }
+]

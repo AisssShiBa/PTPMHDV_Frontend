@@ -1,0 +1,9 @@
+
+> frontend@0.0.0 check
+> npm run lint && npm run typecheck && npm run test && npm run build
+
+
+> frontend@0.0.0 lint
+> eslint .
+
+sh: line 1: eslint: command not found
