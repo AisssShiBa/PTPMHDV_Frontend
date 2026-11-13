@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
+import { authApi } from '@/features/auth/api/auth.api'
 
 export function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -60,16 +61,19 @@ export function SignUpPage() {
 
   const strength = getPasswordStrength(currentPassword)
 
-  // Xử lý gửi đăng ký
+  // Xử lý gửi đăng ký qua API thật
   const onSubmit = async (data: { email: string; password: string; confirmPassword: string; terms?: boolean }) => {
     setIsSubmitting(true)
     try {
-      // Giả lập độ trễ mạng tạo tài khoản
-      await new Promise((resolve) => setTimeout(resolve, 600))
+      await authApi.signUp({
+        email: data.email,
+        password: data.password
+      })
       toast.success('Đăng ký tài khoản FinVault thành công!')
       navigate('/sign-in', { state: { email: data.email } })
-    } catch {
-      toast.error('Đăng ký không thành công. Vui lòng thử lại.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Đăng ký không thành công. Vui lòng thử lại.'
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }

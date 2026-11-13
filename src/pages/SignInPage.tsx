@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,7 +15,9 @@ import {
   RefreshCw,
   Sparkles
 } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { authApi, type QrInitResponse } from '@/features/auth/api/auth.api'
 import { loginSchema } from '@/features/auth/schemas/auth.schema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,12 +28,135 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 export function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [activeTab, setActiveTab] = useState<'password' | 'qr'>('password')
-  const qrCountdown = 120
-  const { signIn, loading } = useAuthStore()
+  const { signIn, loading, setSession } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
 
   const from = (location.state as { from?: string })?.from || '/app'
+
+  // State cho luồng Mã QR thật ngay trên Tab
+  const [qrData, setQrData] = useState<QrInitResponse | null>(null)
+  const [qrCountdown, setQrCountdown] = useState(120)
+  const [isQrLoading, setIsQrLoading] = useState(false)
+  const [isQrExpired, setIsQrExpired] = useState(false)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Khởi tạo phiên QR thật từ Auth Service khi mở tab 'qr'
+  const initQrSession = useCallback(async () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+    setIsQrLoading(true)
+    setIsQrExpired(false)
+
+    try {
+      const res = await authApi.initQrLogin()
+      setQrData(res)
+      const diffSec = Math.max(0, Math.ceil((new Date(res.expiresAt).getTime() - Date.now()) / 1000))
+      setQrCountdown(diffSec > 0 ? diffSec : 120)
+    } catch {
+      toast.error('Không thể tạo mã QR đăng nhập')
+      setIsQrExpired(true)
+    } finally {
+      setIsQrLoading(false)
+    }
+  }, [])
+
+  // Khi chuyển sang tab 'qr' thì kích hoạt tạo mã QR thật
+  useEffect(() => {
+    if (activeTab === 'qr') {
+      initQrSession()
+    } else {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [activeTab, initQrSession])
+
+  // Đếm ngược thời gian mã QR
+  useEffect(() => {
+    if (activeTab !== 'qr' || isQrLoading || isQrExpired) return
+
+    if (qrCountdown <= 0) {
+      setIsQrExpired(true)
+      return
+    }
+
+    const timer = setInterval(() => {
+      setQrCountdown((prev) => {
+        if (prev <= 1) {
+          setIsQrExpired(true)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [activeTab, qrCountdown, isQrLoading, isQrExpired])
+
+  // Polling kiểm tra trạng thái duyệt mã QR mỗi 2 giây
+  useEffect(() => {
+    if (activeTab !== 'qr' || !qrData || isQrLoading || isQrExpired) {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+      return
+    }
+
+    const pollStatus = async () => {
+      try {
+        const res = await authApi.getQrStatus(qrData.qrId, qrData.pollSecret)
+        if (res.status === 'APPROVED' && res.accessToken && res.user) {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setSession({
+            accessToken: res.accessToken,
+            user: res.user
+          })
+          toast.success('Đăng nhập bằng mã QR thành công!')
+          const isRoleAdmin = res.user.role === 'ADMIN'
+          navigate(isRoleAdmin ? '/admin' : from, { replace: true })
+        } else if (res.status === 'REJECTED') {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setIsQrExpired(true)
+          toast.error('Yêu cầu đăng nhập đã bị từ chối từ điện thoại.')
+        }
+      } catch (err: unknown) {
+        const errorObj = err as { response?: { status?: number; data?: { error?: { code?: string } } } }
+        if (errorObj?.response?.status === 410 || errorObj?.response?.data?.error?.code === 'QR_EXPIRED') {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setIsQrExpired(true)
+        }
+      }
+    }
+
+    pollingRef.current = setInterval(pollStatus, 2000)
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [activeTab, qrData, isQrLoading, isQrExpired, from, navigate, setSession])
+
+  // Định dạng hiển thị phút:giây (01:59)
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const qrPayload = qrData ? JSON.stringify({ qrId: qrData.qrId, nonce: qrData.nonce }) : ''
 
   const {
     register,
@@ -49,17 +174,9 @@ export function SignInPage() {
   const onSubmit = async (data: { username: string; password: string }) => {
     const success = await signIn(data.username, data.password)
     if (success) {
-      const isRoleAdmin = data.username.toLowerCase().includes('admin')
+      const user = useAuthStore.getState().user
+      const isRoleAdmin = user?.role === 'ADMIN'
       navigate(isRoleAdmin ? '/admin' : from, { replace: true })
-    }
-  }
-
-  // Xử lý đăng nhập bằng mã QR
-  const handleQrSuccess = async () => {
-    const success = await signIn('annguyen', 'password123')
-    if (success) {
-      toast.success('Xác thực mã QR thành công')
-      navigate(from, { replace: true })
     }
   }
 
@@ -107,7 +224,7 @@ export function SignInPage() {
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="username"
-                      placeholder="Ví dụ: annguyen hoặc user@finvault.vn"
+                      placeholder="Ví dụ: an@demo.vn hoặc annguyen"
                       className="pl-10 h-11"
                       disabled={loading}
                       autoComplete="username"
@@ -169,41 +286,41 @@ export function SignInPage() {
               <div className="p-3 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground space-y-1.5">
                 <div className="flex items-center gap-1.5 font-medium text-foreground">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  <span>Tài khoản trải nghiệm nhanh:</span>
+                  <span>Tài khoản kiểm thử nhanh (Seed):</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => {
-                      signIn('user1', '123456').then(() => navigate(from, { replace: true }))
+                      signIn('an@demo.vn', 'password123').then((ok) => {
+                        if (ok) {
+                          const user = useAuthStore.getState().user
+                          navigate(user?.role === 'ADMIN' ? '/admin' : from, { replace: true })
+                        }
+                      })
                     }}
                     className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-left transition-colors font-medium text-[11px] cursor-pointer"
                   >
-                    👤 Người dùng 1 (100k)
+                    👤 Khách hàng (an@demo.vn)
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      signIn('user2', '123456').then(() => navigate(from, { replace: true }))
+                      signIn('admin@demo.vn', 'password123').then((ok) => {
+                        if (ok) {
+                          navigate('/admin', { replace: true })
+                        }
+                      })
                     }}
                     className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-left transition-colors font-medium text-[11px] cursor-pointer"
                   >
-                    👤 Người dùng 2 (100k)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      signIn('admin', '123456').then(() => navigate('/admin', { replace: true }))
-                    }}
-                    className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted text-left transition-colors font-medium text-[11px] cursor-pointer col-span-2 text-center"
-                  >
-                    🛡️ Quản trị viên (Admin)
+                    🛡️ Quản trị viên (admin@demo.vn)
                   </button>
                 </div>
               </div>
             </TabsContent>
 
-            {/* TAB 2: ĐĂNG NHẬP BẰNG MÃ QR */}
+            {/* TAB 2: ĐĂNG NHẬP BẰNG MÃ QR THẬT */}
             <TabsContent value="qr" className="space-y-4 mt-0 text-center">
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
@@ -211,71 +328,63 @@ export function SignInPage() {
                   <span>Bảo mật không dùng mật khẩu</span>
                 </div>
                 <p className="text-xs text-muted-foreground pt-1">
-                  Mở ứng dụng FinVault trên điện thoại và quét mã bên dưới
+                  Quét mã QR bằng ứng dụng di động để đăng nhập tức thì
                 </p>
               </div>
 
-              {/* Khung mã QR */}
-              <div className="relative mx-auto w-52 h-52 p-3 bg-white rounded-2xl border-2 border-primary/20 shadow-inner flex flex-col items-center justify-center">
-                <svg className="w-full h-full text-slate-800" fill="currentColor" viewBox="0 0 100 100">
-                  <rect fill="none" height="28" rx="4" stroke="currentColor" strokeWidth="4" width="28" x="5" y="5" />
-                  <rect fill="currentColor" height="16" rx="2" width="16" x="11" y="11" />
-                  <rect fill="none" height="28" rx="4" stroke="currentColor" strokeWidth="4" width="28" x="67" y="5" />
-                  <rect fill="currentColor" height="16" rx="2" width="16" x="73" y="11" />
-                  <rect fill="none" height="28" rx="4" stroke="currentColor" strokeWidth="4" width="28" x="5" y="67" />
-                  <rect fill="currentColor" height="16" rx="2" width="16" x="11" y="73" />
-                  <rect fill="none" height="16" rx="2" stroke="currentColor" strokeWidth="3" width="16" x="71" y="71" />
-                  <rect fill="currentColor" height="6" width="6" x="76" y="76" />
-                  <rect height="5" rx="1" width="5" x="38" y="8" />
-                  <rect height="5" rx="1" width="5" x="47" y="8" />
-                  <rect height="5" rx="1" width="5" x="56" y="8" />
-                  <rect height="5" rx="1" width="5" x="38" y="18" />
-                  <rect height="5" rx="1" width="5" x="56" y="18" />
-                  <rect height="5" rx="1" width="5" x="38" y="27" />
-                  <rect height="5" rx="1" width="5" x="47" y="27" />
-                  <rect height="5" rx="1" width="5" x="56" y="27" />
-                  <rect height="5" rx="1" width="5" x="8" y="38" />
-                  <rect height="5" rx="1" width="5" x="18" y="38" />
-                  <rect height="5" rx="1" width="5" x="27" y="38" />
-                  <rect height="5" rx="1" width="5" x="67" y="38" />
-                  <rect height="5" rx="1" width="5" x="77" y="38" />
-                  <rect height="5" rx="1" width="5" x="87" y="38" />
-                  <rect height="5" rx="1" width="5" x="38" y="47" />
-                  <rect height="5" rx="1" width="5" x="47" y="47" />
-                  <rect height="5" rx="1" width="5" x="56" y="47" />
-                  <rect height="5" rx="1" width="5" x="67" y="47" />
-                  <rect height="5" rx="1" width="5" x="38" y="56" />
-                  <rect height="5" rx="1" width="5" x="47" y="56" />
-                  <rect height="5" rx="1" width="5" x="56" y="56" />
-                  <rect height="5" rx="1" width="5" x="77" y="56" />
-                  <rect height="5" rx="1" width="5" x="38" y="67" />
-                  <rect height="5" rx="1" width="5" x="47" y="67" />
-                  <rect height="5" rx="1" width="5" x="56" y="67" />
-                  <rect height="5" rx="1" width="5" x="87" y="67" />
-                </svg>
-
-                {/* Logo FinVault nhỏ ở giữa QR */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-md">
-                    <Wallet className="h-4 w-4" />
+              {/* Khung mã QR Thật */}
+              <div className="relative mx-auto w-56 h-56 p-3 bg-white rounded-2xl border-2 border-primary/20 shadow-inner flex flex-col items-center justify-center">
+                {isQrLoading ? (
+                  <div className="flex flex-col items-center justify-center p-4 text-center space-y-2">
+                    <RefreshCw className="h-7 w-7 text-primary animate-spin" />
+                    <p className="text-xs text-slate-500 font-medium">Đang tạo mã QR...</p>
                   </div>
+                ) : isQrExpired ? (
+                  <div className="flex flex-col items-center justify-center p-3 text-center space-y-2">
+                    <div className="h-10 w-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                      <RefreshCw className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-800">Mã QR đã hết hạn</p>
+                      <p className="text-[11px] text-slate-500">Bấm nút bên dưới để tạo mã mới</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={initQrSession}
+                      className="gap-1.5 text-xs font-medium shadow-sm cursor-pointer"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      <span>Làm mới mã QR</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <QRCodeSVG
+                      value={qrPayload}
+                      size={180}
+                      level="H"
+                      includeMargin={false}
+                    />
+
+                    {/* Logo FinVault nhỏ ở giữa QR */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-md border-2 border-white">
+                        <Wallet className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {!isQrLoading && !isQrExpired && (
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+                  <span>
+                    Mã QR có hiệu lực trong{' '}
+                    <strong className="text-foreground font-semibold">{formatTime(qrCountdown)}</strong>
+                  </span>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <RefreshCw className="h-3 w-3 animate-spin text-primary" />
-                <span>Mã QR tự làm mới sau {qrCountdown}s</span>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full text-xs"
-                onClick={handleQrSuccess}
-              >
-                Xác nhận đã quét trên điện thoại
-              </Button>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

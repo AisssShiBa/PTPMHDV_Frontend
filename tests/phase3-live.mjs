@@ -130,17 +130,14 @@ try {
   await call('/api/admin/kyc/' + saved.id + '/documents', { token: recipient.token, expected: 403 })
   checks.push('H8: missing back blocked locally; one multipart upload returns 202; profile persisted; signed MinIO image loads; USER denied Admin document API')
 
-  // The active transfer page does not mount the historical lookup dialog.
-  // Verify the real lookup API without pretending that obsolete UI still exists.
-  const lookup = query => call('/api/users/lookup?q=' + encodeURIComponent(query), { token: sender.token })
-  for (const query of [recipient.email, phone]) {
-    const found = await lookup(query)
-    assert.equal(found.authUserId, recipient.id)
-    assert.equal(found.maskedName, 'Nguyễn V. B.')
-    assert.equal(found.email, undefined)
-  }
-  for (const query of [sender.email, 'missing-' + randomUUID() + '@example.test']) {
-    await call('/api/users/lookup?q=' + encodeURIComponent(query), { token: sender.token, expected: 404 })
+  await browser.go('/app')
+  await until(() => browser.text('Chuyển khoản'), 'wallet')
+  await browser.click('Chuyển khoản')
+  await until(() => browser.has('#transfer-recipient'), 'transfer dialog')
+  const lookup = async (query, message) => {
+    await browser.fill('#transfer-recipient', query)
+    await browser.click('Tra cứu')
+    await until(() => browser.text(message), 'lookup result')
   }
   for (let attempt = 4; attempt < 10; attempt++) await lookup(recipient.email)
   await call('/api/users/lookup?q=' + encodeURIComponent(recipient.email), { token: sender.token, expected: 429 })

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -7,63 +7,139 @@ import {
   ShieldCheck,
   RefreshCw,
   Smartphone,
-  ArrowRight,
   Lock,
-  CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { authApi, type QrInitResponse } from '@/features/auth/api/auth.api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
 export function QrLoginPage() {
-  const [countdown, setCountdown] = useState(180)
-  const isExpired = countdown <= 0
-  const [isScanning, setIsScanning] = useState(false)
-  const { signIn } = useAuthStore()
+  const [qrData, setQrData] = useState<QrInitResponse | null>(null)
+  const [countdown, setCountdown] = useState(120)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isExpired, setIsExpired] = useState(false)
+  const [isRejected, setIsRejected] = useState(false)
+  const { setSession } = useAuthStore()
   const navigate = useNavigate()
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Bộ đếm thời gian hiệu lực của mã QR (180 giây)
+  // Khởi tạo phiên mã QR thật từ Auth Service
+  const initQrSession = useCallback(async () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
+    setIsLoading(true)
+    setIsExpired(false)
+    setIsRejected(false)
+
+    try {
+      const res = await authApi.initQrLogin()
+      setQrData(res)
+
+      // Tính thời gian hiệu lực còn lại theo expiresAt từ backend (120s)
+      const diffSec = Math.max(0, Math.ceil((new Date(res.expiresAt).getTime() - Date.now()) / 1000))
+      setCountdown(diffSec > 0 ? diffSec : 120)
+    } catch {
+      toast.error('Không thể tạo mã QR đăng nhập. Vui lòng thử lại.')
+      setIsExpired(true)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Khởi tạo mã QR khi vừa vào trang
   useEffect(() => {
+    initQrSession()
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+      }
+    }
+  }, [initQrSession])
+
+  // Bộ đếm ngược thời gian hiệu lực
+  useEffect(() => {
+    if (isLoading || isExpired || isRejected) return
+
     if (countdown <= 0) {
       return
     }
 
     const timer = setInterval(() => {
-      setCountdown((prev) => prev - 1)
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          setIsExpired(true)
+          return 0
+        }
+        return prev - 1
+      })
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [countdown])
+  }, [countdown, isLoading, isExpired, isRejected])
 
-  // Hàm làm mới mã QR
-  const handleRefreshQr = () => {
-    setCountdown(180)
-    toast.info('Đã tạo mã QR đăng nhập mới')
-  }
-
-  // Giả lập quét QR thành công từ ứng dụng di động
-  const handleSimulateScanSuccess = async () => {
-    setIsScanning(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      const success = await signIn('annguyen', '123456')
-      if (success) {
-        toast.success('Xác nhận đăng nhập từ điện thoại thành công!')
-        navigate('/app', { replace: true })
+  // Polling kiểm tra trạng thái mã QR mỗi 2 giây
+  useEffect(() => {
+    if (!qrData || isLoading || isExpired || isRejected) {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
       }
-    } finally {
-      setIsScanning(false)
+      return
     }
-  }
 
-  // Định dạng hiển thị phút:giây (02:45)
+    const pollStatus = async () => {
+      try {
+        const res = await authApi.getQrStatus(qrData.qrId, qrData.pollSecret)
+        if (res.status === 'APPROVED' && res.accessToken && res.user) {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setSession({
+            accessToken: res.accessToken,
+            user: res.user
+          })
+          toast.success('Đăng nhập bằng mã QR thành công!')
+          const isRoleAdmin = res.user.role === 'ADMIN'
+          navigate(isRoleAdmin ? '/admin' : '/app', { replace: true })
+        } else if (res.status === 'REJECTED') {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setIsRejected(true)
+          toast.error('Yêu cầu đăng nhập đã bị từ chối từ thiết bị.')
+        }
+      } catch (err: unknown) {
+        // Nếu mã QR đã hết hạn trên backend (410 QR_EXPIRED)
+        const errorObj = err as { response?: { status?: number; data?: { error?: { code?: string } } } }
+        if (errorObj?.response?.status === 410 || errorObj?.response?.data?.error?.code === 'QR_EXPIRED') {
+          if (pollingRef.current) clearInterval(pollingRef.current)
+          setIsExpired(true)
+        }
+      }
+    }
+
+    pollingRef.current = setInterval(pollStatus, 2000)
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [qrData, isLoading, isExpired, isRejected, navigate, setSession])
+
+  // Định dạng hiển thị phút:giây (01:59)
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
+
+  // Nội dung mã QR: chuẩn JSON chứa qrId và nonce để Mobile quét xác nhận
+  const qrPayload = qrData ? JSON.stringify({ qrId: qrData.qrId, nonce: qrData.nonce }) : ''
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
@@ -94,8 +170,14 @@ export function QrLoginPage() {
           </div>
 
           {/* Khung hiển thị Mã QR */}
-          <div className="relative mx-auto w-60 h-60 p-4 bg-white rounded-2xl border-2 border-primary/20 shadow-inner flex flex-col items-center justify-center">
-            {isExpired ? (
+          <div className="relative mx-auto w-64 h-64 p-4 bg-white rounded-2xl border-2 border-primary/20 shadow-inner flex flex-col items-center justify-center">
+            {isLoading ? (
+              /* Trạng thái đang tải mã QR từ backend */
+              <div className="flex flex-col items-center justify-center p-4 text-center space-y-3">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                <p className="text-xs text-slate-500 font-medium">Đang tạo mã QR bảo mật...</p>
+              </div>
+            ) : isExpired ? (
               /* Trạng thái mã QR hết hạn */
               <div className="flex flex-col items-center justify-center p-4 text-center space-y-3">
                 <div className="h-12 w-12 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center">
@@ -107,65 +189,45 @@ export function QrLoginPage() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={handleRefreshQr}
-                  className="gap-1.5 text-xs font-medium shadow-sm"
+                  onClick={initQrSession}
+                  className="gap-1.5 text-xs font-medium shadow-sm cursor-pointer"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   <span>Làm mới mã QR</span>
                 </Button>
               </div>
+            ) : isRejected ? (
+              /* Trạng thái bị từ chối từ điện thoại */
+              <div className="flex flex-col items-center justify-center p-4 text-center space-y-3">
+                <div className="h-12 w-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">Yêu cầu bị từ chối</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Thiết bị di động đã hủy phiên đăng nhập này</p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={initQrSession}
+                  className="gap-1.5 text-xs font-medium shadow-sm cursor-pointer"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>Tạo mã QR khác</span>
+                </Button>
+              </div>
             ) : (
-              /* Trạng thái mã QR đang hiệu lực */
+              /* Trạng thái mã QR đang hiệu lực (render thật bằng qrcode.react) */
               <div className="relative w-full h-full flex items-center justify-center">
-                <svg className="w-full h-full text-slate-800" fill="currentColor" viewBox="0 0 100 100">
-                  {/* Top-Left Finder */}
-                  <rect fill="none" height="28" rx="4" stroke="currentColor" strokeWidth="4" width="28" x="5" y="5" />
-                  <rect fill="currentColor" height="16" rx="2" width="16" x="11" y="11" />
-                  {/* Top-Right Finder */}
-                  <rect fill="none" height="28" rx="4" stroke="currentColor" strokeWidth="4" width="28" x="67" y="5" />
-                  <rect fill="currentColor" height="16" rx="2" width="16" x="73" y="11" />
-                  {/* Bottom-Left Finder */}
-                  <rect fill="none" height="28" rx="4" stroke="currentColor" strokeWidth="4" width="28" x="5" y="67" />
-                  <rect fill="currentColor" height="16" rx="2" width="16" x="11" y="73" />
-                  {/* Alignment */}
-                  <rect fill="none" height="16" rx="2" stroke="currentColor" strokeWidth="3" width="16" x="71" y="71" />
-                  <rect fill="currentColor" height="6" width="6" x="76" y="76" />
-                  {/* Pattern data bits */}
-                  <rect height="5" rx="1" width="5" x="38" y="8" />
-                  <rect height="5" rx="1" width="5" x="47" y="8" />
-                  <rect height="5" rx="1" width="5" x="56" y="8" />
-                  <rect height="5" rx="1" width="5" x="38" y="18" />
-                  <rect height="5" rx="1" width="5" x="56" y="18" />
-                  <rect height="5" rx="1" width="5" x="38" y="27" />
-                  <rect height="5" rx="1" width="5" x="47" y="27" />
-                  <rect height="5" rx="1" width="5" x="56" y="27" />
-                  <rect height="5" rx="1" width="5" x="8" y="38" />
-                  <rect height="5" rx="1" width="5" x="18" y="38" />
-                  <rect height="5" rx="1" width="5" x="27" y="38" />
-                  <rect height="5" rx="1" width="5" x="67" y="38" />
-                  <rect height="5" rx="1" width="5" x="77" y="38" />
-                  <rect height="5" rx="1" width="5" x="87" y="38" />
-                  <rect height="5" rx="1" width="5" x="38" y="47" />
-                  <rect height="5" rx="1" width="5" x="47" y="47" />
-                  <rect height="5" rx="1" width="5" x="56" y="47" />
-                  <rect height="5" rx="1" width="5" x="67" y="47" />
-                  <rect height="5" rx="1" width="5" x="38" y="56" />
-                  <rect height="5" rx="1" width="5" x="47" y="56" />
-                  <rect height="5" rx="1" width="5" x="56" y="56" />
-                  <rect height="5" rx="1" width="5" x="77" y="56" />
-                  <rect height="5" rx="1" width="5" x="38" y="67" />
-                  <rect height="5" rx="1" width="5" x="47" y="67" />
-                  <rect height="5" rx="1" width="5" x="56" y="67" />
-                  <rect height="5" rx="1" width="5" x="87" y="67" />
-                  <rect height="5" rx="1" width="5" x="47" y="77" />
-                  <rect height="5" rx="1" width="5" x="67" y="77" />
-                  <rect height="5" rx="1" width="5" x="38" y="87" />
-                  <rect height="5" rx="1" width="5" x="56" y="87" />
-                </svg>
+                <QRCodeSVG
+                  value={qrPayload}
+                  size={200}
+                  level="H"
+                  includeMargin={false}
+                />
 
-                {/* Logo FinVault nổi bật ở trung tâm */}
+                {/* Logo FinVault nổi bật ở trung tâm mã QR */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg border-2 border-white">
+                  <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-md border-2 border-white">
                     <Wallet className="h-5 w-5" />
                   </div>
                 </div>
@@ -174,7 +236,7 @@ export function QrLoginPage() {
           </div>
 
           {/* Bộ đếm thời gian */}
-          {!isExpired && (
+          {!isLoading && !isExpired && !isRejected && (
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" />
               <span>
@@ -196,20 +258,6 @@ export function QrLoginPage() {
               <li>Hướng camera vào mã QR và bấm <strong className="text-foreground font-medium">Xác nhận đăng nhập</strong>.</li>
             </ol>
           </div>
-
-          {/* Nút mô phỏng xác nhận quét thành công */}
-          <Button
-            type="button"
-            className="w-full font-semibold shadow-md shadow-primary/20"
-            size="lg"
-            onClick={handleSimulateScanSuccess}
-            loading={isScanning}
-            disabled={isExpired}
-          >
-            <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-400" />
-            <span>Xác nhận đã quét trên điện thoại</span>
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
 
           {/* Nút chuyển sang Đăng nhập Mật khẩu */}
           <div className="pt-1">
