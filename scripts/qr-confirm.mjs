@@ -75,7 +75,7 @@ async function main() {
   const qrPayload = await getQrPayload()
   if (!qrPayload) {
     console.error('❌ Không tìm thấy mã QR nào đang mở trên Web.')
-    console.error('👉 Vui lòng mở trang http://localhost:5173/qr-login trên trình duyệt trước, sau đó chạy lại lệnh này.')
+    console.error('👉 Vui lòng mở tab [Mã QR] tại http://localhost:5173/sign-in (hoặc trang http://localhost:5173/qr-login) trên trình duyệt trước, sau đó chạy lại lệnh này.')
     process.exit(1)
   }
 
@@ -118,7 +118,7 @@ async function main() {
   }
 
   console.log('   🎉 PHÊ DUYỆT THÀNH CÔNG!')
-  console.log(`   🚀 Màn hình Web tại http://localhost:5173/qr-login sẽ lập tức đăng nhập vào Dashboard của @${user.username}!\n`)
+  console.log(`   🚀 Màn hình Web tại http://localhost:5173/sign-in (hoặc /qr-login) sẽ lập tức đăng nhập vào Dashboard của @${user.username}!\n`)
 }
 
 main().catch((err) => {
