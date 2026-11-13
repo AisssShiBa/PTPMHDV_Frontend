@@ -221,13 +221,13 @@ try {
   await cdp('Page.enable')
   await cdp('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false })
 
-  await go('/profile')
+  await go('/app/profile')
   await until(() => evaluate('!!document.querySelector("#profile-email")'), 'profile load')
   assert.equal(await evaluate('document.querySelector("#profile-email").readOnly'), true)
   await fill('#profile-phone', '+84 912 345 678')
   await click('Lưu thông tin')
   await until(() => profile.phone === '+84 912 345 678', 'profile save')
-  await go('/profile')
+  await go('/app/profile')
   await until(() => evaluate('document.querySelector("#profile-phone")?.value === "+84 912 345 678"'), 'profile reload')
 
   await click('Gửi xác thực')
@@ -259,14 +259,14 @@ try {
   assert.ok(await text('Cấp 1'))
   await screenshot('profile-desktop')
   profile = { ...profile, kycStatus: 'REJECTED', kycTier: 0, version: profile.version + 1 }
-  await go('/profile')
+  await go('/app/profile')
   await until(() => evaluate('!!document.querySelector("#kyc-front")'), 'rejected resubmission form')
   await cdp('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
   assert.equal(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), true)
   await screenshot('profile-mobile')
 
   merchantFailure = true
-  await go('/merchant-register')
+  await go('/merchant/register')
   await until(() => text('Thử tải lại'), 'merchant load failure')
   assert.equal(await evaluate('!!document.querySelector("#merchant-businessName")'), false)
   merchantFailure = false
@@ -279,7 +279,7 @@ try {
   await click('Gửi đăng ký đối tác', 2)
   await until(() => text('Đang chờ duyệt'), 'merchant registered')
   assert.equal(registrations, 1)
-  await go('/merchant-register')
+  await go('/merchant/register')
   await until(() => text('Cửa hàng Hữu'), 'merchant persists after reload')
   assert.equal(await evaluate('!!document.querySelector("#merchant-businessName")'), false)
   merchant.status = 'APPROVED'
@@ -288,21 +288,21 @@ try {
   await screenshot('merchant-mobile')
 
   signedIn = false
-  await go('/profile')
-  await until(() => evaluate('location.pathname === "/signin"'), 'protected redirect')
+  await go('/app/profile')
+  await until(() => evaluate('location.pathname === "/sign-in"'), 'protected redirect')
   await until(() => evaluate('!!document.querySelector("#username")'), 'signin form')
   await fill('#username', 'demo')
   await fill('#password', 'incorrect')
   await evaluate('document.querySelector("form").requestSubmit()')
   await until(() => text('Tên đăng nhập hoặc mật khẩu không đúng.'), 'failed login message')
-  assert.equal(await evaluate('location.pathname'), '/signin')
+  assert.equal(await evaluate('location.pathname'), '/sign-in')
   await fill('#password', 'password')
   await evaluate('document.querySelector("form").requestSubmit()')
   await until(() => evaluate('!!document.querySelector("#profile-email")'), 'login returns to profile')
 
   // H11: exact lookup, no recipient wallet reads, stale request cancellation,
   // server cooldown and recipient confirmation before using the existing transfer API.
-  await go('/wallet')
+  await go('/app')
   await until(() => text('Chuyển khoản'), 'wallet page')
   await click('Chuyển khoản')
   await until(() => has('dialog[open] #transfer-recipient'), 'transfer dialog')
@@ -382,9 +382,8 @@ try {
   // Regressions for routes and shared auth after merging the Admin/Notification modules.
   assert.ok(await has('button[aria-label="Thông báo"]'))
   await go('/merchant/register')
-  await until(() => evaluate('location.pathname === "/merchant-register"'), 'incoming merchant route alias')
-  await until(() => text('Cửa hàng Hữu'), 'alias loads existing merchant')
-  await go('/transactions')
+  await until(() => text('Cửa hàng Hữu'), 'loads existing merchant')
+  await go('/app/transactions')
   await until(() => text('payment01'), 'incoming transactions page loads array response')
   assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 10)
   await evaluate('document.querySelector(\'button[aria-label="Trang sau"]\').click()')
@@ -400,7 +399,7 @@ try {
   assert.equal(requests.filter((request) => request.includes('/api/admin/')).length, adminRequestsBefore)
   signedIn = false
   await go('/admin/kyc')
-  await until(() => evaluate('location.pathname === "/signin"'), 'guest admin route requires login')
+  await until(() => evaluate('location.pathname === "/sign-in"'), 'guest admin route requires login')
   user.role = 'ADMIN'
   signedIn = true
   profile = { ...profile, kycStatus: 'PENDING', kycTier: 0 }

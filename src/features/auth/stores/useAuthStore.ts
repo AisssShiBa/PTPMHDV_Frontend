@@ -1,32 +1,15 @@
 import { create } from 'zustand'
 import { toast } from 'sonner'
-import type { AuthState, AuthSession, User } from '../types/auth.types'
+import { authApi } from '../api/auth.api'
+import { errorMessage } from '@/lib/apiResponse'
+import type { AuthState, AuthSession } from '../types/auth.types'
+import { MOCK_AUTH_USER } from '../fixtures/auth.fixtures'
+
+// Re-export tạm thời cho unit test (axios.test.ts) trước khi test chuyển sang import từ fixtures
+export const MOCK_USER = MOCK_AUTH_USER
 
 let refreshInFlight: Promise<boolean> | null = null
 let generation = 0
-
-// Tài khoản mẫu phục vụ việc kiểm thử giao diện trong giai đoạn dựng móng (Prompt A)
-export const MOCK_USER: User = {
-  id: '00000000-0000-0000-0000-000000000001',
-  username: 'annguyen',
-  email: 'an.nguyen@finvault.local',
-  firstName: 'An',
-  lastName: 'Nguyễn',
-  role: 'USER',
-  kycTier: 1,
-  balance: '1250000'
-}
-
-export const MOCK_ADMIN: User = {
-  id: '00000000-0000-0000-0000-000000000002',
-  username: 'admin',
-  email: 'admin@finvault.local',
-  firstName: 'Quản trị',
-  lastName: 'Viên',
-  role: 'ADMIN',
-  kycTier: 2,
-  balance: '50000000'
-}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
@@ -47,7 +30,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     })
   },
 
-  signIn: async (username, _password) => {
+  signIn: async (username: string, password: string) => {
     if (get().loading) return false
     set({ loading: true })
     const current = ++generation
@@ -55,20 +38,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       if (refreshInFlight) await refreshInFlight
 
-      // Tạm thời cung cấp mock session khi chưa có backend auth thật
-      const isMockAdmin = username.toLowerCase().includes('admin')
-      const targetUser = isMockAdmin ? MOCK_ADMIN : MOCK_USER
+      const session = await authApi.signIn({ username, password })
 
       if (current !== generation) return false
       set({
-        accessToken: 'mock_access_token_' + targetUser.role.toLowerCase(),
-        user: targetUser,
+        accessToken: session.accessToken,
+        user: session.user,
         initialized: true
       })
       toast.success('Đăng nhập thành công')
       return true
-    } catch {
-      toast.error('Đăng nhập thất bại. Vui lòng thử lại.')
+    } catch (error) {
+      toast.error(errorMessage(error))
       return false
     } finally {
       set({ loading: false })
@@ -81,7 +62,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true })
     try {
       if (refreshInFlight) await refreshInFlight
+      await authApi.signOut()
       toast.success('Đã đăng xuất')
+    } catch {
+      // Vẫn đảm bảo xóa sạch session ở client dù backend có trả lỗi
     } finally {
       set({ loading: false })
     }
@@ -99,13 +83,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     refreshInFlight = (async () => {
       try {
-        // Trong khi chưa có API refresh thật, khôi phục session mặc định nếu có dev session hoặc trả false
-        // Giữ accessToken an toàn trong memory
+        const session = await authApi.refresh()
         if (current !== generation) return false
-        set({ initialized: true })
-        return false
+        set({
+          accessToken: session.accessToken,
+          user: session.user,
+          initialized: true
+        })
+        return true
       } catch {
-        if (current === generation) get().clearState()
+        if (current === generation) {
+          get().clearState()
+        }
         return false
       } finally {
         refreshInFlight = null

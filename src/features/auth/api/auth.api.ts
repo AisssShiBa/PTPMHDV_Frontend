@@ -18,24 +18,32 @@ export interface SignUpPayload {
 }
 
 export interface QrInitResponse {
-  sessionId: string
-  qrToken: string
-  qrCodeUrl?: string
+  qrId: string
+  nonce: string
   pollSecret: string
   expiresAt: string
+  /** @deprecated Hỗ trợ tương thích ngược cho giao diện cũ */
+  sessionId?: string
+  /** @deprecated Hỗ trợ tương thích ngược cho giao diện cũ */
+  qrToken?: string
 }
 
 export interface QrStatusResponse {
-  status: 'PENDING' | 'SCANNED' | 'CONFIRMED' | 'EXPIRED'
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SCANNED' | 'CONFIRMED' | 'EXPIRED'
   accessToken?: string
   user?: User
   expiresAt?: string
 }
 
+export interface ConfirmQrPayload {
+  qrId: string
+  nonce: string
+}
+
 export interface VerifyPinPayload {
   pin: string
-  paymentId?: string
-  amount?: string | number
+  paymentId: string
+  amount: string | number
 }
 
 export interface VerifyPinResponse {
@@ -70,7 +78,7 @@ export const authApi = {
     const res = await api.post<ApiResponse<AuthSession>>('/auth/signin', {
       username: payload.username.trim(),
       password: payload.password,
-      platform: 'web'
+      platform: payload.platform || 'web'
     })
     return unwrap(res.data)
   },
@@ -78,18 +86,21 @@ export const authApi = {
   /**
    * 2. Đăng ký tài khoản người dùng mới
    * Endpoint: POST /api/auth/signup
-   * Tự động chuẩn hóa username, họ và tên nếu UI chỉ nhận email + mật khẩu
    */
   async signUp(payload: SignUpPayload): Promise<User> {
-    const defaultUsername = payload.username || payload.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 30) || 'user'
-    const res = await api.post<ApiResponse<User>>('/auth/signup', {
+    const defaultUsername =
+      payload.username ||
+      payload.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 30) ||
+      'user'
+    const res = await api.post<ApiResponse<{ user: User } | User>>('/auth/signup', {
       email: payload.email.trim(),
       password: payload.password,
       username: defaultUsername,
       firstName: payload.firstName || 'Thành viên',
       lastName: payload.lastName || 'FinVault'
     })
-    return unwrap(res.data)
+    const data = unwrap(res.data)
+    return (data as { user: User }).user || (data as User)
   },
 
   /**
@@ -106,7 +117,7 @@ export const authApi = {
    * Endpoint: POST /api/auth/signout
    */
   async signOut(): Promise<void> {
-    await api.post('/auth/signout')
+    await api.post('/auth/signout', {})
   },
 
   /**
@@ -121,39 +132,59 @@ export const authApi = {
   /**
    * 6. Khởi tạo phiên quét mã QR Đăng nhập (Web)
    * Endpoint: POST /api/auth/qr-login/init
+   * Khớp chính xác backend: trả về { qrId, nonce, pollSecret, expiresAt }
    */
   async initQrLogin(): Promise<QrInitResponse> {
     const res = await api.post<ApiResponse<QrInitResponse>>('/auth/qr-login/init', {})
-    return unwrap(res.data)
+    const data = unwrap(res.data)
+    return {
+      ...data,
+      sessionId: data.qrId,
+      qrToken: data.nonce
+    }
   },
 
   /**
    * 7. Polling kiểm tra trạng thái phiên mã QR
-   * Endpoint: GET /api/auth/qr-login/:id/status?secret=...
+   * Endpoint: GET /api/auth/qr-login/:id/status
+   * Khớp chính xác backend: gửi pollSecret qua cả query parameter và header x-poll-secret
    */
-  async getQrStatus(sessionId: string, pollSecret: string): Promise<QrStatusResponse> {
+  async getQrStatus(qrId: string, pollSecret: string): Promise<QrStatusResponse> {
     const res = await api.get<ApiResponse<QrStatusResponse>>(
-      `/auth/qr-login/${encodeURIComponent(sessionId)}/status`,
-      { params: { secret: pollSecret } }
+      `/auth/qr-login/${encodeURIComponent(qrId)}/status`,
+      {
+        params: { pollSecret },
+        headers: { 'x-poll-secret': pollSecret }
+      }
     )
     return unwrap(res.data)
   },
 
   /**
-   * 8. Xác thực mã PIN 6 số để nhận transactionToken dùng 1 lần trong 60 giây
+   * 8. Xác nhận đăng nhập QR (Dành cho Mobile hoặc script giả lập)
+   * Endpoint: POST /api/auth/qr-login/confirm
+   */
+  async confirmQrLogin(payload: ConfirmQrPayload): Promise<{ success: boolean }> {
+    const res = await api.post<ApiResponse<{ success: boolean }>>('/auth/qr-login/confirm', payload)
+    return unwrap(res.data)
+  },
+
+  /**
+   * 9. Xác thực mã PIN 6 số để nhận transactionToken dùng 1 lần trong 60 giây
    * Endpoint: POST /api/auth/pin/verify
+   * paymentId và amount bắt buộc theo verifyPinSchema backend
    */
   async verifyPin(payload: VerifyPinPayload): Promise<VerifyPinResponse> {
     const res = await api.post<ApiResponse<VerifyPinResponse>>('/auth/pin/verify', {
       pin: payload.pin,
-      paymentId: payload.paymentId || 'default',
-      amount: payload.amount ? String(payload.amount) : '0'
+      paymentId: payload.paymentId,
+      amount: String(payload.amount)
     })
     return unwrap(res.data)
   },
 
   /**
-   * 9. Lấy trạng thái cài đặt & khóa của mã PIN
+   * 10. Lấy trạng thái cài đặt & khóa của mã PIN
    * Endpoint: GET /api/auth/pin/status
    */
   async getPinStatus(): Promise<PinStatusResponse> {
@@ -162,7 +193,7 @@ export const authApi = {
   },
 
   /**
-   * 10. Thiết lập mã PIN lần đầu
+   * 11. Thiết lập mã PIN lần đầu
    * Endpoint: POST /api/auth/pin/setup
    */
   async setupPin(payload: SetupPinPayload): Promise<{ success: boolean }> {
@@ -171,7 +202,7 @@ export const authApi = {
   },
 
   /**
-   * 11. Đổi mã PIN giao dịch
+   * 12. Đổi mã PIN giao dịch
    * Endpoint: POST /api/auth/pin/change
    */
   async changePin(payload: ChangePinPayload): Promise<{ success: boolean }> {
@@ -180,3 +211,16 @@ export const authApi = {
   }
 }
 
+/**
+ * Gộp authService cũ vào đây làm một điểm gọi duy nhất (Single Source of Truth)
+ */
+export const authService = {
+  signUp: (username: string, password: string, email: string, firstName: string, lastName: string) =>
+    authApi.signUp({ username, password, email, firstName, lastName }),
+  signIn: (username: string, password: string) =>
+    authApi.signIn({ username, password }),
+  signOut: () => authApi.signOut(),
+  refresh: () => authApi.refresh()
+}
+
+export default authApi

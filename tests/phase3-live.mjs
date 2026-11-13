@@ -88,14 +88,14 @@ try {
   // Auth's development CORS policy allows localhost ports, not 127.0.0.1 origins.
   const origin = 'http://localhost:' + server.address().port
   browser = await openBrowser(artifacts, 'phase3', origin)
-  await browser.go('/signin')
+  await browser.go('/sign-in')
   await until(() => browser.has('#username'), 'signin')
   await browser.fill('#username', sender.username)
   await browser.fill('#password', sender.password)
   await browser.evaluate('document.querySelector("form").requestSubmit()')
-  await until(() => browser.evaluate('location.pathname !== "/signin"'), 'real login')
+  await until(() => browser.evaluate('location.pathname !== "/sign-in"'), 'real login')
 
-  await browser.go('/profile')
+  await browser.go('/app/profile')
   await until(() => browser.has('#kyc-front'), 'real profile')
   await browser.fill('#kyc-number', 'SYNTHETIC1234')
   await browser.upload('#kyc-front', imagePath)
@@ -117,7 +117,7 @@ try {
   await call('/api/admin/kyc/' + saved.id + '/documents', { token: recipient.token, expected: 403 })
   checks.push('H8: missing back blocked locally; one multipart upload returns 202; profile persisted; signed MinIO image loads; USER denied Admin document API')
 
-  await browser.go('/wallet')
+  await browser.go('/app')
   await until(() => browser.text('Chuyển khoản'), 'wallet')
   await browser.click('Chuyển khoản')
   await until(() => browser.has('#transfer-recipient'), 'transfer dialog')
