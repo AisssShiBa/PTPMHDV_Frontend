@@ -1,0 +1,126 @@
+{
+  "status": "MOCK_HTTP_BROWSER_PASS",
+  "testedAt": "2026-11-13T03:44:46.035Z",
+  "checks": [
+    "GET /me null is the only unregistered state, authenticated session restored",
+    "One strict registration POST for double click, PENDING from refetched /me, real owner authorization and duplicate protection where live",
+    "PENDING/REJECTED/APPROVED survive reload and change only after server status, no fake merchant identity/revenue",
+    "404/500 are errors, never unregistered; retry available",
+    "390px mobile with no horizontal overflow",
+    "Account B never sees account A merchant; no role MERCHANT assigned by frontend"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "POST",
+      "path": "/api/merchants/register"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/6aad6fb8-a3c5-45cd-98cb-f9f18f7aa982/outlets"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/6aad6fb8-a3c5-45cd-98cb-f9f18f7aa982/outlets"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000002/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    }
+  ]
+}

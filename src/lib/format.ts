@@ -1,25 +1,39 @@
 /**
  * Định dạng tiền tệ, ngày giờ và tính toán tiền tệ (BigInt) theo tiêu chuẩn FinVault
  */
+import {
+  parseVndToBigInt,
+  formatMoneyVnd,
+  formatMoneyNumber,
+  compareMoney,
+  addMoney,
+  subtractMoney,
+  isGreaterThan,
+  isGreaterThanOrEqual,
+  isValidMoneyInput,
+  validateTransferAmount
+} from './money'
 
-const currencyFormatter = new Intl.NumberFormat('vi-VN', {
-  style: 'currency',
-  currency: 'VND',
-  maximumFractionDigits: 0
-})
-
-const numberFormatter = new Intl.NumberFormat('vi-VN', {
-  maximumFractionDigits: 0
-})
+export {
+  parseVndToBigInt,
+  formatMoneyVnd,
+  formatMoneyNumber,
+  compareMoney,
+  addMoney,
+  subtractMoney,
+  isGreaterThan,
+  isGreaterThanOrEqual,
+  isValidMoneyInput,
+  validateTransferAmount
+}
 
 /**
- * Định dạng số tiền từ string (hoặc number) sang định dạng VND chuẩn (vd: "1.000.000 ₫")
+ * Định dạng số tiền từ string (hoặc BigInt) sang định dạng VND chuẩn (vd: "1.000.000 ₫")
+ * KHÔNG dùng Number().
  */
-export function formatCurrency(amount: string | number | null | undefined): string {
+export function formatCurrency(amount: string | number | bigint | null | undefined): string {
   if (amount === null || amount === undefined || amount === '') return '0 ₫'
-  const numericValue = typeof amount === 'number' ? amount : Number(amount)
-  if (isNaN(numericValue)) return '0 ₫'
-  return currencyFormatter.format(numericValue)
+  return formatMoneyVnd(typeof amount === 'number' ? String(Math.floor(amount)) : amount)
 }
 
 /** Alias cho formatCurrency */
@@ -27,12 +41,11 @@ export const formatVnd = formatCurrency
 
 /**
  * Định dạng số có dấu chấm phân cách (vd: "1.000.000")
+ * KHÔNG dùng Number().
  */
-export function formatNumber(value: string | number | null | undefined): string {
+export function formatNumber(value: string | number | bigint | null | undefined): string {
   if (value === null || value === undefined || value === '') return '0'
-  const numericValue = typeof value === 'number' ? value : Number(value)
-  if (isNaN(numericValue)) return '0'
-  return numberFormatter.format(numericValue)
+  return formatMoneyNumber(typeof value === 'number' ? String(Math.floor(value)) : value)
 }
 
 /**
@@ -63,45 +76,14 @@ export function maskPhone(phone: string | null | undefined): string {
 /**
  * Chuyển đổi chuỗi tiền thành BigInt an toàn, loại bỏ ký tự không phải số
  */
-export function toBigIntSafe(amount: string | null | undefined): bigint {
-  if (!amount) return 0n
-  const cleaned = amount.trim().replace(/[^0-9-]/g, '')
-  if (!cleaned || cleaned === '-') return 0n
+export function toBigIntSafe(amount: string | bigint | number | null | undefined): bigint {
+  if (amount === null || amount === undefined) return 0n
+  if (typeof amount === 'bigint') return amount
   try {
-    return BigInt(cleaned)
+    return parseVndToBigInt(String(amount))
   } catch {
     return 0n
   }
 }
 
-/**
- * Cộng hai chuỗi tiền tệ bằng BigInt
- */
-export function addMoney(a: string, b: string): string {
-  return (toBigIntSafe(a) + toBigIntSafe(b)).toString()
-}
-
-/**
- * Trừ hai chuỗi tiền tệ bằng BigInt (a - b)
- */
-export function subtractMoney(a: string, b: string): string {
-  return (toBigIntSafe(a) - toBigIntSafe(b)).toString()
-}
-
-/**
- * So sánh hai chuỗi tiền: -1 nếu a < b, 0 nếu a == b, 1 nếu a > b
- */
-export function compareMoney(a: string, b: string): number {
-  const bigA = toBigIntSafe(a)
-  const bigB = toBigIntSafe(b)
-  if (bigA < bigB) return -1
-  if (bigA > bigB) return 1
-  return 0
-}
-
-/**
- * Kiểm tra a > b
- */
-export function isGreaterThan(a: string, b: string): boolean {
-  return compareMoney(a, b) > 0
-}
+export { normalizeVnd, formatVndExact } from './money'

@@ -1,0 +1,135 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/apps/mobile/App.tsx
+  126:10  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/apps/mobile/App.tsx:126:10
+  124 |     }
+  125 |
+> 126 |     void restoreSession()
+      |          ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  127 |     return () => {
+  128 |       mountedRef.current = false
+  129 |       sessionExpiredHandler = undefined  react-hooks/set-state-in-effect
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/features/auth/components/PinModal.tsx
+  46:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/features/auth/components/PinModal.tsx:46:7
+  44 |   useEffect(() => {
+  45 |     if (open) {
+> 46 |       setPin(Array(6).fill(''))
+     |       ^^^^^^ Avoid calling setState() directly within an effect
+  47 |       setErrorMsg(null)
+  48 |       setIsLoading(false)
+  49 |       // Focus vào ô đầu tiên sau khi modal mở  react-hooks/set-state-in-effect
+  61:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/features/auth/components/PinModal.tsx:61:7
+  59 |
+  60 |     if (lockCountdown <= 0) {
+> 61 |       setIsLocked(false)
+     |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  62 |       setAttemptsRemaining(5)
+  63 |       setLockCountdown(300)
+  64 |       setErrorMsg(null)                         react-hooks/set-state-in-effect
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/features/notification/components/NotificationBell.tsx
+  63:42  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `user`, but the source dependencies were [user?.id]. Inferred less specific property than source.
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/features/notification/components/NotificationBell.tsx:63:42
+  61 |   )
+  62 |
+> 63 |   const fetchNotifications = useCallback(async (requestedPage = 1, append = false) => {
+     |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 64 |     if (!user?.id) return
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 65 |     try {
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 86 |     }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 87 |   }, [user?.id])
+     | ^^^^ Could not preserve existing manual memoization
+  88 |
+  89 |   useEffect(() => {
+  90 |     fetchNotifications()                                   react-hooks/preserve-manual-memoization
+  90:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/features/notification/components/NotificationBell.tsx:90:5
+  88 |
+  89 |   useEffect(() => {
+> 90 |     fetchNotifications()
+     |     ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  91 |     const timer = setInterval(fetchNotifications, socketConnected ? 60000 : 15000)
+  92 |     return () => clearInterval(timer)
+  93 |   }, [fetchNotifications, socketConnected])  react-hooks/set-state-in-effect
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/pages/SignUpPage.tsx
+  44:27  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/pages/SignUpPage.tsx:44:27
+  42 |   })
+  43 |
+> 44 |   const currentPassword = watch('password') || ''
+     |                           ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  45 |
+  46 |   // Tính toán mức độ mạnh của mật khẩu
+  47 |   const getPasswordStrength = (pwd: string) => {  react-hooks/incompatible-library
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/pages/TopupResult.tsx
+  21:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/pages/TopupResult.tsx:21:7
+  19 |
+  20 |     if (vnp_ResponseCode !== '00') {
+> 21 |       setStatus('FAILED')
+     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  22 |       setMessage('Thanh toán thất bại hoặc đã bị huỷ bởi người dùng.')
+  23 |       return
+  24 |     }  react-hooks/set-state-in-effect
+  34:21  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+
+/home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/src/pages/UtilitiesPage.tsx
+  182:7  warning  Unexpected if as the only statement in an else block  no-lonely-if
+
+✖ 9 problems (7 errors, 2 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

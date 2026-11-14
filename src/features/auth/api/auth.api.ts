@@ -48,7 +48,7 @@ export interface VerifyPinPayload {
 
 export interface VerifyPinResponse {
   transactionToken: string
-  expiresInSeconds: number
+  expiresIn: number
 }
 
 export interface PinStatusResponse {
@@ -175,6 +175,7 @@ export const authApi = {
    * paymentId và amount bắt buộc theo verifyPinSchema backend
    */
   async verifyPin(payload: VerifyPinPayload): Promise<VerifyPinResponse> {
+    if (!payload.paymentId || !payload.amount) throw new Error('Thiếu thông tin giao dịch cần xác thực.')
     const res = await api.post<ApiResponse<VerifyPinResponse>>('/auth/pin/verify', {
       pin: payload.pin,
       paymentId: payload.paymentId,

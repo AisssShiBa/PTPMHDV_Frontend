@@ -1,0 +1,379 @@
+{
+  "status": "LIVE_GATEWAY_FUNDING_PASS",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "testedAt": "2026-11-13T04:26:01.236Z",
+  "checks": [
+    "HU-F05: authenticated string create; alias/legacy concurrent retries one UUID/URL/DB row; changed payload 422; foreign 403; no early credit",
+    "HU-F07: forged HMAC rejected; signed browser return stays PENDING and never credits",
+    "HU-F06: 2 then 20 duplicate IPNs: one credit and one balanced ledger transaction",
+    "HU-F08/F09/F10/F11: SUCCEEDED through Gateway/PIN; owner isolation, idempotent create, real hold/ledger/balance and token replay 409",
+    "HU-F08/F09/F10/F11: FAILED through Gateway/PIN; owner isolation, idempotent create, real hold/ledger/balance and token replay 409",
+    "HU-F08/F09/F10/F11: PAYOUT_PENDING through Gateway/PIN; owner isolation, idempotent create, real hold/ledger/balance and token replay 409"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/d4042841-02ad-4894-8121-3061311a3e5d/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/fdb11daa-6e87-4276-9188-3df3acc3fdd9/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/vnpay/create",
+      "status": 401,
+      "code": "UNAUTHORIZED"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 401,
+      "code": "UNAUTHORIZED"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/vnpay/ipn",
+      "status": 401,
+      "code": "UNAUTHORIZED"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/vnpay/create",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/payments/topups",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/payments/topups",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/payments/topups",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/payments/topups",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/payments/topups",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/payments/topups",
+      "status": 422,
+      "code": "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD"
+    },
+    {
+      "method": "GET",
+      "path": "/payments/topups/69a6faa0-f376-45cd-97a0-2964ed92d981",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/return",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/vnpay/ipn",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/setup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/7b100aaa-0f71-47d2-a926-38a9ae1ee0b3",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/verify",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/7b100aaa-0f71-47d2-a926-38a9ae1ee0b3/confirm",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/7b100aaa-0f71-47d2-a926-38a9ae1ee0b3",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/7b100aaa-0f71-47d2-a926-38a9ae1ee0b3/confirm",
+      "status": 409,
+      "code": "TXN_TOKEN_REUSED"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/ba16344b-c0c1-4cef-9ffc-e6579b3f6ab6",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/verify",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/ba16344b-c0c1-4cef-9ffc-e6579b3f6ab6/confirm",
+      "status": 409,
+      "code": "CASHOUT_FAILED"
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/ba16344b-c0c1-4cef-9ffc-e6579b3f6ab6",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/ba16344b-c0c1-4cef-9ffc-e6579b3f6ab6/confirm",
+      "status": 409,
+      "code": "TXN_TOKEN_REUSED"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/fce3484b-013b-4426-bde7-39b4bf618499",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/pin/verify",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/fce3484b-013b-4426-bde7-39b4bf618499/confirm",
+      "status": 503,
+      "code": "CASHOUT_PROCESSING"
+    },
+    {
+      "method": "GET",
+      "path": "/funding/cash-out/fce3484b-013b-4426-bde7-39b4bf618499",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out/fce3484b-013b-4426-bde7-39b4bf618499/confirm",
+      "status": 409,
+      "code": "TXN_TOKEN_REUSED"
+    }
+  ],
+  "realVnpaySandbox": "NOT_RUN",
+  "payoutProvider": "SIMULATED"
+}

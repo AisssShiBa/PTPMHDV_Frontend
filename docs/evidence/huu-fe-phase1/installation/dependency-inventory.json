@@ -1,0 +1,359 @@
+[
+  {
+    "name": "@fontsource/be-vietnam-pro",
+    "group": "dependencies",
+    "requested": "^5.2.5",
+    "lockedVersion": "5.3.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@hookform/resolvers",
+    "group": "dependencies",
+    "requested": "^5.9.1",
+    "lockedVersion": "5.9.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-avatar",
+    "group": "dependencies",
+    "requested": "^1.3.1",
+    "lockedVersion": "1.3.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-collapsible",
+    "group": "dependencies",
+    "requested": "^1.2.1",
+    "lockedVersion": "1.2.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-dialog",
+    "group": "dependencies",
+    "requested": "^1.3.1",
+    "lockedVersion": "1.3.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-dropdown-menu",
+    "group": "dependencies",
+    "requested": "^2.2.1",
+    "lockedVersion": "2.2.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-label",
+    "group": "dependencies",
+    "requested": "^2.1.17",
+    "lockedVersion": "2.1.17",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-separator",
+    "group": "dependencies",
+    "requested": "^1.2.0",
+    "lockedVersion": "1.2.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-slot",
+    "group": "dependencies",
+    "requested": "^1.1.2",
+    "lockedVersion": "1.5.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-tabs",
+    "group": "dependencies",
+    "requested": "^1.2.1",
+    "lockedVersion": "1.2.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@radix-ui/react-tooltip",
+    "group": "dependencies",
+    "requested": "^1.4.1",
+    "lockedVersion": "1.4.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@tailwindcss/vite",
+    "group": "dependencies",
+    "requested": "^4.3.3",
+    "lockedVersion": "4.3.3",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@tanstack/react-query",
+    "group": "dependencies",
+    "requested": "^5.67.1",
+    "lockedVersion": "5.105.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "axios",
+    "group": "dependencies",
+    "requested": "^1.19.0",
+    "lockedVersion": "1.19.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "class-variance-authority",
+    "group": "dependencies",
+    "requested": "^0.7.1",
+    "lockedVersion": "0.7.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "clsx",
+    "group": "dependencies",
+    "requested": "^2.1.1",
+    "lockedVersion": "2.1.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "lucide-react",
+    "group": "dependencies",
+    "requested": "^1.34.0",
+    "lockedVersion": "1.34.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "motion",
+    "group": "dependencies",
+    "requested": "^12.4.7",
+    "lockedVersion": "12.43.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "react",
+    "group": "dependencies",
+    "requested": "^19.2.8",
+    "lockedVersion": "19.2.8",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "react-dom",
+    "group": "dependencies",
+    "requested": "^19.2.8",
+    "lockedVersion": "19.2.8",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "react-hook-form",
+    "group": "dependencies",
+    "requested": "^7.86.0",
+    "lockedVersion": "7.86.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "react-router-dom",
+    "group": "dependencies",
+    "requested": "^7.18.2",
+    "lockedVersion": "7.18.2",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "socket.io-client",
+    "group": "dependencies",
+    "requested": "^4.8.3",
+    "lockedVersion": "4.8.3",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "sonner",
+    "group": "dependencies",
+    "requested": "^2.0.8",
+    "lockedVersion": "2.0.8",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "tailwind-merge",
+    "group": "dependencies",
+    "requested": "^3.6.0",
+    "lockedVersion": "3.6.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "tailwindcss",
+    "group": "dependencies",
+    "requested": "^4.3.3",
+    "lockedVersion": "4.3.3",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "tw-animate-css",
+    "group": "dependencies",
+    "requested": "^1.4.0",
+    "lockedVersion": "1.4.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "zod",
+    "group": "dependencies",
+    "requested": "^4.4.3",
+    "lockedVersion": "4.4.3",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "zustand",
+    "group": "dependencies",
+    "requested": "^5.0.15",
+    "lockedVersion": "5.0.15",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@eslint/js",
+    "group": "devDependencies",
+    "requested": "^9.39.5",
+    "lockedVersion": "9.39.5",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@redocly/cli",
+    "group": "devDependencies",
+    "requested": "^2.28.0",
+    "lockedVersion": null,
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@stoplight/prism-cli",
+    "group": "devDependencies",
+    "requested": "^5.14.2",
+    "lockedVersion": null,
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@testing-library/jest-dom",
+    "group": "devDependencies",
+    "requested": "^6.6.3",
+    "lockedVersion": "6.9.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@testing-library/react",
+    "group": "devDependencies",
+    "requested": "^16.2.0",
+    "lockedVersion": "16.3.3",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@types/node",
+    "group": "devDependencies",
+    "requested": "^24.13.3",
+    "lockedVersion": "24.13.3",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@types/react",
+    "group": "devDependencies",
+    "requested": "^19.2.17",
+    "lockedVersion": "19.2.18",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@types/react-dom",
+    "group": "devDependencies",
+    "requested": "^19.2.3",
+    "lockedVersion": "19.2.4",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "@vitejs/plugin-react",
+    "group": "devDependencies",
+    "requested": "^6.0.4",
+    "lockedVersion": "6.0.5",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "concurrently",
+    "group": "devDependencies",
+    "requested": "^10.0.6",
+    "lockedVersion": null,
+    "lockedTarballCached": false
+  },
+  {
+    "name": "eslint",
+    "group": "devDependencies",
+    "requested": "^9.39.5",
+    "lockedVersion": "9.39.5",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "eslint-plugin-react",
+    "group": "devDependencies",
+    "requested": "^7.37.5",
+    "lockedVersion": "7.37.5",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "eslint-plugin-react-hooks",
+    "group": "devDependencies",
+    "requested": "^7.1.1",
+    "lockedVersion": "7.1.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "eslint-plugin-react-refresh",
+    "group": "devDependencies",
+    "requested": "^0.5.4",
+    "lockedVersion": "0.5.4",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "globals",
+    "group": "devDependencies",
+    "requested": "^17.11.0",
+    "lockedVersion": "17.11.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "jsdom",
+    "group": "devDependencies",
+    "requested": "^26.0.0",
+    "lockedVersion": "26.1.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "msw",
+    "group": "devDependencies",
+    "requested": "^2.7.3",
+    "lockedVersion": "2.15.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "prettier",
+    "group": "devDependencies",
+    "requested": "^3.5.2",
+    "lockedVersion": "3.9.10",
+    "lockedTarballCached": true
+  },
+  {
+    "name": "typescript",
+    "group": "devDependencies",
+    "requested": "~6.0.2",
+    "lockedVersion": "6.0.3",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "typescript-eslint",
+    "group": "devDependencies",
+    "requested": "^8.68.0",
+    "lockedVersion": "8.68.0",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "vite",
+    "group": "devDependencies",
+    "requested": "^8.2.0",
+    "lockedVersion": "8.2.1",
+    "lockedTarballCached": false
+  },
+  {
+    "name": "vitest",
+    "group": "devDependencies",
+    "requested": "^3.0.7",
+    "lockedVersion": "3.2.7",
+    "lockedTarballCached": false
+  }
+]

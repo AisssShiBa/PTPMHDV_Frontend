@@ -1,0 +1,44 @@
+[
+  {
+    "command": "npm run check",
+    "timestamp": "2026-11-12T05:11:47.916006+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "check.txt"
+  },
+  {
+    "command": "npm run test:unit",
+    "timestamp": "2026-11-12T05:11:48.165526+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "test-unit.txt"
+  },
+  {
+    "command": "npm test",
+    "timestamp": "2026-11-12T05:11:48.291901+00:00",
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "evidence": "test-node.txt"
+  },
+  {
+    "command": "npm run typecheck",
+    "timestamp": "2026-11-12T05:11:48.583489+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "typecheck.txt"
+  },
+  {
+    "command": "npm run build",
+    "timestamp": "2026-11-12T05:11:48.709381+00:00",
+    "exitCode": 127,
+    "status": "BLOCKED",
+    "evidence": "build.txt"
+  },
+  {
+    "command": "npm run test:browser",
+    "timestamp": "2026-11-12T05:11:48.835032+00:00",
+    "exitCode": 1,
+    "status": "BLOCKED",
+    "evidence": "test-browser.txt"
+  }
+]

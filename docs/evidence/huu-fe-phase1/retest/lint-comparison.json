@@ -1,0 +1,26 @@
+{
+  "baseline": 32,
+  "current": 29,
+  "newErrors": [],
+  "removedErrors": [
+    [
+      "src/features/user/components/KycForm.tsx",
+      "react-hooks/refs",
+      48,
+      48
+    ],
+    [
+      "src/features/user/components/KycForm.tsx",
+      "react-hooks/set-state-in-effect",
+      79,
+      5
+    ],
+    [
+      "src/features/user/components/ProfileForm.tsx",
+      "react-hooks/refs",
+      35,
+      39
+    ]
+  ],
+  "method": "same installed dependencies, baseline git archive HEAD, errors matched by relative path/rule/line/column"
+}

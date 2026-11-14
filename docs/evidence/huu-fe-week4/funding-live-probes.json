@@ -1,0 +1,113 @@
+{
+  "testedAt": "2026-11-13T03:47:09.608Z",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "rows": [
+    {
+      "path": "/funding/vnpay/create",
+      "statuses": [
+        {
+          "authenticated": false,
+          "httpStatus": 401,
+          "code": "INVALID_GATEWAY_TOKEN"
+        },
+        {
+          "authenticated": true,
+          "httpStatus": 401,
+          "code": "INVALID_GATEWAY_TOKEN"
+        }
+      ],
+      "status": "BLOCKED_GATEWAY_IDENTITY"
+    },
+    {
+      "path": "/funding/cash-out",
+      "statuses": [
+        {
+          "authenticated": false,
+          "httpStatus": 401,
+          "code": "INVALID_GATEWAY_TOKEN"
+        },
+        {
+          "authenticated": true,
+          "httpStatus": 401,
+          "code": "INVALID_GATEWAY_TOKEN"
+        }
+      ],
+      "status": "BLOCKED_GATEWAY_IDENTITY"
+    },
+    {
+      "path": "/payments/topups",
+      "amountType": "string",
+      "httpStatus": 400,
+      "code": "VALIDATION_ERROR",
+      "status": "BLOCKED_STRING_CONTRACT"
+    },
+    {
+      "id": "VNPAY_LEGACY_MATRIX",
+      "status": "BLOCKED_SYNTHETIC_TERMINAL_CONFIG"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/2d114568-0483-4b97-95f4-3675ab85bd2c/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/funding/vnpay/create",
+      "status": 401,
+      "code": "INVALID_GATEWAY_TOKEN"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/vnpay/create",
+      "status": 401,
+      "code": "INVALID_GATEWAY_TOKEN"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 401,
+      "code": "INVALID_GATEWAY_TOKEN"
+    },
+    {
+      "method": "POST",
+      "path": "/funding/cash-out",
+      "status": 401,
+      "code": "INVALID_GATEWAY_TOKEN"
+    },
+    {
+      "method": "POST",
+      "path": "/payments/topups",
+      "status": 400,
+      "code": "VALIDATION_ERROR"
+    }
+  ]
+}

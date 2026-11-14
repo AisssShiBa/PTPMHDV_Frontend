@@ -1,0 +1,5 @@
+
+> frontend@0.0.0 test:profile:live
+> node tests/profile-live.mjs
+
+PASS: H01 live Gateway/Auth/User/Admin/MinIO (5 groups), synthetic accounts, no transfers

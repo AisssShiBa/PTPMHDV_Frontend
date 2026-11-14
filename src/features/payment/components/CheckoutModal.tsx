@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { paymentService } from '../services/paymentService'
 import type { PaymentType } from '../types/payment.types'
 import { X, CreditCard, Loader2 } from 'lucide-react'
+import { errorMessage } from '@/lib/apiResponse'
 import { toast } from 'sonner'
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
 export const CheckoutModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
   const [amount, setAmount] = useState('50000')
   const [type, setType] = useState<PaymentType>('BUS_TICKET')
-  const [referenceId, setReferenceId] = useState(`ORDER-${Date.now()}`)
+  const [referenceId, setReferenceId] = useState(() => `ORDER-${crypto.randomUUID()}`)
   const [loading, setLoading] = useState(false)
 
   if (!isOpen) return null
@@ -34,8 +35,8 @@ export const CheckoutModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =
       toast.success('Khởi tạo thanh toán thành công!')
       onSuccess?.()
       onClose()
-    } catch (err: any) {
-      toast.error('Thanh toán thất bại: ' + (err?.response?.data?.error?.message || err.message))
+    } catch (err: unknown) {
+      toast.error(errorMessage(err))
     } finally {
       setLoading(false)
     }

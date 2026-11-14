@@ -4,6 +4,10 @@ import { errorMessage } from '@/lib/apiResponse'
 import { userService } from '../services/userService'
 
 export function KycDocumentViewer({ authUserId }: { authUserId: string }) {
+  return <AccountDocumentViewer key={authUserId} authUserId={authUserId} />
+}
+
+function AccountDocumentViewer({ authUserId }: { authUserId: string }) {
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,7 +31,8 @@ export function KycDocumentViewer({ authUserId }: { authUserId: string }) {
         setError('Liên kết xem ảnh đã hết hạn. Bạn có thể mở lại ảnh.')
       }, document.expiresIn * 1000)
     } catch (reason) {
-      if (!controller.signal.aborted) setError(errorMessage(reason))
+      if (!controller.signal.aborted) setError(reason instanceof Error && !('isAxiosError' in reason)
+        ? 'Không thể mở ảnh giấy tờ. Vui lòng thử lại.' : errorMessage(reason))
     } finally { if (!controller.signal.aborted) setLoading(false) }
   }
   return <div className="space-y-3 border-t border-border pt-4">

@@ -1,0 +1,117 @@
+ M .env.example
+ M README.md
+ M apps/mobile/App.tsx
+ M docs/CONTRACT_OPEN_QUESTIONS.md
+ M docs/handover/funding.md
+ M docs/handover/kyc.md
+ M docs/handover/merchant.md
+ M package-lock.json
+ M package.json
+ M packages/api-contract/openapi.yaml
+ M src/app/guards.tsx
+ M src/app/router.tsx
+ M src/components/ui/badge.tsx
+ M src/components/ui/button.tsx
+ M src/features/admin/services/adminService.ts
+ M src/features/admin/types/admin.types.ts
+ M src/features/auth/api/auth.api.ts
+ M src/features/auth/components/PinModal.tsx
+ M src/features/auth/index.ts
+ M src/features/auth/stores/useAuthStore.ts
+ M src/features/funding/index.ts
+ M src/features/merchant/components/MerchantRegisterForm.tsx
+ M src/features/merchant/components/MerchantStatusCard.tsx
+ M src/features/merchant/index.ts
+ M src/features/merchant/schemas/merchant.schema.ts
+ M src/features/merchant/services/merchantService.ts
+ M src/features/notification/components/NotificationBell.tsx
+ M src/features/notification/hooks/useNotificationSocket.ts
+ M src/features/notification/services/notificationService.ts
+ M src/features/payment/components/CheckoutModal.tsx
+ M src/features/payment/index.ts
+ M src/features/payment/services/paymentService.ts
+ M src/features/payment/types/payment.types.ts
+ M src/features/user/components/KycDocumentViewer.tsx
+ M src/features/user/components/KycForm.tsx
+ M src/features/user/components/ProfileForm.tsx
+ M src/features/user/hooks/useUserProfile.ts
+ M src/features/user/services/userService.ts
+ M src/features/user/types/user.types.ts
+ M src/features/wallet/components/RealBalanceCard.tsx
+ M src/features/wallet/components/TopupModal.tsx
+ M src/features/wallet/index.ts
+ M src/features/wallet/services/walletService.ts
+ M src/hooks/use-mobile.ts
+ M src/hooks/useRemoteResource.ts
+ M src/layouts/MainLayout.tsx
+ M src/lib/apiResponse.ts
+ M src/lib/axios.ts
+ M src/lib/format.ts
+ M src/pages/MerchantPortalPage.tsx
+ M src/pages/MerchantRegisterPage.tsx
+ M src/pages/ProfilePage.tsx
+ M src/pages/QrLoginPage.tsx
+ M src/pages/SignUpPage.tsx
+ M src/pages/TopupPage.tsx
+ M src/pages/TopupResult.tsx
+ M src/pages/UtilitiesPage.tsx
+ M src/pages/WithdrawPage.tsx
+ M src/styles/index.css
+ M tests/browser-smoke.mjs
+ M tests/browser-support.mjs
+ M tests/phase3-live.mjs
+?? docs/evidence/
+?? docs/handover/cashout.md
+?? docs/handover/huu-be-funding-pr-draft.md
+?? docs/handover/huu-fe-closeout-review.md
+?? docs/handover/huu-fe-closeout.md
+?? docs/handover/huu-fe-contract-matrix.md
+?? docs/handover/huu-fe-demo-runbook.md
+?? docs/handover/huu-fe-phase0-audit.md
+?? docs/handover/huu-fe-phase8.md
+?? docs/handover/huu-fe-pr-draft.md
+?? docs/handover/merchant-tools.md
+?? docs/handover/topup.md
+?? src/app/RoutePage.tsx
+?? src/app/routePages.ts
+?? src/components/ui/badge-variants.ts
+?? src/components/ui/button-variants.ts
+?? src/features/funding/api/
+?? src/features/funding/components/
+?? src/features/funding/hooks/
+?? src/features/funding/schemas/
+?? src/features/funding/types/
+?? src/features/merchant/api/
+?? src/features/merchant/components/ApiKeyCreateModal.tsx
+?? src/features/merchant/components/ApiKeyManager.tsx
+?? src/features/merchant/components/MerchantOverview.tsx
+?? src/features/merchant/components/MerchantTools.tsx
+?? src/features/merchant/components/OutletCreateForm.tsx
+?? src/features/merchant/components/OutletList.tsx
+?? src/features/merchant/components/OutletQrCard.tsx
+?? src/features/merchant/schemas/outlet.schema.ts
+?? src/features/merchant/types/outlet.types.ts
+?? src/features/payment/components/TopupResultPanel.tsx
+?? src/features/user/api/
+?? src/features/user/components/UserProfilePanel.tsx
+?? src/features/user/index.ts
+?? src/features/wallet/api/
+?? src/lib/money.ts
+?? src/test/cashoutFlow.test.tsx
+?? src/test/funding.test.tsx
+?? src/test/merchantOnboarding.test.tsx
+?? src/test/merchantTools.test.tsx
+?? src/test/notificationBell.test.tsx
+?? src/test/topupFlow.test.tsx
+?? src/test/transactionSafety.test.tsx
+?? src/test/userProfile.test.tsx
+?? tests/browser-smoke-legacy.mjs
+?? tests/cashout-browser.mjs
+?? tests/funding-live.mjs
+?? tests/huu-closeout-live.mjs
+?? tests/huu-demo-rehearsal.mjs
+?? tests/merchant-browser.mjs
+?? tests/merchant-tools-live.mjs
+?? tests/profile-live.mjs
+?? tests/run-browser-smoke.mjs
+?? tests/topup-browser.mjs

@@ -1,106 +1,56 @@
-// d:\PTPMHDV\Frontend\src\features\notification\components\NotificationBell.tsx
-import { useCallback, useEffect, useRef, useState } from 'react'
-import axios from 'axios'
-import { BadgeCheck, Bell, CheckCheck, Clock, CreditCard, Loader2, RotateCcw, ShieldCheck, Store, WalletCards, XCircle } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { notificationService } from '../services/notificationService'
-import type { NotificationItem, NotificationType } from '../types/notification.types'
-import { useNotificationSocket } from '../hooks/useNotificationSocket'
-import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Bell, CheckCheck, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { errorMessage } from '@/lib/apiResponse'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { QueryBoundary } from '@/components/common/QueryBoundary'
+import {
+  applyRealtimeNotification,
+  hasNotificationInCache,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotificationList
+} from '../api/notification.queries'
+import { useNotificationSocket } from '../hooks/useNotificationSocket'
+import type { NotificationItem } from '../types/notification.types'
+import { NotificationIcon, formatNotificationTime } from './NotificationList'
 
-const notificationIconByType: Record<NotificationType, LucideIcon> = {
-  PAYMENT_SUCCESS: CreditCard,
-  PAYMENT_FAILED: CreditCard,
-  PAYMENT_EXPIRED: Clock,
-  PAYMENT_REFUNDED: RotateCcw,
-  PAYMENT_CANCELLED: XCircle,
-  WALLET_CREDITED: WalletCards,
-  WALLET_DEBITED: WalletCards,
-  KYC_APPROVED: BadgeCheck,
-  KYC_REJECTED: BadgeCheck,
-  KYC_TIER_CHANGED: ShieldCheck,
-  MERCHANT_APPROVED: Store,
-  MERCHANT_REJECTED: Store
-}
+const BELL_PAGE_SIZE = 8
 
-function notificationErrorMessage(error: unknown): string {
-  if (axios.isAxiosError<{ error?: { message?: string }; requestId?: string }>(error)) {
-    const message = error.response?.data?.error?.message
-    const requestId = error.response?.data?.requestId
-    if (message) return requestId ? `${message} (Request ID: ${requestId})` : message
-  }
-  return errorMessage(error)
-}
-
-export const NotificationBell: React.FC = () => {
+/**
+ * Header bell. The notification list and `unreadCount` live in the TanStack
+ * Query cache; socket events are merged into that cache (dedupe by id/eventId)
+ * instead of being kept in local component state.
+ */
+export function NotificationBell() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
   const accessToken = useAuthStore((state) => state.accessToken)
   const [isOpen, setIsOpen] = useState(false)
-  const [notifications, setNotifications] = useState<NotificationItem[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const seenNotificationIds = useRef(new Set<string>())
+
+  const listQuery = useNotificationList(1, BELL_PAGE_SIZE, { enabled: Boolean(user) })
+  const markRead = useMarkNotificationRead()
+  const markAllRead = useMarkAllNotificationsRead()
+  const unreadCount = listQuery.data?.unreadCount ?? 0
 
   const handleRealtimeNotification = (notification: NotificationItem) => {
-    if (seenNotificationIds.current.has(notification.id)) return
-    seenNotificationIds.current.add(notification.id)
-    setNotifications((prev) => [notification, ...prev])
-    setUnreadCount((count) => count + (notification.read ? 0 : 1))
+    if (hasNotificationInCache(queryClient, notification)) return
+    applyRealtimeNotification(queryClient, notification)
     toast.info(notification.message)
   }
 
-  const socketConnected = useNotificationSocket(
+  useNotificationSocket(
     user?.id ? String(user.id) : undefined,
     accessToken ?? undefined,
     handleRealtimeNotification
   )
 
-  const fetchNotifications = useCallback(async (requestedPage = 1, append = false) => {
-    if (!user?.id) return
-    try {
-      setLoading(true)
-      const data = await notificationService.getNotifications(requestedPage, 10)
-      const items = data.notifications || []
-      if (append) {
-        items.forEach((item) => seenNotificationIds.current.add(item.id))
-        setNotifications((prev) => {
-          const knownIds = new Set(prev.map((item) => item.id))
-          return [...prev, ...items.filter((item) => !knownIds.has(item.id))]
-        })
-      } else {
-        seenNotificationIds.current = new Set(items.map((item) => item.id))
-        setNotifications(items)
-      }
-      setUnreadCount(data.unreadCount || 0)
-      setPage(requestedPage)
-      setTotalPages(data.pagination?.totalPages || 1)
-    } catch (error) {
-      toast.error(notificationErrorMessage(error))
-    } finally {
-      setLoading(false)
-    }
-  }, [user?.id])
-
   useEffect(() => {
-    fetchNotifications()
-    const timer = setInterval(fetchNotifications, socketConnected ? 60000 : 15000)
-    return () => clearInterval(timer)
-  }, [fetchNotifications, socketConnected])
-
-  const handleLoadMore = () => {
-    if (loading || page >= totalPages) return
-    void fetchNotifications(page + 1, true)
-  }
-
-  // Đóng dropdown khi click ra ngoài
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false)
       }
     }
@@ -108,105 +58,107 @@ export const NotificationBell: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleMarkAsRead = async (id: string, currentlyRead: boolean) => {
-    if (currentlyRead) return
-    try {
-      await notificationService.markRead(id)
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
-      setUnreadCount((c) => Math.max(0, c - 1))
-    } catch (err: any) {
-      toast.error('Lỗi cập nhật: ' + notificationErrorMessage(err))
-    }
+  const handleMarkRead = (id: string) => {
+    markRead.mutate(id, {
+      onError: () => toast.error('Không thể cập nhật trạng thái thông báo.')
+    })
   }
 
-  const handleMarkAllRead = async () => {
-    if (!user?.id || unreadCount === 0) return
-    try {
-      await notificationService.markAllRead()
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-      setUnreadCount(0)
-      toast.success('Đã đánh dấu đọc tất cả thông báo!')
-    } catch (err: any) {
-      toast.error('Lỗi cập nhật: ' + notificationErrorMessage(err))
-    }
+  const handleMarkAllRead = () => {
+    if (unreadCount === 0 || markAllRead.isPending) return
+    markAllRead.mutate(undefined, {
+      onSuccess: () => toast.success('Đã đánh dấu đọc tất cả thông báo!'),
+      onError: () => toast.error('Không thể đánh dấu đọc tất cả thông báo.')
+    })
   }
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Nút Chuông */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+        onClick={() => setIsOpen((open) => !open)}
+        className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
         aria-label="Thông báo"
       >
         <Bell className="size-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-border/80 bg-card p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between px-2 py-1.5 border-b border-border/50">
+        <div className="absolute right-0 z-50 mt-2 w-80 rounded-2xl border border-border/80 bg-card p-3 shadow-2xl sm:w-96">
+          <div className="flex items-center justify-between border-b border-border/50 px-2 py-1.5">
             <h4 className="text-sm font-bold text-foreground">Thông báo</h4>
             {unreadCount > 0 && (
               <button
+                type="button"
                 onClick={handleMarkAllRead}
-                className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
+                disabled={markAllRead.isPending}
+                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline disabled:opacity-60"
               >
                 <CheckCheck className="size-3" /> Đọc tất cả
               </button>
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-border/40 my-1">
-            {loading && notifications.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                <Loader2 className="size-5 animate-spin mx-auto text-primary" />
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="py-8 text-center text-xs text-muted-foreground">
-                Bạn chưa có thông báo nào
-              </div>
-            ) : (
-              notifications.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleMarkAsRead(item.id, item.read)}
-                  className={`p-2.5 rounded-xl text-xs transition-colors cursor-pointer flex gap-2.5 items-start ${
-                    item.read ? 'hover:bg-muted/50 text-muted-foreground' : 'bg-primary/5 hover:bg-primary/10 text-foreground font-medium'
-                  }`}
-                >
-                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    {(() => {
-                      const NotificationIcon = notificationIconByType[item.type] ?? Bell
-                      return <NotificationIcon className="size-3.5" aria-hidden="true" />
-                    })()}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="line-clamp-2 text-xs leading-relaxed">{item.message}</p>
-                    <span className="text-[10px] text-muted-foreground mt-1 block">
-                      {new Date(item.createdAt).toLocaleString('vi-VN')}
-                    </span>
-                  </div>
+          <div className="my-1 max-h-80 divide-y divide-border/40 overflow-y-auto">
+            <QueryBoundary
+              query={listQuery}
+              skeleton={
+                <div className="py-8 text-center text-muted-foreground" role="status">
+                  <Loader2 className="mx-auto size-5 animate-spin text-primary" />
+                  <span className="sr-only">Đang tải thông báo…</span>
                 </div>
-              ))
-            )}
-          </div>
-          {notifications.length > 0 && page < totalPages && (
-            <button
-              type="button"
-              onClick={handleLoadMore}
-              disabled={loading}
-              className="w-full rounded-lg py-2 text-xs font-semibold text-primary hover:bg-primary/5 disabled:cursor-wait disabled:opacity-60"
+              }
+              isEmpty={(data) => data.notifications.length === 0}
+              emptyFallback={
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  Bạn chưa có thông báo nào
+                </div>
+              }
             >
-              {loading ? 'Đang tải...' : 'Xem thêm'}
-            </button>
-          )}
+              {(data) => (
+                <div className="divide-y divide-border/40">
+                  {data.notifications.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleMarkRead(item.id)}
+                      className={`flex w-full cursor-pointer items-start gap-2.5 rounded-xl p-2.5 text-left text-xs transition-colors ${
+                        item.read
+                          ? 'text-muted-foreground hover:bg-muted/50'
+                          : 'bg-primary/5 font-medium text-foreground hover:bg-primary/10'
+                      }`}
+                    >
+                      <span className="mt-0.5 shrink-0">
+                        <NotificationIcon type={item.type} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="line-clamp-2 block leading-relaxed">{item.message}</span>
+                        <span className="mt-1 block text-[10px] text-muted-foreground">
+                          {formatNotificationTime(item.createdAt)}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </QueryBoundary>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false)
+              navigate('/app/notifications')
+            }}
+            className="w-full rounded-lg py-2 text-xs font-semibold text-primary hover:bg-primary/5"
+          >
+            Xem tất cả thông báo
+          </button>
         </div>
       )}
     </div>

@@ -1,0 +1,64 @@
+STEP 1/15: FROM node:20-alpine
+STEP 2/15: WORKDIR /app
+--> Using cache 332ce561ed378f5f262d927dd9f3e54a8cd3ab05413bb771c07c1a72fbb9fa26
+--> 332ce561ed37
+STEP 3/15: COPY packages/finvault-internal-auth ./packages/finvault-internal-auth
+--> Using cache 7d01e9d59fb91096cd48031773fbf4fffe9db77836b76f02ba97a16cb69160c4
+--> 7d01e9d59fb9
+STEP 4/15: COPY packages/finvault-events ./packages/finvault-events
+--> Using cache 434491ded7aaea9b58d3f1f327c7777791e96f42ea948f1879c69ef609966d55
+--> 434491ded7aa
+STEP 5/15: RUN cd /app/packages/finvault-internal-auth && npm ci && npm run build
+--> Using cache df97cff5dbd25314ce27800a0617294caa36d4296f7de99a42b02b8ffb9f4513
+--> df97cff5dbd2
+STEP 6/15: RUN cd /app/packages/finvault-events && npm ci && npm run build
+--> Using cache 7c333f46575f61fd4520e23857b56592667347c18fcfd981b381e486ead56780
+--> 7c333f46575f
+STEP 7/15: WORKDIR /app/services/payment-service
+--> Using cache dfa5c1e3a55fc042aace20c856f770b426d135dbec591c55bdaa60b51589374c
+--> dfa5c1e3a55f
+STEP 8/15: COPY services/payment-service/package*.json ./
+--> Using cache d63cefb7a4b1a023bee4b1fe7936925c85fe29ace4f2da798c2c26fc4b8de134
+--> d63cefb7a4b1
+STEP 9/15: COPY services/payment-service/prisma ./prisma
+--> Using cache 2c964b5364d57df1640da83b08000db69a30e9d26a022ab422f708a29b31b087
+--> 2c964b5364d5
+STEP 10/15: COPY services/payment-service/tsconfig.json ./
+--> Using cache 48ac882ec8d826e8c904610caba92536232ebd49d44fddf18efe917eb46b0c41
+--> 48ac882ec8d8
+STEP 11/15: RUN npm ci
+--> Using cache 64c3de64823fe6c06f633c3d3926c0311254bfb4f97e975146aa1e7d94f7c720
+--> 64c3de64823f
+STEP 12/15: COPY services/payment-service/src ./src
+--> c7699af92989
+STEP 13/15: RUN ./node_modules/.bin/prisma generate && npm run build
+Prisma schema loaded from prisma/schema.prisma
+┌─────────────────────────────────────────────────────────┐
+│  Update available 6.19.3 -> 8.0.0-rc.33                 │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+
+✔ Generated Prisma Client (v6.19.3) to ./node_modules/@prisma/client in 82ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+
+> transaction-service@1.0.0 build
+> tsc -p tsconfig.json
+
+--> 0226a4c4cb3a
+STEP 14/15: EXPOSE 3005
+--> bf3fdd6c2c4b
+STEP 15/15: CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && npm run start"]
+COMMIT docker.io/library/finvault-acceptance-dadc7eef7537-payment-service:latest
+--> dd0797758773
+Successfully tagged docker.io/library/finvault-acceptance-dadc7eef7537-payment-service:latest
+dd0797758773609c818c7942b42cf66aea315cd53aafc7c60b69d0c9ba741218

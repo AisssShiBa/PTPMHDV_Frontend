@@ -1,0 +1,6 @@
+
+> frontend@0.0.0 test:phase3:live
+> node tests/phase3-live.mjs
+
+PASS: Phase 3 frontend against real local backend. H8 two-face upload/private image/403; H11 API-only exact lookup/masked name/generic 404/429; transfer UI not covered. No money transfers.
+Evidence: /home/nguyenhuu/Hoc Tap/HDV/PTPMHDV_Frontend/docs/evidence/huu-fe-closeout/phase3-live/result.json

@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-11-13T04:08:29.817421+00:00",
+  "scope": "Phase 8 documentation only; no product tests rerun",
+  "relativeLinks": {
+    "checked": 68,
+    "missing": []
+  },
+  "priorFixSourceHashes": {
+    "checked": 15,
+    "mismatches": []
+  },
+  "newDocumentCredentialPatternCheck": {
+    "files": 6,
+    "findings": [],
+    "limit": "limited patterns and manual author review; not a repository-wide secret audit"
+  },
+  "diffCheckExitCodes": {
+    "frontend": 0,
+    "backend": 0
+  },
+  "documentSha256": {
+    "README.md": "27ad35ecd3bb615ce7f5591d49ece4e8f65095ec32e0c814540723dfdccf099e",
+    "docs/handover/huu-fe-phase8.md": "9124fa77de0607c64d541ec8dc5ddcba2f5cd34c3d2bccaa95cd664d95cfc157",
+    "docs/handover/huu-fe-demo-runbook.md": "e3eb7e2dce0aa47ea6d1fee618e9ab37fc2e2e23b99fd58cfc6d6b7b3614b80d",
+    "docs/handover/huu-fe-pr-draft.md": "bfcee9dc329c14bd1c1f14f85673af058c979962b6266255d0e29286b390d52c",
+    "docs/handover/huu-be-funding-pr-draft.md": "02a9dff385f1e96b2cbb4626f83f26f955dc8e20f4f031f07a37dc6dedee5914",
+    "docs/evidence/huu-fe-phase8/README.md": "462ac3629bb0fe449ed1853c08c5d5f6f86b9ab0bb63b72c0b2a56a06acfabab",
+    "docs/CONTRACT_OPEN_QUESTIONS.md": "99c22f25d497d477781e569dbcd26ef3c8d241a7756196863a1300247a330c41",
+    "docs/handover/kyc.md": "8ece341f260d10d32e6fe1d412c83bc6d9c794a246d94417bbba6908697e044d",
+    "docs/handover/funding.md": "9f23bf0ad7ee18317b29821ea70654e7f08566c348c6fd8dcc28be272209e1d0",
+    "docs/handover/merchant.md": "f00501403988b983632eb041c6e634df3c9d6e7a95202281a48aa3dcfce8869f",
+    "docs/handover/merchant-tools.md": "1d92e0e0169ff928b51e151f4f53a088e66e50247503e3ed552b754302935507"
+  }
+}

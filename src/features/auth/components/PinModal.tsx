@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useState, useRef, useEffect } from 'react'
 import {
   Dialog,
@@ -22,13 +23,19 @@ export interface PinModalProps {
   onCancel?: () => void
 }
 
-export function PinModal({
+export function PinModal(props: PinModalProps) {
+  const owner = useAuthStore((state) => state.user?.id)
+  return props.open ? <PinModalSession key={[owner, props.paymentId, props.amount].join(':')} {...props} /> : null
+}
+
+function PinModalSession({
   open,
   onOpenChange,
   title = 'Xác thực mã PIN giao dịch',
   description = 'Vui lòng nhập mã PIN bảo mật 6 số để tiếp tục giao dịch.',
   paymentId,
   amount,
+  paymentId,
   onSuccess,
   onCancel
 }: PinModalProps) {
@@ -36,43 +43,18 @@ export function PinModal({
   const [showPin, setShowPin] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [attemptsRemaining, setAttemptsRemaining] = useState(5)
-  const [isLocked, setIsLocked] = useState(false)
-  const [lockCountdown, setLockCountdown] = useState(300)
-
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  // Reset trạng thái khi mở modal
+  const active = useRef(true)
+  const verifying = useRef(false)
+  const lockCountdown = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0
+  const isLocked = lockCountdown > 0
+  useEffect(() => { active.current = true; return () => { active.current = false } }, [])
   useEffect(() => {
-    if (open) {
-      setPin(Array(6).fill(''))
-      setErrorMsg(null)
-      setIsLoading(false)
-      // Focus vào ô đầu tiên sau khi modal mở
-      setTimeout(() => {
-        inputRefs.current[0]?.focus()
-      }, 100)
-    }
-  }, [open])
-
-  // Đếm ngược khi bị khóa mã PIN (PIN_LOCKED)
-  useEffect(() => {
-    if (!isLocked) return
-
-    if (lockCountdown <= 0) {
-      setIsLocked(false)
-      setAttemptsRemaining(5)
-      setLockCountdown(300)
-      setErrorMsg(null)
-      return
-    }
-
-    const timer = setInterval(() => {
-      setLockCountdown((prev) => prev - 1)
-    }, 1000)
-
+    const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
-  }, [isLocked, lockCountdown])
+  }, [])
 
   // Xử lý khi gõ ký tự vào từng ô
   const handleDigitChange = (index: number, value: string) => {
@@ -156,9 +138,15 @@ export function PinModal({
 
   // Hàm xác thực mã PIN thật qua authApi
   const verifyPin = async (inputPin: string) => {
+    if (verifying.current || isLocked) return
+    if (!paymentId || !amount) {
+      setErrorMsg('Giao dịch chưa sẵn sàng để xác thực mã PIN.')
+      setPin(Array(6).fill(''))
+      return
+    }
+    verifying.current = true
     setIsLoading(true)
     setErrorMsg(null)
-
     try {
       const pId = paymentId || `pay_${Date.now()}`
       const amt = amount || '1'
@@ -224,7 +212,8 @@ export function PinModal({
       setPin(Array(6).fill(''))
       inputRefs.current[0]?.focus()
     } finally {
-      setIsLoading(false)
+      verifying.current = false
+      if (active.current) setIsLoading(false)
     }
   }
 
@@ -260,7 +249,7 @@ export function PinModal({
           <div className="p-3 rounded-xl bg-muted/40 border border-border/60 flex items-center justify-between text-xs">
             <span className="text-muted-foreground font-medium">Số tiền thanh toán:</span>
             <span className="font-extrabold text-primary text-base tracking-tight">
-              {formatVnd(amount)}
+              {formatVndExact(amount)} ₫
             </span>
           </div>
         )}
@@ -286,6 +275,8 @@ export function PinModal({
                     ref={(el) => {
                       inputRefs.current[index] = el
                     }}
+                    autoFocus={index === 0}
+                    aria-label={`Chữ số PIN ${index + 1}`}
                     type={showPin ? 'text' : 'password'}
                     inputMode="numeric"
                     maxLength={1}
@@ -314,7 +305,7 @@ export function PinModal({
             <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
               <div className="flex items-center gap-1">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Mã hóa bảo mật 2 lớp</span>
+                <span>Xác thực PIN qua hệ thống</span>
               </div>
               <button
                 type="button"
@@ -379,7 +370,7 @@ export function PinModal({
             onClick={handleClose}
             className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
           >
-            Hủy bỏ giao dịch
+            Đóng xác thực
           </Button>
         </div>
       </DialogContent>

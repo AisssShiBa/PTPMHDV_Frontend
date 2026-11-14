@@ -1,0 +1,89 @@
+TAP version 13
+# Subtest: V01 valid paid IPN with wallet success approves once and returns 00
+ok 1 - V01 valid paid IPN with wallet success approves once and returns 00
+  ---
+  duration_ms: 76.148143
+  ...
+# Subtest: V02/V06 bad checksum and wrong TmnCode return 97 without touching the row
+ok 2 - V02/V06 bad checksum and wrong TmnCode return 97 without touching the row
+  ---
+  duration_ms: 2.106265
+  ...
+# Subtest: V07 unknown order returns 01
+ok 3 - V07 unknown order returns 01
+  ---
+  duration_ms: 1.746549
+  ...
+# Subtest: V03 amount mismatch returns 04 and never credits
+ok 4 - V03 amount mismatch returns 04 and never credits
+  ---
+  duration_ms: 2.872787
+  ...
+# Subtest: V12 non-canonical query shapes are rejected as 97
+ok 5 - V12 non-canonical query shapes are rejected as 97
+  ---
+  duration_ms: 3.947699
+  ...
+# Subtest: already-approved order returns 02 on replay without a second credit
+ok 6 - already-approved order returns 02 on replay without a second credit
+  ---
+  duration_ms: 0.928685
+  ...
+# [Topup] Wallet credit outcome unknown {
+#   topupId: '11111111-1111-4111-8111-111111111111',
+#   code: 'NAP0001',
+#   walletStatus: 503,
+#   walletCode: 'WALLET_UNAVAILABLE'
+# }
+# [Job:recoverTopups] approved=1 retried=0
+# Subtest: V08/A6-R unknown wallet outcome keeps PROCESSING and returns 99, recovery then approves exactly once
+ok 7 - V08/A6-R unknown wallet outcome keeps PROCESSING and returns 99, recovery then approves exactly once
+  ---
+  duration_ms: 4.417067
+  ...
+# [Topup] Wallet definitively rejected credit {
+#   topupId: '11111111-1111-4111-8111-111111111111',
+#   code: 'NAP0001',
+#   walletStatus: 422,
+#   walletCode: 'LIMIT_EXCEEDED'
+# }
+# Subtest: definitive wallet rejection stays PROCESSING and returns 99 (money never marked failed)
+ok 8 - definitive wallet rejection stays PROCESSING and returns 99 (money never marked failed)
+  ---
+  duration_ms: 1.482169
+  ...
+# [Topup] Wallet credit transport failure {
+#   topupId: '11111111-1111-4111-8111-111111111111',
+#   code: 'NAP0001',
+#   error: 'ECONNRESET'
+# }
+# Subtest: wallet transport throw is unknown, not failure
+ok 9 - wallet transport throw is unknown, not failure
+  ---
+  duration_ms: 2.109951
+  ...
+# Subtest: V05 non-paid VNPAY result marks FAILED and returns 00, without crediting
+ok 10 - V05 non-paid VNPAY result marks FAILED and returns 00, without crediting
+  ---
+  duration_ms: 1.420908
+  ...
+# [Job:recoverTopups] approved=1 retried=0
+# Subtest: V09 crash between wallet credit and status update: recovery replays the same reference once
+ok 11 - V09 crash between wallet credit and status update: recovery replays the same reference once
+  ---
+  duration_ms: 17.014815
+  ...
+# Subtest: return URL is read-only and rejects a forged signature
+ok 12 - return URL is read-only and rejects a forged signature
+  ---
+  duration_ms: 1.461789
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 334.861893

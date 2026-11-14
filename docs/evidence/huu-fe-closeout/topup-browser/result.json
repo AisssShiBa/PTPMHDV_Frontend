@@ -1,0 +1,120 @@
+{
+  "status": "MOCK_HTTP_BROWSER_PASS",
+  "testedAt": "2026-11-13T04:18:43.811Z",
+  "checks": [
+    "Production string create with Idempotency-Key, one POST on double click; unconfigured redirect blocked, history/wallet from HTTP",
+    "Full reload refresh, exact NAP-to-UUID account history lookup; fake callback 00 remains pending",
+    "Server status APPROVED produces receipt; wallet read from server, no local credit",
+    "503 is unknown outcome; EXPIRED only from backend, safe request ID shown",
+    "Account change and empty history never select another account order",
+    "390px mobile layout without horizontal overflow",
+    "Expired session login preserves callback query and resolves the same UUID"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/payments/topups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups/20000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups/20000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups/20000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups/20000000-0000-4000-8000-000000000001"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000002/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000002/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/10000000-0000-4000-8000-000000000002/balance"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments/topups/20000000-0000-4000-8000-000000000001"
+    }
+  ],
+  "realVnpaySandbox": "NOT_RUN"
+}

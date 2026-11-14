@@ -33,3 +33,10 @@ export interface KycDocument {
   url: string
   expiresIn: number
 }
+
+export interface UserKycStatus {
+  kycStatus: KycStatus
+  kycTier: KycTier
+  hasKycDocument: boolean
+  kycRejectReason?: string
+}

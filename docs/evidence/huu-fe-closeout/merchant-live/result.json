@@ -1,0 +1,268 @@
+{
+  "status": "LIVE_GATEWAY_MERCHANT_BROWSER_PASS",
+  "testedAt": "2026-11-13T04:21:35.904Z",
+  "project": "finvault-acceptance-dadc7eef7537",
+  "checks": [
+    "GET /me null is the only unregistered state, authenticated session restored",
+    "One strict registration POST for double click, PENDING from refetched /me, real owner authorization and duplicate protection where live",
+    "PENDING/REJECTED/APPROVED survive reload and change only after server status, no fake merchant identity/revenue",
+    "390px mobile with no horizontal overflow",
+    "Account B never sees account A merchant; no role MERCHANT assigned by frontend"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/39735aad-6760-41ad-af7d-b1083b0e735a/balance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/39735aad-6760-41ad-af7d-b1083b0e735a/balance",
+      "status": 304
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 304
+    },
+    {
+      "method": "POST",
+      "path": "/api/merchants/register",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/39735aad-6760-41ad-af7d-b1083b0e735a/balance",
+      "status": 304
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 304
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/a055ce9d-8609-46e3-abf9-72da1f59a0ec/outlets",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/39735aad-6760-41ad-af7d-b1083b0e735a/balance",
+      "status": 304
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 304
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/a055ce9d-8609-46e3-abf9-72da1f59a0ec/outlets",
+      "status": 304
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signout",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/fd213636-3363-4da4-a55e-ca7745ee5718/balance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me",
+      "status": 200
+    }
+  ],
+  "apiChecks": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/39735aad-6760-41ad-af7d-b1083b0e735a/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/fd213636-3363-4da4-a55e-ca7745ee5718/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/wallets/fc4a1b2c-53d2-4877-90f1-e4d6c1df38d9/balance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/me",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/a055ce9d-8609-46e3-abf9-72da1f59a0ec/status",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/a055ce9d-8609-46e3-abf9-72da1f59a0ec",
+      "status": 403,
+      "code": "FORBIDDEN"
+    },
+    {
+      "method": "POST",
+      "path": "/merchants/register",
+      "status": 409,
+      "code": "DUPLICATE_RESOURCE"
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/a055ce9d-8609-46e3-abf9-72da1f59a0ec/status",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/a055ce9d-8609-46e3-abf9-72da1f59a0ec/status",
+      "status": 200
+    },
+    {
+      "method": "PATCH",
+      "path": "/merchants/a055ce9d-8609-46e3-abf9-72da1f59a0ec/status",
+      "status": 200
+    }
+  ]
+}

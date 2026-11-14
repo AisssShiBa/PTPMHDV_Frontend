@@ -1,185 +1,94 @@
-// Browser smoke test against deterministic API fixtures, not a live backend.
-// Requires Node 24, a Chromium browser, and a completed production build.
+// Current Auth/Profile/KYC routes against synthetic HTTP fixtures. Not live E2E.
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
-import { spawn } from 'node:child_process'
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve, extname, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
+import { openBrowser, until } from './browser-support.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const dist = resolve(root, 'dist')
-const artifacts = resolve(root, 'node_modules/.tmp/browser-smoke')
-const profileDir = resolve(artifacts, 'profile-' + process.pid)
-mkdirSync(profileDir, { recursive: true })
-const executable = process.env.BROWSER_PATH || [
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'
-].find(existsSync)
-assert.ok(executable, 'Set BROWSER_PATH to a Chromium executable')
-assert.ok(existsSync(resolve(dist, 'index.html')), 'Run npm run build first')
-
-const user = { id: '10000000-0000-4000-8000-000000000001', username: 'demo', firstName: 'Hữu', lastName: 'Nguyễn', email: 'demo@example.com', role: 'USER' }
-let profile = { id: '20000000-0000-4000-8000-000000000001', authUserId: user.id, email: user.email, fullName: 'Nguyễn Hữu', phone: null, address: null, kycStatus: 'NONE', kycTier: 0, idNumber: null, hasKycDocument: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), version: 0 }
-let merchant = null
+const artifacts = resolve(root, process.env.BROWSER_EVIDENCE_DIR || 'docs/evidence/huu-fe-phase1/final/browser')
+const runtime = resolve(root, 'node_modules/.tmp/profile-browser')
+mkdirSync(artifacts, { recursive: true }); mkdirSync(runtime, { recursive: true })
+assert.ok(existsSync(resolve(dist, 'index.html')), 'Build the current frontend first')
+let user = { id: '10000000-0000-4000-8000-000000000001', username: 'synthetic', email: 'synthetic@example.test', role: 'USER' }
+let profile = { id: '20000000-0000-4000-8000-000000000001', authUserId: user.id, email: user.email, fullName: 'Người dùng tổng hợp', phone: null, address: null, kycStatus: 'NONE', kycTier: 0, idNumber: null, hasKycDocument: false, version: 0, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString() }
 let signedIn = true
-let merchantFailure = false
+let failProfile = false
 let uploads = 0
-let registrations = 0
-let adminWrites = 0
-let documentReads = 0
-let failAdminWrite = false
-let failAdminList = false
-let failDocuments = false
-const recipientId = '40000000-0000-4000-8000-000000000001'
-const lookupQueries = []
-const transfers = []
-let uncertainTransfer = false
-const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==', 'base64')
-const filePath = resolve(artifacts, 'document.png')
-writeFileSync(filePath, png)
+let refreshes = 0
 const requests = []
+const checks = []
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==', 'base64')
+const imagePath = resolve(runtime, 'synthetic.png')
+writeFileSync(imagePath, png)
+let origin
 const server = createServer(async (req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname
   const send = (status, data) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(data)) }
-  const success = (data) => send(200, { success: true, data })
-  const failure = (status, code) => send(status, { success: false, error: { code, message: code } })
+  const success = (data, status = 200) => send(status, { success: true, data })
+  const failure = (status, code) => send(status, { success: false, error: { code, message: 'Synthetic backend error' } })
   try {
     if (path.startsWith('/api/')) {
-      requests.push(req.method + ' ' + path)
-      const chunks = []
-      for await (const chunk of req) chunks.push(chunk)
+      requests.push({ method: req.method, path })
+      const chunks = []; for await (const chunk of req) chunks.push(chunk)
       const raw = Buffer.concat(chunks)
-      if (path === '/api/auth/refresh') return signedIn ? success({ user, accessToken: 'fixture-token' }) : failure(401, 'UNAUTHORIZED')
+      if (path === '/api/auth/refresh') {
+        refreshes += 1
+        return signedIn ? success({ user, accessToken: 'synthetic-fixture-token' }) : failure(401, 'UNAUTHORIZED')
+      }
       if (path === '/api/auth/signin') {
         const body = JSON.parse(raw.toString())
-        if (body.username !== 'demo' || body.password !== 'password') return failure(401, 'INVALID_CREDENTIALS')
+        if (body.password !== 'synthetic-password') return failure(401, 'INVALID_CREDENTIALS')
         signedIn = true
-        return success({ user, accessToken: 'fixture-token' })
+        return success({ user, accessToken: 'synthetic-fixture-token' })
       }
       if (path === '/api/auth/signout') { signedIn = false; return success(null) }
-      if (!signedIn || req.headers.authorization !== 'Bearer fixture-token') return failure(401, 'UNAUTHORIZED')
-      if (path === '/api/users/lookup') {
-        assert.equal(req.method, 'GET')
-        const query = new URL(req.url, 'http://localhost').searchParams.get('q')
-        lookupQueries.push(query)
-        if (query === 'slow@example.com') {
-          await delay(350)
-          return success({ authUserId: recipientId, maskedName: 'Phản hồi cũ' })
-        }
-        if (query === 'limit@example.com') { res.setHeader('Retry-After', '2'); return failure(429, 'RATE_LIMIT_EXCEEDED') }
-        if (query === 'server@example.com') return failure(503, 'UNAVAILABLE')
-        if (!['Binh+wallet@Example.com', '+84 912 345 678'].includes(query)) return failure(404, 'RECIPIENT_NOT_FOUND')
-        return success({ authUserId: recipientId, maskedName: 'Nguyễn V. B.' })
-      }
-      if (path.startsWith('/api/wallets/')) {
-        assert.ok(path.startsWith('/api/wallets/' + user.id + '/'), 'never read the recipient wallet')
-        if (path.endsWith('/balance')) return success({ balance: '500000', availableBalance: '500000', heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
-        if (path.endsWith('/transfer')) {
-          assert.equal(req.method, 'POST')
-          const body = JSON.parse(raw.toString())
-          assert.deepEqual(Object.keys(body).sort(), ['amount', 'referenceId', 'toUserId'])
-          assert.equal(body.toUserId, recipientId)
-          assert.match(body.referenceId, /^P2P-[0-9a-f-]{36}$/)
-          transfers.push(body)
-          await delay(100)
-          if (uncertainTransfer) return failure(503, 'UNAVAILABLE')
-          return success({ transactionId: 'fixture-txn', replayed: transfers.length > 1 })
-        }
-      }
-      if (path.startsWith('/api/notifications')) return success({ notifications: [], unreadCount: 0, pagination: { totalPages: 1 } })
-      if (path === '/api/payments' && req.method === 'GET') {
-        const query = new URL(req.url, 'http://localhost').searchParams
-        assert.equal(query.has('page') || query.has('limit'), false)
-        return success(Array.from({ length: 12 }, (_, index) => ({
-          id: 'payment' + String(index + 1).padStart(2, '0'), userId: user.id,
-          amount: 10000, type: 'BUS_TICKET', status: 'SUCCESS', createdAt: new Date().toISOString()
-        })))
-      }
-      if (path === '/api/admin/kyc') {
-        if (user.role !== 'ADMIN') return failure(403, 'FORBIDDEN')
-        if (failAdminList) return failure(503, 'UNAVAILABLE')
-        const query = new URL(req.url, 'http://localhost').searchParams
-        const matches = (!query.get('status') || query.get('status') === profile.kycStatus) &&
-          (!query.get('search') || (profile.email + profile.fullName).includes(query.get('search')))
-        return success({ content: matches ? [profile] : [], totalElements: matches ? 1 : 0, totalPages: 1 })
-      }
-      if (path.startsWith('/api/admin/kyc/' + profile.id + '/')) {
-        if (user.role !== 'ADMIN') return failure(403, 'FORBIDDEN')
-        if (path.endsWith('/documents')) {
-          documentReads++
-          if (failDocuments) return failure(404, 'KYC_DOCUMENTS_INCOMPLETE')
-          return success({ frontUrl: origin + '/document.png?front', backUrl: origin + '/document.png?back', expiresAt: new Date(Date.now() + 2000).toISOString() })
-        }
-        adminWrites++
-        const body = JSON.parse(raw.toString())
-        if (failAdminWrite) return failure(503, 'KYC_OUTCOME_UNKNOWN')
-        if (path.endsWith('/tier')) {
-          assert.equal(req.method, 'PATCH')
-          assert.deepEqual(Object.keys(body).sort(), ['reason', 'tier'])
-          assert.ok(body.reason.trim() && body.reason.length <= 500)
-          if (profile.kycStatus !== 'APPROVED') return failure(409, 'KYC_NOT_APPROVED')
-          assert.ok([1, 2].includes(body.tier))
-          profile = { ...profile, kycTier: body.tier }
-        } else {
-          assert.equal(req.method, 'POST')
-          assert.deepEqual(Object.keys(body).sort(), ['detail', 'status'])
-          assert.ok(body.detail.trim())
-          profile = { ...profile, kycStatus: body.status, kycTier: body.status === 'APPROVED' ? 1 : 0 }
-        }
-        return success(profile)
-      }
+      if (!signedIn || req.headers.authorization !== 'Bearer synthetic-fixture-token') return failure(401, 'UNAUTHORIZED')
       if (path === '/api/users/by-auth/' + user.id) {
+        if (failProfile) return failure(500, 'INTERNAL_SERVER_ERROR')
         if (req.method === 'PUT') {
           const body = JSON.parse(raw.toString())
           assert.ok(Object.keys(body).every((key) => ['fullName', 'phone', 'address'].includes(key)))
-          profile = { ...profile, ...body, version: profile.version + 1, updatedAt: new Date().toISOString() }
+          profile = { ...profile, ...body, version: profile.version + 1 }
         }
         return success(profile)
       }
-      if (path.endsWith('/kyc/document')) return success({ url: origin + '/document.png', expiresIn: 2 })
-      if (path === '/api/users/kyc/documents' && req.method === 'POST') {
-        const request = new Request(origin + path, { method: 'POST', headers: { 'Content-Type': req.headers['content-type'] }, body: raw })
-        const form = await request.formData()
-        assert.deepEqual([...form.keys()].sort(), ['back', 'front', 'idNumber'])
-        assert.equal(form.get('front').type, 'image/png')
-        assert.equal(form.get('back').type, 'image/png')
-        uploads++
-        profile = { ...profile, idNumber: form.get('idNumber'), kycStatus: 'PENDING', hasKycDocument: true, version: profile.version + 1, updatedAt: new Date().toISOString() }
-        return success(profile)
+      if (path === '/api/users/me/kyc') return success({ kycStatus: profile.kycStatus, kycTier: profile.kycTier, hasKycDocument: profile.hasKycDocument, ...(profile.kycStatus === 'REJECTED' ? { kycRejectReason: 'Ảnh mặt sau bị mờ (dữ liệu tổng hợp).' } : {}) })
+      if (path === '/api/users/kyc/documents') {
+        const headers = { 'Content-Type': req.headers['content-type'] }
+        const body = await new Request(origin + path, { method: 'POST', headers, body: raw }).formData()
+        assert.equal(body.get('idNumber'), 'SYNTHETIC123')
+        for (const side of ['front', 'back']) {
+          const image = body.get(side)
+          assert.equal(image.type, 'image/png')
+          assert.equal(image.name, 'synthetic.png')
+          assert.equal(image.size, png.length)
+        }
+        uploads += 1
+        await delay(80)
+        profile = { ...profile, kycStatus: 'PENDING', hasKycDocument: true, version: profile.version + 1, updatedAt: new Date().toISOString() }
+        return success(profile, 202)
       }
-      if (path === '/api/merchants/me') return merchantFailure ? failure(500, 'INTERNAL_SERVER_ERROR') : success(merchant)
-      if (path === '/api/merchants/register') {
-        registrations++
-        if (merchant) return failure(409, 'DUPLICATE_RESOURCE')
-        const body = JSON.parse(raw.toString())
-        assert.deepEqual(Object.keys(body), ['businessName'])
-        merchant = { ...body, id: '30000000-0000-4000-8000-000000000001', ownerId: user.id, taxId: null, bankAccount: null, status: 'PENDING', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
-        return success(merchant)
-      }
+      if (path === '/api/users/by-auth/' + user.id + '/kyc/document') return success({ url: origin + '/synthetic-document.png', expiresIn: 2 })
+      if (path === '/api/wallets/me' || /^\/api\/wallets\/[^/]+\/balance$/.test(path)) return success({ availableBalance: '100000', balance: '100000', heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
+      if (path === '/api/notifications/me') return success({ notifications: [], unreadCount: 0, pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } })
+      if (path === '/api/notifications/socket-ticket') return failure(503, 'SOCKET_UNAVAILABLE')
       return failure(404, 'NOT_FOUND')
     }
-    if (path === '/document.png') { res.writeHead(200, { 'Content-Type': 'image/png' }); return res.end(png) }
+    if (path === '/synthetic-document.png') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); return res.end(png) }
+    if (path.startsWith('/socket.io')) { res.writeHead(503); return res.end() }
     const candidate = resolve(dist, '.' + decodeURIComponent(path))
     if (!candidate.startsWith(dist + sep) && candidate !== dist) { res.writeHead(403); return res.end() }
     const file = extname(path) && existsSync(candidate) ? candidate : resolve(dist, 'index.html')
     const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.png': 'image/png' }
     res.writeHead(200, { 'Content-Type': mime[extname(file)] || 'application/octet-stream' })
     res.end(readFileSync(file))
-  } catch (error) { console.error(error); failure(500, 'FIXTURE_ERROR') }
+  } catch { failure(500, 'FIXTURE_ASSERTION_FAILED') }
 })
-await new Promise((done) => server.listen(0, '127.0.0.1', done))
-const origin = 'http://127.0.0.1:' + server.address().port
-const browser = spawn(executable, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
-  '--remote-debugging-port=0', '--user-data-dir=' + profileDir, 'about:blank'], { windowsHide: true, stdio: 'ignore' })
-let socket
-let cdp
-const runtimeErrors = []
-async function until(check, label) {
-  for (let i = 0; i < 150; i++) { if (await check()) return; await delay(80) }
-  throw new Error('Timed out: ' + label)
-}
+let browser
 try {
   const portFile = resolve(profileDir, 'DevToolsActivePort')
   await until(() => existsSync(portFile), 'browser debugging port')
@@ -241,12 +150,10 @@ try {
   await click('Gửi xác thực')
   await until(() => text('Vui lòng chọn ảnh giấy tờ.'), 'missing back validation')
   assert.equal(uploads, 0)
-  const backInput = await cdp('DOM.querySelector', { nodeId: doc.root.nodeId, selector: '#kyc-back' })
-  await cdp('DOM.setFileInputFiles', { nodeId: backInput.nodeId, files: [filePath] })
-  await until(() => has('img[alt="Xem trước mặt sau"]'), 'back preview')
-  await fill('#profile-fullName', 'Tên đang soạn chưa lưu')
-  await click('Gửi xác thực', 2)
-  await until(() => text('Đang chờ duyệt'), 'KYC submitted')
+  await browser.upload('#kyc-back', imagePath)
+  await browser.fill('#profile-fullName', 'Bản nháp chưa lưu')
+  await browser.click('Gửi xác thực', 2)
+  await wait(() => browser.text('Đang chờ xét duyệt'), 'backend PENDING after HTTP multipart')
   assert.equal(uploads, 1)
   assert.equal(await evaluate('document.querySelector("#profile-fullName").value'), 'Tên đang soạn chưa lưu')
   assert.equal(await evaluate('!!document.querySelector("#kyc-front")'), false)
@@ -492,9 +399,7 @@ try {
   console.log('PASS: profile; H8 two-sided KYC; H11 email/phone lookup, generic 404, 429 cooldown/reopen, stale response cancellation, explicit confirmation and idempotent transfer retry; merchant; login/roles; Admin KYC; mobile overflow; no runtime exceptions.')
   console.log('API fixtures only. Screenshots: ' + artifacts)
 } finally {
-  if (cdp) await Promise.race([cdp('Browser.close').catch(() => {}), delay(1000)])
-  socket?.close()
-  browser.kill()
+  if (browser) await browser.close()
   server.closeAllConnections()
-  await new Promise((done) => server.close(done))
+  if (server.listening) await new Promise((done) => server.close(done))
 }

@@ -1,0 +1,739 @@
+{
+  "result": "PASS",
+  "testedAt": "2026-11-13T04:20:18.672Z",
+  "checks": [
+    "H8: missing back blocked locally; one multipart upload returns 202; profile persisted; signed MinIO image loads; USER denied Admin document API",
+    "H11 API ONLY: exact email/phone, masked result, self/missing 404, lookup 11 returns 429; active transfer UI not covered"
+  ],
+  "api": [
+    {
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/d662da99-a669-4b07-a258-e55c3b4c3479/balance",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/139b719b-a243-4eea-afc6-7cbc7b993b2f/balance",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/users/by-auth/139b719b-a243-4eea-afc6-7cbc7b993b2f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/kyc/469fd3f5-243a-4100-ac65-2aee78e2045e/documents",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "status": 429
+    }
+  ],
+  "browserNetwork": [
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/sign-in",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/index-CmcQ4HPm.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/eye-BUuxQZRr.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/dist-Co7-8tfg.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/button-j6UdX4Xb.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/useAuthStore-Bhd7wzFA.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/lock-Bdz6225q.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/shield-check-BP0tcuyk.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/triangle-alert-Bj84k5nH.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/dist-EJi3cMjp.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/format-mbz6FBlG.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/dist-KZM-baSC.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/PinModal-Bd_bQfaZ.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/dialog-0T9rI0Iz.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/index-Bv3cnV7X.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/queryOptions-Dfvzj6n2.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/auth-ChGCOzTT.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/favicon.svg",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "origin": "http://localhost:40535",
+      "path": "/api/auth/refresh",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/arrow-right-D9_fp_Qp.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/auth.schema-BwnY4zEi.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/qr-code-BqPYkwLV.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/refresh-cw-B-KOtKGA.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/SignInPage-D57elETL.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/zod-BPZZBKLR.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/sparkles-DYcV6v8D.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/card-C_5uhItP.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/input-DGXA7u4l.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/label-DC0VJQyC.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-700-normal-DlW1Zbsh.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-400-normal-PpnXBOrz.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-vietnamese-400-normal-CRcqvyg1.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-600-normal-BZDkUTrt.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-500-normal-B6LVzGNe.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-ext-400-normal-CiZNW1ec.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-vietnamese-700-normal-Csr0PCuG.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-vietnamese-500-normal-DREgrEoJ.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-vietnamese-600-normal-nyU-ZL2p.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-ext-600-normal-BNd8euf0.woff2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "origin": "http://localhost:40535",
+      "path": "/api/auth/signin",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/favicon.svg",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/copy-9BXC2Sws.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/smartphone-BtyfY80H.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/clock-fDD2RJ4i.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/trending-up-BF5ZAgXw.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/DashboardPage-CQ9GtYKP.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-ext-700-normal-C8_gqRu2.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-ext-500-normal-h0Fp6aX0.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/api/wallets/d662da99-a669-4b07-a258-e55c3b4c3479/balance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/app/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/index-CmcQ4HPm.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/dist-Co7-8tfg.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/button-j6UdX4Xb.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/useAuthStore-Bhd7wzFA.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/eye-BUuxQZRr.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/lock-Bdz6225q.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/shield-check-BP0tcuyk.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/triangle-alert-Bj84k5nH.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/dist-EJi3cMjp.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/dist-KZM-baSC.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/format-mbz6FBlG.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/dialog-0T9rI0Iz.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/queryOptions-Dfvzj6n2.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/PinModal-Bd_bQfaZ.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/auth-ChGCOzTT.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/index-Bv3cnV7X.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-ext-500-normal-h0Fp6aX0.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/favicon.svg",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-vietnamese-500-normal-DREgrEoJ.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-500-normal-B6LVzGNe.woff2",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "origin": "http://localhost:40535",
+      "path": "/api/auth/refresh",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/badge-check-B3Ciff48.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/refresh-cw-B-KOtKGA.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/card-C_5uhItP.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/input-DGXA7u4l.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/label-DC0VJQyC.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/ProfilePage-B6NPjT0r.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/QueryBoundary-p9l8eSlo.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/circle-alert-DDqCZTRN.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/zod-BPZZBKLR.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/api/wallets/d662da99-a669-4b07-a258-e55c3b4c3479/balance",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-ext-400-normal-CiZNW1ec.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-400-normal-PpnXBOrz.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-700-normal-DlW1Zbsh.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-600-normal-BZDkUTrt.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-vietnamese-400-normal-CRcqvyg1.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-ext-600-normal-BNd8euf0.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-vietnamese-600-normal-nyU-ZL2p.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-latin-ext-700-normal-C8_gqRu2.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/assets/be-vietnam-pro-vietnamese-700-normal-Csr0PCuG.woff2",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/api/users/by-auth/d662da99-a669-4b07-a258-e55c3b4c3479",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/api/users/me/kyc",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "origin": "http://localhost:40535",
+      "path": "/api/users/kyc/documents",
+      "status": 202
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/api/users/by-auth/d662da99-a669-4b07-a258-e55c3b4c3479",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/api/users/me/kyc",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://localhost:40535",
+      "path": "/api/users/by-auth/d662da99-a669-4b07-a258-e55c3b4c3479/kyc/document",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "origin": "http://127.0.0.1:35935",
+      "path": "/finvault-kyc/kyc/469fd3f5-243a-4100-ac65-2aee78e2045e/3f3e0c52-07dc-4e5f-9ac6-445f1333c7f7.jpg",
+      "status": 200
+    }
+  ]
+}

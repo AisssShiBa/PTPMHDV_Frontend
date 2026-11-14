@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import {
@@ -30,7 +30,7 @@ export function SignUpPage() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors }
   } = useForm<{ email: string; password: string; confirmPassword: string; terms?: boolean }>({
     resolver: zodResolver(registerSchema),
@@ -42,7 +42,7 @@ export function SignUpPage() {
     }
   })
 
-  const currentPassword = watch('password') || ''
+  const currentPassword = useWatch({ control, name: 'password' }) || ''
 
   // Tính toán mức độ mạnh của mật khẩu
   const getPasswordStrength = (pwd: string) => {
