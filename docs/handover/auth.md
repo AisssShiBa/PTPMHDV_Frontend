@@ -4,19 +4,27 @@ Người phụ trách: Đạt. Phạm vi: hướng dẫn tích hợp phần Auth
 
 ## 1. Trạng thái và bằng chứng
 
-Tài liệu cập nhật ngày 16/11/2026. Các kết quả dưới đây là lần chạy gần nhất trước lượt sửa tài liệu này, không phải nghiệm thu trên Backend thật.
+Tài liệu cập nhật ngày 16/11/2026, sau khi sửa hồi quy merge trong PinModal và apiResponse. Kết quả được chạy trên Frontend nền `8e3a67a` kèm hai file sửa cục bộ chưa commit; Backend nền `bbdf0e6`. Các mã commit nền này chưa bao gồm hai bản sửa. Đây là kiểm thử tự động, không phải nghiệm thu trên Backend thật.
 
 | Kiểm tra | Kết quả gần nhất | Giới hạn |
 | --- | --- | --- |
 | `npm run check` | Exit 0: lint, typecheck, Node tests 59/59, build thành công | Lint còn 29 cảnh báo; lệnh này không chạy Vitest và browser |
-| `npm run test:unit` | 28 file, 209 test đạt | Kiểm thử tự động không thay thế nghiệm thu dịch vụ thật |
+| Vitest (`npm run test:unit`; lần chốt dùng CLI cùng suite, reporter JSON trong bộ nhớ) | 28 file, 211/211 test đạt | Đã hết 3 ca fail sau merge; kiểm thử tự động không thay thế nghiệm thu dịch vụ thật |
 | `src/test/transactionSafety.test.tsx` | 7/7 đạt | Gồm 5 ca an toàn PIN và 2 ca VNPAY return |
-| Kiểm tra bổ sung trong bộ nhớ | QR page 7/7, SignIn 11/11, qr-confirm 15/15 đạt | Không lưu thành file; không nằm trong các lệnh test của repo |
+| Kiểm tra bổ sung sau sửa merge, trong bộ nhớ | 3/3 hành vi PIN và 5/5 mã lỗi đạt | Gửi verify đồng thời; đóng X/phản hồi muộn; countdown bằng đồng hồ điều khiển; mã lỗi duy nhất, tiếng Việt và giữ traceId |
+| Kiểm tra bổ sung QR trước đợt pull | QR page 7/7, SignIn 11/11, qr-confirm 15/15 đạt | Bằng chứng lịch sử, chưa chạy lại trong đợt sửa merge; không có file test lưu trong repo |
+| `node scripts/check-thin-pages.mjs` | Đạt ở lượt rà sau pull: 21 trang, 0 lỗi axios, 0 cảnh báo Number | Script chỉ kiểm tra các mẫu này, không kiểm hết API import, query hooks hoặc đóng gói feature |
 | Browser + Gateway/Auth/Redis thật | Chưa nghiệm thu lại | Chưa đủ bằng chứng kết luận A3 khóa PIN, A4 chống dùng lại/hết hạn token và Q1 QR live đạt |
 
-Ở lần kiểm tra hạ tầng trước, Docker Engine chưa chạy. Không lấy lỗi thiếu hạ tầng làm bằng chứng chức năng sai. Cũng không lấy test mock đạt làm bằng chứng Backend thật hoạt động đúng.
+Lượt rà sau pull xác nhận import `scripts/init-secrets.js` của Backend đã hoạt động; lỗi CommonJS/ES module cũ không còn chặn bước import. Suite framework Backend có 1/4 ca đạt; 3 ca dừng vì không kết nối được PostgreSQL tại localhost:5432, nên chưa có bằng chứng PIN live. Suite này có bước reset dữ liệu thử nghiệm: phải đọc phạm vi và dùng môi trường thử riêng trước khi chạy lại. Không lấy lỗi thiếu hạ tầng làm bằng chứng chức năng sai, cũng không lấy test mock đạt làm bằng chứng Backend thật hoạt động đúng.
 
-Những điểm còn phải rà trong phạm vi Đạt: store vẫn có fixture/export `MOCK_USER`; các trang Auth/QR vẫn còn gọi API trực tiếp và polling theo interval, chưa hoàn tất kiến trúc page mỏng/TanStack Query. `check` xanh không chứng minh toàn bộ quy tắc kiến trúc đã đạt. Kiểm tra page mỏng riêng trước đây còn báo import axios trong TransferPage; đây là điểm tích hợp cần phối hợp chủ nhiệm màn hình.
+Những điểm còn phải rà trong phạm vi Đạt: store vẫn có fixture/export `MOCK_USER`; các trang Auth/QR vẫn còn gọi API trực tiếp và polling theo interval, chưa hoàn tất kiến trúc page mỏng/TanStack Query. Nhóm đã bỏ import axios trực tiếp khỏi TransferPage nên lỗi script cũ đã được xử lý. `check` và script page mỏng đạt chưa chứng minh toàn bộ quy tắc kiến trúc đã đạt.
+
+### Các hồi quy merge đã sửa
+
+- PinModal: bỏ setter không tồn tại, dùng deadline Backend để tính countdown; khôi phục chốt chống verify đồng thời, nhãn ô PIN và xử lý đóng thống nhất. Giữ giao diện mới của nhóm.
+- apiResponse: khôi phục đúng một lần cho mỗi mã PIN_NOT_SETUP, INVALID_PIN, TXN_TOKEN_MISMATCH, TXN_TOKEN_REUSED, IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD. Thông báo token đã dùng yêu cầu kiểm tra trạng thái, không khuyến khích gửi lại.
+- Ca kiểm thử PIN sai không có remainingAttempts nay hiển thị đúng thông báo, xóa ô nhập và không gọi confirm. Test đạt không có nghĩa các call site đều tự dùng helper này; chủ feature cần kiểm tra luồng thực tế.
 
 ## 2. File nguồn và đường vào Web
 
@@ -178,8 +186,8 @@ Kỳ vọng: script duyệt thành công; Web nhận phiên ở lượt polling 
 2. DevTools Network: kiểm tra `/auth/pin/verify` gửi paymentId và amount đúng đơn vừa tạo; không có mã tự sinh thay đơn. Không chụp/lưu PIN hoặc token.
 3. PIN đúng: nhận token rồi caller mới gọi confirm; chỉ báo thành công sau confirm thành công.
 4. PIN sai: thấy lỗi/số lần còn lại theo Backend; không được gọi confirm. Đóng/mở lại cùng đơn không tạo đơn khác chỉ để mở modal.
-5. Dùng Network throttling làm chậm verify rồi đóng modal: phản hồi về muộn không gọi confirm/hiển thị biên nhận. Lặp lại khi chuyển tài khoản bằng quy trình phiên của ứng dụng.
-6. A3: chỉ dùng tài khoản thử riêng để kiểm tra sai 5 lần/khóa 30 phút; đóng mở, F5 và gọi API vẫn phải bị Backend chặn trong thời gian khóa.
+5. Dùng Network throttling làm chậm verify rồi đóng modal bằng X, Esc, bấm ngoài hoặc nút Đóng xác thực: phản hồi về muộn không gọi confirm/hiển thị biên nhận. Đóng chỉ kết thúc UI xác thực, không hủy đơn trên Backend. Lặp lại khi chuyển tài khoản bằng quy trình phiên của ứng dụng.
+6. A3: chỉ dùng tài khoản thử riêng để kiểm tra sai 5 lần/khóa 30 phút; countdown phải giảm theo thời hạn Backend. Đóng mở, F5 và gọi API vẫn phải bị Backend chặn trong thời gian khóa. Hết countdown chỉ cho phép thử lại; Backend tiếp tục quyết định chấp nhận hay từ chối PIN.
 7. A4: dùng harness/API test đã được nhóm thống nhất để thử cùng token lần hai, sau 60 giây, đổi paymentId hoặc amount. Backend phải từ chối; xác minh không có giao dịch/ghi sổ trùng. Luồng UI thành công một lần chưa đủ kết luận A4.
 
 Đối với màn của Khoa/Hữu/Nguyên, áp dụng cùng contract PIN và phối hợp chủ nhiệm màn hình nghiệm thu nghiệp vụ; tài liệu này không thay thế bàn giao các feature đó.
@@ -199,3 +207,15 @@ node scripts/check-thin-pages.mjs
 Việc còn lại của Đạt: nghiệm thu Web/Gateway thật theo mục 6; ghi nhận A3/A4/Q1 bằng kết quả thật; rà fixture của Auth store và cấu trúc Auth/QR theo luật frontend. Khi thay đổi contract tiếp, sửa lại tài liệu này ở một lượt riêng. Không mở rộng sang sửa nghiệp vụ của thành viên khác chỉ để làm xanh kiểm thử.
 
 Biên bản nghiệm thu nên ghi: ngày, phiên bản FE/BE, môi trường, tài khoản thử đã che thông tin, ca thử, kết quả mong đợi/thực tế và requestId nếu có lỗi. Không lưu cookie, Authorization, PIN, token hay secret vào biên bản.
+
+## 8. Người nhận bàn giao và việc cần phối hợp
+
+| Người nhận | Việc trong feature của mình | Kết quả cần báo lại |
+| --- | --- | --- |
+| Khoa — Payment/Transfer | Dùng mã đơn và tiền từ checkout, nhận token rồi confirm; kiểm tra phần tích hợp sau merge | Chuyển tiền thật thành công; PIN sai không confirm; timeout không tự phát lại lệnh chi tiền |
+| Hữu — Withdraw | Đối chiếu contract PIN/token của rút tiền với Backend và thử theo mục 4, mục 6.4 | Đóng PIN không hủy đơn; token đã dùng không mở đường confirm lần hai; đọc trạng thái khi chưa rõ kết quả |
+| Nguyên — Utilities | Đối chiếu mã đơn/tiền đã tạo, dùng token đúng contract và theo dõi đơn tới trạng thái cuối | PIN sai hoặc phản hồi muộn không confirm; chỉ báo kết quả theo trạng thái Backend |
+
+Đây là yêu cầu phối hợp tích hợp và nghiệm thu, không khẳng định các thành viên đang thiếu hoặc làm sai các phần trên. Đạt phụ trách sửa Auth/PIN/QR, nền thông báo lỗi, Gateway và bằng chứng nghiệm thu bảo mật; từng chủ feature chịu trách nhiệm nghiệp vụ của mình.
+
+Sau merge/pull, đọc diff ở các file Auth dùng chung rồi chạy mục 7 trước khi báo hoàn thành. Không chọn nguyên một phía Current/Incoming cho cả file nếu làm mất logic tích hợp cần giữ. Bản bàn giao này chưa chốt hoàn thành toàn bộ nhiệm vụ tuần 4 của Đạt.

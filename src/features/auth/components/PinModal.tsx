@@ -78,35 +78,9 @@ function PinModalSession({
     && typeof amount === 'string' && /^[1-9]\d{0,17}(\.0+)?$/.test(amount)
   useEffect(() => { active.current = true; return () => { active.current = false } }, [])
   useEffect(() => {
-    if (open) {
-      setPin(Array(6).fill(''))
-      setErrorMsg(null)
-      setIsLoading(false)
-      // Focus vào ô đầu tiên sau khi modal mở
-      setTimeout(() => {
-        inputRefs.current[0]?.focus()
-      }, 100)
-    }
-  }, [open])
-
-  // Đếm ngược khi bị khóa mã PIN (PIN_LOCKED)
-  useEffect(() => {
-    if (!isLocked) return
-
-    if (lockCountdown <= 0) {
-      setIsLocked(false)
-      setAttemptsRemaining(5)
-      setLockCountdown(300)
-      setErrorMsg(null)
-      return
-    }
-
-    const timer = setInterval(() => {
-      setLockCountdown((prev) => prev - 1)
-    }, 1000)
-
+    const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
-  }, [isLocked, lockCountdown])
+  }, [])
 
   // Xử lý khi gõ ký tự vào từng ô
   const handleDigitChange = (index: number, value: string) => {
@@ -221,6 +195,7 @@ function PinModalSession({
       return
     }
 
+    verifying.current = true
     setIsLoading(true)
     setErrorMsg(null)
     const owner = useAuthStore.getState().user?.id
@@ -243,6 +218,7 @@ function PinModalSession({
       const code = errorCode(err)
       const { remainingAttempts, deadline } = pinFailureDetails(err)
       if (code === 'PIN_LOCKED') {
+        setNow(Date.now)
         setLockedUntil(deadline)
         onLock(deadline)
         setErrorMsg('Tài khoản bị tạm khóa giao dịch do nhập sai mã PIN quá 5 lần.')
@@ -259,7 +235,8 @@ function PinModalSession({
       setPin(Array(6).fill(''))
       inputRefs.current[0]?.focus()
     } finally {
-      setIsLoading(false)
+      verifying.current = false
+      if (active.current) setIsLoading(false)
     }
   }
 
@@ -277,11 +254,9 @@ function PinModalSession({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
         className="max-w-md w-full p-6 space-y-4 rounded-3xl sm:rounded-3xl border-border bg-card shadow-2xl overflow-hidden"
-        onEscapeKeyDown={handleClose}
-        onPointerDownOutside={handleClose}
       >
         <DialogHeader className="text-center space-y-1">
           <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-1">
@@ -334,6 +309,8 @@ function PinModalSession({
                     ref={(el) => {
                       inputRefs.current[index] = el
                     }}
+                    autoFocus={index === 0}
+                    aria-label={`Chữ số PIN ${index + 1}`}
                     type={showPin ? 'text' : 'password'}
                     inputMode="numeric"
                     maxLength={1}
@@ -418,7 +395,7 @@ function PinModalSession({
           </div>
         )}
 
-        {/* Nút hủy giao dịch */}
+        {/* Close PIN verification without cancelling the server order */}
         <div className="pt-2 flex justify-center">
           <Button
             type="button"
@@ -427,7 +404,7 @@ function PinModalSession({
             onClick={handleClose}
             className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
           >
-            Hủy bỏ giao dịch
+            Đóng xác thực
           </Button>
         </div>
       </DialogContent>
