@@ -17,14 +17,13 @@ import {
   Copy,
   Check,
   ChevronRight,
-  TrendingUp,
   CreditCard,
   AlertCircle,
   RefreshCw
 } from 'lucide-react'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
-import { useWalletMe, useWalletLedger } from '@/features/wallet'
-import { formatVnd, formatDateTime, compareMoney, parseVndToBigInt } from '@/lib/format'
+import { useWalletMe, useWalletLedger, computeDashboardStats } from '@/features/wallet'
+import { formatVnd, formatDateTime, parseVndToBigInt } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -53,16 +52,25 @@ export function DashboardPage() {
     refetch: refetchLedger
   } = useWalletLedger({ limit: 5 })
 
-  // Số dư ví: ưu tiên availableBalance, fallback balance
-  const rawBalance = wallet?.availableBalance ?? wallet?.balance ?? user?.balance ?? '0'
-  const heldBalance = wallet?.heldBalance ?? '0'
-  let hasHeldBalance = false
-  try {
-    hasHeldBalance = compareMoney(heldBalance, '0') > 0
-  } catch {
-    hasHeldBalance = false
-  }
-  const walletDisplayId = wallet?.walletId || wallet?.id || user?.id || 'FV-PRIMARY'
+  // Tách nghiệp vụ Dashboard khỏi page: tính toán hạn mức thật, số dư khả dụng và biến động số dư
+  const {
+    rawBalance,
+    heldBalance,
+    hasHeldBalance,
+    walletDisplayId,
+    tier,
+    hasDailyLimit,
+    dailyLimitStr,
+    dailyUsedStr,
+    remainingDaily,
+    dailyPercentUsed,
+    hasMonthlyLimit,
+    monthlyLimitStr,
+    monthlyUsedStr,
+    remainingMonthly,
+    monthlyPercentUsed,
+    recentTransactions
+  } = computeDashboardStats({ wallet, user, ledgerData })
 
   const handleCopyWalletId = () => {
     navigator.clipboard.writeText(walletDisplayId)
@@ -70,28 +78,6 @@ export function DashboardPage() {
     toast.success('Đã sao chép mã ví FinVault')
     setTimeout(() => setCopied(false), 2000)
   }
-
-  // Hạn mức giao dịch chuẩn theo KYC Tier (Bảng ghi đè Prompt 0)
-  const tier = wallet?.kycTier ?? user?.kycTier ?? 1
-  const standardDailyLimit = tier === 0 ? '500000' : tier === 1 ? '20000000' : '100000000'
-
-  const dailyLimitStr = wallet?.dailyLimit || standardDailyLimit
-  const dailyUsedStr = wallet?.dailyUsed || '0'
-
-  // Tính phần trăm hạn mức sử dụng (tính qua BigInt)
-  let percentUsed = 0
-  try {
-    const bigLimit = parseVndToBigInt(dailyLimitStr)
-    const bigUsed = parseVndToBigInt(dailyUsedStr)
-    if (bigLimit > 0n) {
-      const pct = (bigUsed * 100n) / bigLimit
-      percentUsed = pct > 100n ? 100 : Math.min(100, Math.max(0, +pct.toString()))
-    }
-  } catch {
-    percentUsed = 0
-  }
-
-  const recentTransactions = ledgerData?.items ?? []
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
@@ -193,6 +179,12 @@ export function DashboardPage() {
                     (Đang tạm giữ giao dịch: {formatVnd(heldBalance)})
                   </p>
                 )}
+
+                {showBalance && !isWalletLoading && parseVndToBigInt(rawBalance) === 0n && (
+                  <p className="text-[11px] text-white/70 italic">
+                    Số dư đang là 0 ₫. Bạn có thể nạp tiền để bắt đầu giao dịch.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -200,48 +192,82 @@ export function DashboardPage() {
             <div className="relative z-10 pt-6 mt-6 border-t border-white/15 space-y-2 text-xs text-white/80">
               <div className="flex items-center justify-between">
                 <span>Hạn mức chuyển tiền hôm nay:</span>
-                <span className="font-semibold text-white">
-                  Đã dùng {formatVnd(dailyUsedStr)} / {formatVnd(dailyLimitStr)}
-                </span>
+                {hasDailyLimit ? (
+                  <span className="font-semibold text-white">
+                    Đã dùng {formatVnd(dailyUsedStr)} / {formatVnd(dailyLimitStr)}
+                  </span>
+                ) : (
+                  <span className="font-semibold text-white/70">Chưa có dữ liệu</span>
+                )}
               </div>
-              <Progress value={percentUsed} className="h-1.5 bg-white/20" />
+              {hasDailyLimit ? (
+                <Progress value={dailyPercentUsed} className="h-1.5 bg-white/20" />
+              ) : null}
             </div>
           </div>
         </div>
 
-        {/* Thẻ Thống kê Dòng tiền nhanh */}
+        {/* Thẻ Thống kê Hạn mức Ngày & Tháng thật từ API (không dùng số liệu hardcode) */}
         <div className="md:col-span-5 lg:col-span-4 flex flex-col justify-between gap-4">
           <Card className="flex-1 shadow-sm border-border bg-card">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs">Dòng tiền vào tháng này</CardDescription>
+                <CardDescription className="text-xs">Hạn mức chuyển tiền hôm nay</CardDescription>
                 <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4" />
+                  <Clock className="h-4 w-4" />
                 </div>
               </div>
-              <CardTitle className="text-xl font-bold text-emerald-600">
-                +1.450.000 ₫
+              <CardTitle className="text-lg font-bold text-foreground">
+                {hasDailyLimit ? (
+                  `${formatVnd(dailyUsedStr)} / ${formatVnd(dailyLimitStr)}`
+                ) : (
+                  <span className="text-sm font-normal text-muted-foreground">Chưa có dữ liệu</span>
+                )}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Tăng 24% so với tháng trước</p>
+            <CardContent className="space-y-2">
+              {hasDailyLimit ? (
+                <>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Còn lại trong ngày:</span>
+                    <span className="font-semibold text-foreground">{formatVnd(remainingDaily)}</span>
+                  </div>
+                  <Progress value={dailyPercentUsed} className="h-1.5" />
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Chưa cấu hình hạn mức giao dịch theo ngày</p>
+              )}
             </CardContent>
           </Card>
 
           <Card className="flex-1 shadow-sm border-border bg-card">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs">Đã chi tiêu tháng này</CardDescription>
-                <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                <CardDescription className="text-xs">Hạn mức chuyển tiền tháng này</CardDescription>
+                <div className="h-8 w-8 rounded-lg bg-sky-500/10 text-sky-600 flex items-center justify-center">
                   <CreditCard className="h-4 w-4" />
                 </div>
               </div>
-              <CardTitle className="text-xl font-bold text-foreground">
-                -550.000 ₫
+              <CardTitle className="text-lg font-bold text-foreground">
+                {hasMonthlyLimit ? (
+                  `${formatVnd(monthlyUsedStr)} / ${formatVnd(monthlyLimitStr)}`
+                ) : (
+                  <span className="text-sm font-normal text-muted-foreground">Chưa có dữ liệu</span>
+                )}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">Giao dịch chuyển tiền & dịch vụ</p>
+            <CardContent className="space-y-2">
+              {hasMonthlyLimit ? (
+                <>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Còn lại trong tháng:</span>
+                    <span className="font-semibold text-foreground">{formatVnd(remainingMonthly)}</span>
+                  </div>
+                  <Progress value={monthlyPercentUsed} className="h-1.5" />
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Chưa cấu hình hạn mức giao dịch theo tháng</p>
+              )}
             </CardContent>
           </Card>
         </div>
