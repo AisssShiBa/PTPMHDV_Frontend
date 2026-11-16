@@ -21,6 +21,7 @@ describe('Transaction PIN', () => {
   it('cannot issue a fake token when the caller has no bound order', async () => {
     const verify = vi.spyOn(authApi, 'verifyPin')
     const success = vi.fn()
+    // @ts-expect-error Deliberately omit required order props to test the runtime guard.
     render(<PinModal open onSuccess={success} />)
     enterPin()
     expect(await screen.findByText('Giao dịch chưa sẵn sàng để xác thực mã PIN.')).toBeInTheDocument()
@@ -45,6 +46,46 @@ describe('Transaction PIN', () => {
     enterPin()
     view.rerender(<PinModal open={false} paymentId={id} amount="100000" onSuccess={success} />)
     await act(async () => { release?.({ transactionToken: 'late-synthetic-token', expiresIn: 60 }); await pending })
+    expect(success).not.toHaveBeenCalled()
+  })
+  it('does not deliver a delayed token after the account changes', async () => {
+    let release: ((value: { transactionToken: string; expiresIn: number }) => void) | undefined
+    const pending = new Promise<{ transactionToken: string; expiresIn: number }>((resolve) => { release = resolve })
+    const verify = vi.spyOn(authApi, 'verifyPin').mockReturnValue(pending)
+    const success = vi.fn()
+    render(<PinModal open paymentId={id} amount="100000" onSuccess={success} />)
+    enterPin()
+    expect(verify).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      useAuthStore.setState({ user: { ...MOCK_USER, id: '30000000-0000-4000-8000-000000000003' } })
+    })
+    await act(async () => { release?.({ transactionToken: 'old-account-token', expiresIn: 60 }); await pending })
+
+    expect(success).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('Chữ số PIN 1')).toHaveValue('')
+  })
+  it('preserves the server PIN lock when the modal is closed and reopened', async () => {
+    const lockedUntil = new Date(Date.now() + 1800000).toISOString()
+    const verify = vi.spyOn(authApi, 'verifyPin').mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 423,
+        data: { success: false, error: { code: 'PIN_LOCKED', details: { lockedUntil } } }
+      }
+    })
+    const success = vi.fn()
+    const view = render(<PinModal open paymentId={id} amount="100000" onSuccess={success} />)
+    enterPin()
+    expect(await screen.findByText('Tài khoản tạm khóa giao dịch')).toBeInTheDocument()
+
+    view.rerender(<PinModal open={false} paymentId={id} amount="100000" onSuccess={success} />)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    view.rerender(<PinModal open paymentId={id} amount="100000" onSuccess={success} />)
+
+    expect(screen.getByText('Tài khoản tạm khóa giao dịch')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Chữ số PIN 1')).not.toBeInTheDocument()
+    expect(verify).toHaveBeenCalledTimes(1)
     expect(success).not.toHaveBeenCalled()
   })
 })

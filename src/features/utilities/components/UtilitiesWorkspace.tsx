@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { QueryBoundary } from '@/components/common/QueryBoundary'
-import { PinModal } from '@/features/auth/components/PinModal'
+import { PinModal } from '@/features/auth'
 import { useWalletMe, walletKeys } from '@/features/wallet'
-import { formatVnd, isGreaterThanOrEqual } from '@/lib/format'
+import { formatVnd, isGreaterThanOrEqual, isValidMoneyInput } from '@/lib/format'
 import { BILL_PROVIDERS, billProviderLabel } from '../constants'
 import {
   isRetryableCheckoutError,
@@ -45,6 +45,8 @@ import { BillPaymentForm } from './BillPaymentForm'
 import { OrderStatusPanel } from './OrderStatusPanel'
 import { PaymentSummary } from './PaymentSummary'
 import { TopupForm } from './TopupForm'
+
+type PayableOrder = UtilityOrderView & { paymentId: string }
 
 function UtilitiesLoading({ label }: { label: string }) {
   return (
@@ -122,8 +124,8 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
   const [billError, setBillError] = useState<string | null>(null)
   const [lookupRequest, setLookupRequest] = useState<BillLookupRequest | null>(null)
 
-  const [pinOrder, setPinOrder] = useState<UtilityOrderView | null>(null)
-  const [reauthOrder, setReauthOrder] = useState<UtilityOrderView | null>(null)
+  const [pinOrder, setPinOrder] = useState<PayableOrder | null>(null)
+  const [reauthOrder, setReauthOrder] = useState<PayableOrder | null>(null)
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
   const [lastAttempt, setLastAttempt] = useState<CheckoutAttempt | null>(null)
   const [notice, setNotice] = useState<UtilityNotice | null>(null)
@@ -162,14 +164,17 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
               idempotencyKey: attempt.key
             })
 
-      if (!order.paymentId) {
+      if (typeof order.paymentId !== 'string' || !order.paymentId.trim()
+        || !isValidMoneyInput(order.amount) || order.amount === '0') {
         setNotice({
-          kind: 'error',
-          text: 'Đơn hàng đã được tạo nhưng chưa có mã thanh toán. Vui lòng thử lại sau.'
+          kind: 'retry',
+          text: 'Đơn hàng chưa đủ thông tin thanh toán hợp lệ. Chưa mở PIN; bấm "Thử lại" để kiểm tra bằng cùng yêu cầu.',
+          action: 'CHECKOUT'
         })
         return
       }
-      setPinOrder(order)
+      // Keep the server order amount bound to its non-null payment ID.
+      setPinOrder({ ...order, paymentId: order.paymentId })
     } catch (error) {
       if (isRetryableCheckoutError(error)) {
         setNotice({
@@ -495,24 +500,22 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
         </div>
       </div>
 
-      <PinModal
-        open={pinOrder !== null}
-        onOpenChange={(open) => {
-          if (!open) setPinOrder(null)
-        }}
-        title="Xác thực mã PIN thanh toán"
-        description={
-          pinOrder
-            ? `Xác nhận thanh toán ${formatVnd(pinOrder.amount)} cho ${pinOrder.type === 'TELCO_TOPUP' ? `số ${pinOrder.target}` : `hóa đơn ${pinOrder.target}`}.`
-            : undefined
-        }
-        paymentId={pinOrder?.paymentId ?? undefined}
-        amount={pinOrder?.amount}
-        onSuccess={(transactionToken) => {
-          void handlePinSuccess(transactionToken)
-        }}
-        onCancel={() => setPinOrder(null)}
-      />
+      {pinOrder && (
+        <PinModal
+          open
+          onOpenChange={(open) => {
+            if (!open) setPinOrder(null)
+          }}
+          title="Xác thực mã PIN thanh toán"
+          description={`Xác nhận thanh toán ${formatVnd(pinOrder.amount)} cho ${pinOrder.type === 'TELCO_TOPUP' ? `số ${pinOrder.target}` : `hóa đơn ${pinOrder.target}`}.`}
+          paymentId={pinOrder.paymentId}
+          amount={pinOrder.amount}
+          onSuccess={(transactionToken) => {
+            void handlePinSuccess(transactionToken)
+          }}
+          onCancel={() => setPinOrder(null)}
+        />
+      )}
     </>
   )
 }
