@@ -50,6 +50,7 @@ export interface LedgerFilterParams {
   startDate?: string
   endDate?: string
   type?: string
+  direction?: 'CREDIT' | 'DEBIT' | 'ALL'
 }
 
 export interface LedgerPage {

@@ -1,5 +1,5 @@
-import axios from 'axios'
 import { useState, useRef, useEffect } from 'react'
+import axios from 'axios'
 import {
   Dialog,
   DialogContent,
@@ -78,9 +78,35 @@ function PinModalSession({
     && typeof amount === 'string' && /^[1-9]\d{0,17}(\.0+)?$/.test(amount)
   useEffect(() => { active.current = true; return () => { active.current = false } }, [])
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000)
+    if (open) {
+      setPin(Array(6).fill(''))
+      setErrorMsg(null)
+      setIsLoading(false)
+      // Focus vào ô đầu tiên sau khi modal mở
+      setTimeout(() => {
+        inputRefs.current[0]?.focus()
+      }, 100)
+    }
+  }, [open])
+
+  // Đếm ngược khi bị khóa mã PIN (PIN_LOCKED)
+  useEffect(() => {
+    if (!isLocked) return
+
+    if (lockCountdown <= 0) {
+      setIsLocked(false)
+      setAttemptsRemaining(5)
+      setLockCountdown(300)
+      setErrorMsg(null)
+      return
+    }
+
+    const timer = setInterval(() => {
+      setLockCountdown((prev) => prev - 1)
+    }, 1000)
+
     return () => clearInterval(timer)
-  }, [])
+  }, [isLocked, lockCountdown])
 
   // Xử lý khi gõ ký tự vào từng ô
   const handleDigitChange = (index: number, value: string) => {
@@ -194,7 +220,7 @@ function PinModalSession({
       setPin(Array(6).fill(''))
       return
     }
-    verifying.current = true
+
     setIsLoading(true)
     setErrorMsg(null)
     const owner = useAuthStore.getState().user?.id
@@ -233,8 +259,7 @@ function PinModalSession({
       setPin(Array(6).fill(''))
       inputRefs.current[0]?.focus()
     } finally {
-      verifying.current = false
-      if (active.current) setIsLoading(false)
+      setIsLoading(false)
     }
   }
 
@@ -252,13 +277,17 @@ function PinModalSession({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md p-6 sm:p-8 bg-card border-border shadow-2xl rounded-2xl">
-        <DialogHeader className="text-center space-y-2 sm:text-center">
-          <div className="mx-auto h-12 w-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-sm">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="max-w-md w-full p-6 space-y-4 rounded-3xl sm:rounded-3xl border-border bg-card shadow-2xl overflow-hidden"
+        onEscapeKeyDown={handleClose}
+        onPointerDownOutside={handleClose}
+      >
+        <DialogHeader className="text-center space-y-1">
+          <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-1">
             <Lock className="h-6 w-6" />
           </div>
-          <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
+          <DialogTitle className="text-lg font-bold text-foreground">
             {title}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -305,8 +334,6 @@ function PinModalSession({
                     ref={(el) => {
                       inputRefs.current[index] = el
                     }}
-                    autoFocus={index === 0}
-                    aria-label={`Chữ số PIN ${index + 1}`}
                     type={showPin ? 'text' : 'password'}
                     inputMode="numeric"
                     maxLength={1}
@@ -400,7 +427,7 @@ function PinModalSession({
             onClick={handleClose}
             className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
           >
-            Đóng xác thực
+            Hủy bỏ giao dịch
           </Button>
         </div>
       </DialogContent>

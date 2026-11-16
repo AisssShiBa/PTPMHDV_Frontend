@@ -35,7 +35,8 @@ export const walletApi = {
           limit: params?.limit || 20,
           startDate: params?.startDate || undefined,
           endDate: params?.endDate || undefined,
-          type: params?.type || undefined
+          type: params?.type && params.type !== 'ALL' ? params.type : undefined,
+          direction: params?.direction && params.direction !== 'ALL' ? params.direction : undefined
         },
         signal
       }
