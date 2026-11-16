@@ -23,7 +23,11 @@ import {
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { PinModal } from '@/features/auth/components/PinModal'
 import { useWalletMe, walletKeys } from '@/features/wallet'
-import { paymentApi, type P2pQuoteResult, type LimitExceededDetails } from '@/features/payment'
+import {
+  paymentApi,
+  parsePaymentError,
+  type P2pQuoteResult
+} from '@/features/payment'
 import { useRecipientLookup } from '@/features/user/hooks/useRecipientLookup'
 import {
   formatVnd,
@@ -31,14 +35,12 @@ import {
   isValidMoneyInput,
   validateTransferAmount
 } from '@/lib/format'
-import { errorDetails } from '@/lib/apiResponse'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import axios from 'axios'
 
 const QUICK_AMOUNTS = [
   { label: '50.000 ₫', value: '50000' },
@@ -195,34 +197,18 @@ export function TransferPage() {
       setCurrentStep(2)
       toast.success('Báo giá giao dịch thành công (có hiệu lực trong 60 giây).')
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 422) {
-        const details = errorDetails<LimitExceededDetails>(err)
-        if (details?.limitType) {
-          let limitMsg = ''
-          const limitFormatted = formatVnd(details.limit || '0')
-          const remainingFormatted = formatVnd(details.remaining || '0')
-
-          if (details.limitType === 'PER_TXN') {
-            limitMsg = `Vượt quá hạn mức tối đa cho mỗi lần chuyển (${limitFormatted}). Bạn còn được chuyển tối đa ${remainingFormatted} trong lần này.`
-          } else if (details.limitType === 'PER_DAY') {
-            limitMsg = `Vượt quá hạn mức giao dịch trong ngày (${limitFormatted}). Hôm nay bạn chỉ còn được chuyển thêm ${remainingFormatted}.`
-          } else if (details.limitType === 'PER_MONTH') {
-            limitMsg = `Vượt quá hạn mức giao dịch trong tháng (${limitFormatted}). Trong tháng này bạn chỉ còn lại ${remainingFormatted}.`
-          } else {
-            limitMsg = `Giao dịch vượt quá hạn mức quy định (${limitFormatted}).`
-          }
-
-          setLimitExceededError({
-            message: limitMsg,
-            limitType: details.limitType,
-            limit: details.limit,
-            remaining: details.remaining
-          })
-          toast.error(limitMsg)
-          return
-        }
+      const parsed = parsePaymentError(err)
+      if (parsed.isLimitExceeded && parsed.limitDetails && parsed.limitMessage) {
+        setLimitExceededError({
+          message: parsed.limitMessage,
+          limitType: parsed.limitDetails.limitType,
+          limit: parsed.limitDetails.limit,
+          remaining: parsed.limitDetails.remaining
+        })
+        toast.error(parsed.limitMessage)
+        return
       }
-      toast.error(err instanceof Error ? err.message : 'Không thể lấy báo giá giao dịch. Vui lòng thử lại.')
+      toast.error(parsed.message || 'Không thể lấy báo giá giao dịch. Vui lòng thử lại.')
     } finally {
       setIsQuoting(false)
     }
@@ -239,7 +225,7 @@ export function TransferPage() {
       })
       setQuoteCountdown(60)
       setQuote(quoteRes)
-        setPaymentId(null)
+      setPaymentId(null)
       toast.success('Đã cập nhật báo giá giao dịch mới (60 giây).')
     } catch {
       toast.error('Không thể làm mới báo giá. Vui lòng quay lại Bước 1.')
@@ -247,19 +233,6 @@ export function TransferPage() {
     } finally {
       setIsQuoting(false)
     }
-  }
-
-  // Kiểm tra lỗi timeout hoặc sự cố mạng
-  const isNetworkOrTimeout = (err: unknown): boolean => {
-    if (axios.isAxiosError(err)) {
-      if (err.code === 'ECONNABORTED' || err.message?.toLowerCase().includes('timeout')) return true
-      if (!err.response) return true
-      const status = err.response.status
-      if (status === 504 || status === 502 || status === 503 || status === 408) return true
-      const code = err.response.data?.error?.code || err.response.data?.code
-      if (code === 'PAYMENT_PROCESSING' || code === 'GATEWAY_TIMEOUT') return true
-    }
-    return false
   }
 
   // Polling tra cứu trạng thái giao dịch khi confirm bị timeout (backoff 1s, 2s, 4s, tối đa 30s)
@@ -390,7 +363,8 @@ export function TransferPage() {
       setPaymentId(pId)
       setPinModalOpen(true)
     } catch (err: unknown) {
-      if (isNetworkOrTimeout(err)) {
+      const parsed = parsePaymentError(err)
+      if (parsed.isNetworkOrTimeout) {
         setProcessingState({
           phase: 'checkout',
           message:
@@ -399,39 +373,31 @@ export function TransferPage() {
         return
       }
 
-      if (axios.isAxiosError(err)) {
-        const errorData = err.response?.data?.error || err.response?.data
-        const code = errorData?.code
-        const details = (errorDetails(err) || errorData?.details) as LimitExceededDetails | undefined
-
-        if (code === 'LIMIT_EXCEEDED' && details) {
-          const limitTypeLabel =
-            details.limitType === 'PER_TXN'
-              ? 'mỗi lần'
-              : details.limitType === 'PER_DAY'
-                ? 'mỗi ngày'
-                : 'mỗi tháng'
-          toast.error(
-            `Vượt hạn mức ${limitTypeLabel}. Bạn còn được chuyển tối đa ${formatVnd(details.remaining)}.`
-          )
-          return
-        }
-
-        if (code === 'INSUFFICIENT_FUNDS') {
-          toast.error('Số dư khả dụng trong ví không đủ để thực hiện giao dịch.')
-          return
-        }
-
-        if (code === 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD') {
-          setIdempotencyKey(crypto.randomUUID())
-          toast.error('Khóa giao dịch bị trùng lặp với nội dung khác. Vui lòng thử lại.')
-          return
-        }
-
-        toast.error(errorData?.message || 'Không thể tạo phiên chuyển tiền. Vui lòng thử lại.')
-      } else {
-        toast.error('Lỗi kết nối khi khởi tạo phiên giao dịch.')
+      if (parsed.isLimitExceeded && parsed.limitDetails) {
+        const limitTypeLabel =
+          parsed.limitDetails.limitType === 'PER_TXN'
+            ? 'mỗi lần'
+            : parsed.limitDetails.limitType === 'PER_DAY'
+              ? 'mỗi ngày'
+              : 'mỗi tháng'
+        toast.error(
+          `Vượt hạn mức ${limitTypeLabel}. Bạn còn được chuyển tối đa ${formatVnd(parsed.limitDetails.remaining)}.`
+        )
+        return
       }
+
+      if (parsed.isInsufficientFunds) {
+        toast.error('Số dư khả dụng trong ví không đủ để thực hiện giao dịch.')
+        return
+      }
+
+      if (parsed.isIdempotencyReused) {
+        setIdempotencyKey(crypto.randomUUID())
+        toast.error('Khóa giao dịch bị trùng lặp với nội dung khác. Vui lòng thử lại.')
+        return
+      }
+
+      toast.error(parsed.message || 'Không thể tạo phiên chuyển tiền. Vui lòng thử lại.')
     } finally {
       setIsCheckingOut(false)
     }
@@ -470,50 +436,44 @@ export function TransferPage() {
         description: `Đã gửi ${formatVnd(amount)} tới ${recipient?.maskedName}.`
       })
     } catch (err: unknown) {
-      if (isNetworkOrTimeout(err)) {
+      const parsed = parsePaymentError(err)
+      if (parsed.isNetworkOrTimeout) {
         // Confirm timeout/mạng: KHÔNG gọi confirm lại bằng token cũ
         // Chuyển sang poll GET /payments/:id
         await pollPaymentStatus(paymentId, 0, paymentClockNow())
         return
       }
 
-      if (axios.isAxiosError(err)) {
-        const errorData = err.response?.data?.error || err.response?.data
-        const code = errorData?.code
-
-        if (code === 'TXN_TOKEN_EXPIRED') {
-          toast.error('Mã xác thực giao dịch đã hết hạn. Vui lòng nhập lại mã PIN.')
-          // Mở lại PinModal với cùng paymentId
-          setPinModalOpen(true)
-          return
-        }
-
-        if (code === 'PAYMENT_EXPIRED') {
-          toast.error('Giao dịch đã hết thời gian giữ tiền (5 phút). Vui lòng thực hiện lại từ đầu.')
-          handleResetNewTransfer()
-          return
-        }
-
-        if (code === 'TXN_TOKEN_REUSED') {
-          toast.error('Mã xác thực giao dịch đã được sử dụng. Vui lòng nhập lại mã PIN.')
-          setPinModalOpen(true)
-          return
-        }
-
-        if (code === 'TXN_TOKEN_MISMATCH') {
-          toast.error('Mã xác thực không hợp lệ cho giao dịch này.')
-          return
-        }
-
-        if (code === 'PAYMENT_NOT_PENDING') {
-          toast.error('Giao dịch không còn ở trạng thái chờ xác nhận.')
-          return
-        }
-
-        toast.error(errorData?.message || 'Xác nhận giao dịch thất bại. Vui lòng thử lại.')
-      } else {
-        toast.error('Lỗi kết nối khi xác nhận giao dịch.')
+      if (parsed.isTokenExpired) {
+        toast.error('Mã xác thực giao dịch đã hết hạn. Vui lòng nhập lại mã PIN.')
+        // Mở lại PinModal với cùng paymentId
+        setPinModalOpen(true)
+        return
       }
+
+      if (parsed.isPaymentExpired) {
+        toast.error('Giao dịch đã hết thời gian giữ tiền (5 phút). Vui lòng thực hiện lại từ đầu.')
+        handleResetNewTransfer()
+        return
+      }
+
+      if (parsed.isTokenReused) {
+        toast.error('Mã xác thực giao dịch đã được sử dụng. Vui lòng nhập lại mã PIN.')
+        setPinModalOpen(true)
+        return
+      }
+
+      if (parsed.code === 'TXN_TOKEN_MISMATCH') {
+        toast.error('Mã xác thực không hợp lệ cho giao dịch này.')
+        return
+      }
+
+      if (parsed.code === 'PAYMENT_NOT_PENDING') {
+        toast.error('Giao dịch không còn ở trạng thái chờ xác nhận.')
+        return
+      }
+
+      toast.error(parsed.message || 'Xác nhận giao dịch thất bại. Vui lòng thử lại.')
     } finally {
       setIsConfirming(false)
     }
