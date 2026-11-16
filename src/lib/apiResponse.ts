@@ -34,8 +34,7 @@ export function errorCode(error: unknown): string | undefined {
   return axios.isAxiosError<ApiResponse<unknown>>(error) ? error.response?.data?.error?.code : undefined
 }
 
-export function errorMessage(error: unknown): string {
-  const messages: Record<string, string> = {
+const errorMessages: Record<string, string> = {
     MERCHANT_NOT_APPROVED: 'Đối tác chưa được duyệt. Vui lòng tải lại trạng thái.',
     MERCHANT_INVALID_RESPONSE: 'Phản hồi đối tác chưa hợp lệ. Vui lòng kiểm tra trạng thái trước khi gửi lại.',
     MERCHANT_INVALID_INPUT: 'Thông tin đăng ký chưa hợp lệ. Vui lòng kiểm tra lại.',
@@ -72,27 +71,23 @@ export function errorMessage(error: unknown): string {
     CONCURRENT_UPDATE: 'Hồ sơ vừa được cập nhật. Vui lòng tải lại trước khi gửi.',
     INVALID_CREDENTIALS: 'Tên đăng nhập hoặc mật khẩu không đúng.',
     PIN_LOCKED: 'Mã PIN đã bị tạm khóa do nhập sai nhiều lần. Vui lòng thử lại sau.',
-    PIN_NOT_SETUP: 'Bạn chưa thiết lập mã PIN giao dịch. Vui lòng cài đặt mã PIN trước.',
-    INVALID_PIN: 'Mã PIN không chính xác. Vui lòng thử lại.',
     LIMIT_EXCEEDED: 'Giao dịch vượt quá hạn mức cho phép. Vui lòng nâng cấp gói KYC.',
     RATE_LIMIT_EXCEEDED: 'Bạn thao tác quá nhanh. Vui lòng đợi một lát rồi thử lại.',
     INSUFFICIENT_FUNDS: 'Số dư khả dụng trong ví không đủ để thực hiện giao dịch.',
     IDEMPOTENCY_KEY_REUSED: 'Yêu cầu giao dịch đang được xử lý hoặc đã hoàn tất.',
-    IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD: 'Khóa giao dịch bị trùng lặp với nội dung khác. Vui lòng tạo giao dịch mới.',
     TOKEN_EXPIRED: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.',
     TOKEN_REUSE_DETECTED: 'Phát hiện phiên làm việc bất thường. Vui lòng đăng nhập lại.',
     UNAUTHORIZED: 'Bạn chưa đăng nhập hoặc phiên đã hết hạn.',
     FORBIDDEN: 'Bạn không có quyền thực hiện chức năng này.',
     QR_EXPIRED: 'Mã QR đăng nhập đã hết hạn hoặc không tồn tại. Vui lòng tạo mã mới.',
     TXN_TOKEN_EXPIRED: 'Mã xác thực giao dịch đã hết hạn (chỉ có hiệu lực trong 60 giây). Vui lòng thử lại.',
-    TXN_TOKEN_MISMATCH: 'Mã xác thực giao dịch không khớp với thông tin thanh toán.',
-    TXN_TOKEN_REUSED: 'Mã xác thực giao dịch đã được sử dụng. Vui lòng tạo giao dịch mới.',
     TXN_TOKEN_INVALID: 'Mã xác thực giao dịch không hợp lệ.'
-  }
+}
 
+function localizedErrorMessage(error: unknown): string {
   const code = errorCode(error)
   if (code) {
-    if (messages[code]) return messages[code]
+    if (Object.hasOwn(errorMessages, code)) return errorMessages[code]
     if (code.startsWith('TXN_TOKEN_')) return 'Mã xác thực giao dịch không hợp lệ hoặc đã hết hạn.'
   }
 
@@ -118,4 +113,18 @@ export function errorMessage(error: unknown): string {
   }
 
   return 'Không thể hoàn tất thao tác. Vui lòng thử lại.'
+}
+
+export function errorMessage(error: unknown): string {
+  const message = localizedErrorMessage(error)
+  const requestId = error instanceof Error && error.name === 'FundingError' && 'requestId' in error
+    ? error.requestId
+    : axios.isAxiosError<ApiResponse<unknown>>(error)
+      ? error.response?.data?.error?.traceId
+      : undefined
+
+  // Include only a bounded correlation ID, never the backend's raw error message.
+  return typeof requestId === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(requestId)
+    ? `${message} Mã yêu cầu: ${requestId}`
+    : message
 }

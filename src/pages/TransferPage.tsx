@@ -86,7 +86,8 @@ export function TransferPage() {
 
   // Idempotency-Key được sinh mỗi khi khởi tạo ý định chuyển mới, giữ nguyên khi thử lại
   const [idempotencyKey, setIdempotencyKey] = useState<string>(() => crypto.randomUUID())
-  const [paymentId, setPaymentId] = useState<string | null>(null)
+  const [checkoutPayment, setCheckoutPayment] = useState<{ id: string; amount: string } | null>(null)
+  const paymentId = checkoutPayment?.id ?? null
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
 
@@ -161,7 +162,7 @@ export function TransferPage() {
     setAmount(cleanDigits)
     setLimitExceededError(null)
     setQuote(null)
-    setPaymentId(null)
+    setCheckoutPayment(null)
     setIdempotencyKey(crypto.randomUUID())
   }
 
@@ -225,7 +226,7 @@ export function TransferPage() {
       })
       setQuoteCountdown(60)
       setQuote(quoteRes)
-      setPaymentId(null)
+      setCheckoutPayment(null)
       toast.success('Đã cập nhật báo giá giao dịch mới (60 giây).')
     } catch {
       toast.error('Không thể làm mới báo giá. Vui lòng quay lại Bước 1.')
@@ -349,18 +350,27 @@ export function TransferPage() {
 
     setIsCheckingOut(true)
     setProcessingState(null)
+    const checkoutAmount = amount
     try {
       const checkoutRes = await paymentApi.p2pCheckout(
         {
           destinationUserId: recipient.authUserId,
-          amount,
+          amount: checkoutAmount,
           note: message.trim() || undefined
         },
         idempotencyKey
       )
 
-      const pId = checkoutRes.paymentId || checkoutRes.id || ''
-      setPaymentId(pId)
+      const pId = checkoutRes.paymentId || checkoutRes.id
+      if (typeof pId !== 'string' || !pId.trim()) {
+        setProcessingState({
+          phase: 'checkout',
+          message: 'Máy chủ chưa trả mã giao dịch hợp lệ. Chưa mở xác thực PIN; thử lại để tra cứu cùng yêu cầu, không tạo ý định chuyển tiền mới.'
+        })
+        return
+      }
+      // Keep the exact order/amount binding submitted to checkout for subsequent PIN attempts.
+      setCheckoutPayment({ id: pId, amount: checkoutAmount })
       setPinModalOpen(true)
     } catch (err: unknown) {
       const parsed = parsePaymentError(err)
@@ -496,7 +506,8 @@ export function TransferPage() {
     setMessage('Chuyển tiền FinVault')
     setCompletedTxn(null)
     setFailedTxn(null)
-    setPaymentId(null)
+    setCheckoutPayment(null)
+    setPinModalOpen(false)
     setProcessingState(null)
     setIdempotencyKey(crypto.randomUUID())
   }
@@ -998,6 +1009,7 @@ export function TransferPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setCurrentStep(1)}
+                  disabled={isCheckingOut || isConfirming}
                   className="h-11 font-semibold gap-2 cursor-pointer"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -1197,16 +1209,18 @@ export function TransferPage() {
       )}
 
       {/* Shared PIN Modal: Kích hoạt tại Bước 2 */}
-      <PinModal
-        open={pinModalOpen}
-        onOpenChange={setPinModalOpen}
-        title="Xác thực mã PIN giao dịch"
-        description={`Xác nhận chuyển ${formatVnd(amount)} tới ${recipient?.maskedName || 'người nhận'}.`}
-        paymentId={paymentId || undefined}
-        amount={amount}
-        onSuccess={handlePinSuccess}
-        onCancel={() => setPinModalOpen(false)}
-      />
+      {checkoutPayment && (
+        <PinModal
+          open={pinModalOpen}
+          onOpenChange={setPinModalOpen}
+          title="Xác thực mã PIN giao dịch"
+          description={`Xác nhận chuyển ${formatVnd(checkoutPayment.amount)} tới ${recipient?.maskedName || 'người nhận'}.`}
+          paymentId={checkoutPayment.id}
+          amount={checkoutPayment.amount}
+          onSuccess={handlePinSuccess}
+          onCancel={() => setPinModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
