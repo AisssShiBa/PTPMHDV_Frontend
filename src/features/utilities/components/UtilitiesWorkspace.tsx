@@ -10,8 +10,8 @@ import { useWalletMe, walletKeys } from '@/features/wallet'
 import { formatVnd, isGreaterThanOrEqual, isValidMoneyInput } from '@/lib/format'
 import { BILL_PROVIDERS, billProviderLabel } from '../constants'
 import {
+  classifyConfirmError,
   isRetryableCheckoutError,
-  isRetryableConfirmError,
   utilitiesErrorMessage
 } from '../errors'
 import { resolveIdempotencyKey, type IntentKey } from '../idempotency'
@@ -31,7 +31,6 @@ import {
   topupFormSchema,
   topupIntent
 } from '../schemas'
-import { isTerminalOrderStatus } from '../status'
 import type {
   BillLookupRequest,
   BillPayPayload,
@@ -47,6 +46,14 @@ import { PaymentSummary } from './PaymentSummary'
 import { TopupForm } from './TopupForm'
 
 type PayableOrder = UtilityOrderView & { paymentId: string }
+
+/**
+ * A created order holds the wallet for 5 minutes (payment-service constant).
+ * Closing the PIN modal does not cancel it, so the UI keeps it resumable with
+ * the exact same `paymentId`/`amount` instead of creating a new order.
+ */
+const UNPAID_ORDER_NOTE =
+  'Đơn đã tạo nhưng chưa thanh toán. Bấm "Thanh toán" để nhập PIN lại (đơn được giữ tối đa 5 phút).'
 
 function UtilitiesLoading({ label }: { label: string }) {
   return (
@@ -126,6 +133,7 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
 
   const [pinOrder, setPinOrder] = useState<PayableOrder | null>(null)
   const [reauthOrder, setReauthOrder] = useState<PayableOrder | null>(null)
+  const [abandonedOrder, setAbandonedOrder] = useState<PayableOrder | null>(null)
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
   const [lastAttempt, setLastAttempt] = useState<CheckoutAttempt | null>(null)
   const [notice, setNotice] = useState<UtilityNotice | null>(null)
@@ -133,6 +141,9 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
 
   const attemptKeyRef = useRef<IntentKey | null>(null)
   const executingRef = useRef(false)
+  /** Set before `onSuccess` so the modal's follow-up close is not "unpaid". */
+  const paymentSubmittedRef = useRef(false)
+  const lastOrderStatusRef = useRef<string | null>(null)
 
   const billLookup = useBillLookup(lookupRequest)
   const createTopup = useCreateTopup()
@@ -141,11 +152,20 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
   const orderQuery = useUtilityOrder(activeOrderId)
   const orderData = orderQuery.data
 
+  // The wallet changes on confirm (hold) and on every server-side transition,
+  // not just at the terminal state. The client never adds/subtracts balances.
   useEffect(() => {
-    if (orderData && isTerminalOrderStatus(orderData.status)) {
-      void queryClient.invalidateQueries({ queryKey: walletKeys.me() })
-    }
-  }, [orderData, queryClient])
+    const status = orderData?.status
+    if (!status || status === lastOrderStatusRef.current) return
+    lastOrderStatusRef.current = status
+    void queryClient.invalidateQueries({ queryKey: walletKeys.me() })
+  }, [orderData?.status, queryClient])
+
+  const openPin = (order: PayableOrder) => {
+    paymentSubmittedRef.current = false
+    setAbandonedOrder(null)
+    setPinOrder(order)
+  }
 
   const executeAttempt = async (attempt: CheckoutAttempt) => {
     if (executingRef.current) return
@@ -174,7 +194,7 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
         return
       }
       // Keep the server order amount bound to its non-null payment ID.
-      setPinOrder({ ...order, paymentId: order.paymentId })
+      openPin({ ...order, paymentId: order.paymentId })
     } catch (error) {
       if (isRetryableCheckoutError(error)) {
         setNotice({
@@ -192,6 +212,7 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
   }
 
   const startAttempt = (attempt: CheckoutAttempt) => {
+    setAbandonedOrder(null)
     setLastAttempt(attempt)
     void executeAttempt(attempt)
   }
@@ -261,8 +282,16 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
     else handlePayBill()
   }
 
+  const switchTab = (tab: CheckoutKind) => {
+    if (tab === activeTab) return
+    // The unpaid banner belongs to the form content that created the order.
+    setAbandonedOrder(null)
+    setActiveTab(tab)
+  }
+
   const handleLookup = () => {
     setBillError(null)
+    setAbandonedOrder(null)
     const parsed = billLookupSchema.safeParse({
       provider: billProvider,
       customerCode: billCustomerCode
@@ -286,6 +315,7 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
     if (!order?.paymentId) return
     setPinOrder(null)
     setReauthOrder(null)
+    setAbandonedOrder(null)
     setSubmitting(true)
     try {
       await confirmPayment.mutateAsync({
@@ -294,23 +324,43 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
       })
       setActiveOrderId(order.orderId)
       setNotice(null)
+      // The hold/release happens immediately; do not wait for a terminal state.
+      void queryClient.invalidateQueries({ queryKey: walletKeys.me() })
     } catch (error) {
-      if (isRetryableConfirmError(error)) {
+      const kind = classifyConfirmError(error)
+      if (kind === 'RESUME_POLLING') {
+        // Outcome unknown or already handled: watch the order, never confirm again.
         setNotice({
           kind: 'info',
           text: 'Thanh toán đang được xử lý. FinVault sẽ tự cập nhật kết quả, vui lòng không thực hiện lại.'
         })
         setActiveOrderId(order.orderId)
-      } else {
+      } else if (kind === 'EXPIRED') {
+        // The hold is gone. The backend will move the order to FAILED; only poll.
+        setNotice({ kind: 'error', text: utilitiesErrorMessage(error) })
+        setActiveOrderId(order.orderId)
+      } else if (kind === 'REAUTH') {
         setReauthOrder(order)
         setNotice({
           kind: 'error',
           text: utilitiesErrorMessage(error),
           action: 'REAUTH'
         })
+      } else {
+        // Definite rejection (403/409 CONFLICT/...): explain, do not ask for PIN again.
+        setNotice({ kind: 'error', text: utilitiesErrorMessage(error) })
       }
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  /** Closing the PIN modal leaves a server-side unpaid order; keep it resumable. */
+  const handlePinCancel = () => {
+    const order = pinOrder
+    setPinOrder(null)
+    if (order && !paymentSubmittedRef.current) {
+      setAbandonedOrder(order)
     }
   }
 
@@ -319,16 +369,22 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
   }
 
   const handleReauth = () => {
-    if (reauthOrder) setPinOrder(reauthOrder)
+    if (reauthOrder) {
+      setNotice(null)
+      openPin(reauthOrder)
+    }
   }
 
   const resetFlow = () => {
     setActiveOrderId(null)
     setPinOrder(null)
     setReauthOrder(null)
+    setAbandonedOrder(null)
     setNotice(null)
     setLastAttempt(null)
     attemptKeyRef.current = null
+    paymentSubmittedRef.current = false
+    lastOrderStatusRef.current = null
     setLookupRequest(null)
     setTopupError(null)
     setBillError(null)
@@ -341,7 +397,14 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
         query={orderQuery}
         skeleton={<UtilitiesLoading label="Đang tải trạng thái đơn hàng…" />}
       >
-        {(order) => <OrderStatusPanel order={order} onReset={resetFlow} />}
+        {(order) => (
+          <OrderStatusPanel
+            order={order}
+            onReset={resetFlow}
+            slowPolling={orderQuery.slowPolling}
+            notice={notice?.text}
+          />
+        )}
       </QueryBoundary>
     )
   }
@@ -361,7 +424,7 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
       <div className="flex items-center gap-3 border-b border-border pb-4">
         <Button
           type="button"
-          onClick={() => setActiveTab('TOPUP')}
+          onClick={() => switchTab('TOPUP')}
           disabled={submitting}
           className={`h-11 cursor-pointer gap-2 rounded-xl px-5 text-xs font-semibold transition-all sm:text-sm ${
             isTopup
@@ -374,7 +437,7 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
         </Button>
         <Button
           type="button"
-          onClick={() => setActiveTab('BILLS')}
+          onClick={() => switchTab('BILLS')}
           disabled={submitting}
           className={`h-11 cursor-pointer gap-2 rounded-xl px-5 text-xs font-semibold transition-all sm:text-sm ${
             !isTopup
@@ -431,14 +494,42 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
         </div>
       )}
 
+      {abandonedOrder && !pinOrder && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs font-medium text-amber-800 dark:text-amber-300"
+        >
+          <span className="flex items-start gap-2">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{UNPAID_ORDER_NOTE}</span>
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => openPin(abandonedOrder)}
+            disabled={submitting}
+            className="h-8 gap-1.5 text-xs"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Thanh toán
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-7">
           {isTopup ? (
             <TopupForm
               phone={topupPhone}
               amount={topupAmount}
-              onPhoneChange={setTopupPhone}
-              onAmountChange={setTopupAmount}
+              onPhoneChange={(value) => {
+                setAbandonedOrder(null)
+                setTopupPhone(value)
+              }}
+              onAmountChange={(value) => {
+                setAbandonedOrder(null)
+                setTopupAmount(value)
+              }}
               disabled={submitting}
               error={topupError}
             />
@@ -450,11 +541,13 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
                 setBillProvider(value)
                 setLookupRequest(null)
                 setBillError(null)
+                setAbandonedOrder(null)
               }}
               onCustomerCodeChange={(value) => {
                 setBillCustomerCode(value)
                 setLookupRequest(null)
                 setBillError(null)
+                setAbandonedOrder(null)
               }}
               onLookup={handleLookup}
               lookup={{
@@ -504,16 +597,18 @@ function UtilitiesWorkspaceContent({ balance }: { balance: string }) {
         <PinModal
           open
           onOpenChange={(open) => {
-            if (!open) setPinOrder(null)
+            if (!open) handlePinCancel()
           }}
           title="Xác thực mã PIN thanh toán"
           description={`Xác nhận thanh toán ${formatVnd(pinOrder.amount)} cho ${pinOrder.type === 'TELCO_TOPUP' ? `số ${pinOrder.target}` : `hóa đơn ${pinOrder.target}`}.`}
           paymentId={pinOrder.paymentId}
           amount={pinOrder.amount}
           onSuccess={(transactionToken) => {
+            // Mark first: PinModal closes itself right after onSuccess.
+            paymentSubmittedRef.current = true
             void handlePinSuccess(transactionToken)
           }}
-          onCancel={() => setPinOrder(null)}
+          onCancel={handlePinCancel}
         />
       )}
     </>
