@@ -25,6 +25,13 @@ export const DISCOUNT_PERCENT = 3n
 /** Backend orders are asynchronous; poll until one of the terminal states. */
 export const ORDER_POLL_INTERVAL_MS = 2000
 
+/**
+ * A stuck `PROVIDER_PENDING` order keeps polling, but after this long the UI
+ * slows down instead of hammering the backend every 2 seconds.
+ */
+export const ORDER_SLOW_POLL_AFTER_MS = 60_000
+export const ORDER_POLL_SLOW_INTERVAL_MS = 10_000
+
 export const TERMINAL_ORDER_STATUSES: readonly UtilityOrderStatus[] = [
   'SUCCESS',
   'FAILED',

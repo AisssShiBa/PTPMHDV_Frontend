@@ -47,13 +47,41 @@
 - Lỗi không rõ kết quả khi xác nhận thanh toán → không xác nhận lại, chuyển sang theo dõi đơn.
 - Nút thanh toán bị khóa trong suốt thời gian gửi để tránh double-click.
 
+### Phân loại lỗi confirm (N16 / D1)
+
+`classifyConfirmError` trong `errors.ts` chia lỗi `POST /api/payments/:id/confirm` thành 4 nhóm, không bao giờ tự confirm lại:
+
+| Nhóm | Mã / trạng thái | UI |
+| :--- | :--- | :--- |
+| `RESUME_POLLING` | mất mạng, 408/502/504, `PAYMENT_PROCESSING`, `PAYMENT_ALREADY_CONFIRMED`, `TXN_TOKEN_REUSED`, `GATEWAY_TIMEOUT`, `UPSTREAM_UNAVAILABLE` | Banner "đang xử lý, không thực hiện lại" + poll đơn |
+| `EXPIRED` | 410 / `PAYMENT_EXPIRED` | Poll đơn (BE đưa về `FAILED (PAYMENT_EXPIRED)`), **không** mở lại PIN |
+| `REAUTH` | `TXN_TOKEN_EXPIRED` / `TXN_TOKEN_INVALID` / `TXN_TOKEN_MISSING` | Nút "Xác thực lại" với đúng `paymentId` + `amount` cũ |
+| `FATAL` | 403 `FORBIDDEN`, 409 `CONFLICT`, còn lại | Báo lỗi tiếng Việt, không có nút xác thực lại |
+
+### Polling và trạng thái treo (D2)
+
+- 2 giây/lần cho tới trạng thái kết thúc.
+- Ở `PROVIDER_PENDING` liên tục 60 giây (đo phía client) → giãn còn 10 giây/lần, `OrderStatusPanel` hiện ghi chú "Nhà cung cấp chưa phản hồi. Tiền đang được giữ, FinVault sẽ tự kiểm tra…" kèm mã đơn. Không hứa hoàn tiền.
+- Lý do thất bại lấy từ `failureReason`: `PAYMENT_FAILED`, `PAYMENT_EXPIRED`, `CHECKOUT_NOT_CREATED`, `PROVIDER_REJECTED`, `PAYMENT_REJECTED`, `REFUND_REJECTED`, `TIMEOUT`; mã lạ không hiển thị thô.
+
+### Đơn chưa thanh toán (D3) và số dư (D4, D5)
+
+- Đóng `PinModal` khi chưa xác thực → banner "Đơn đã tạo nhưng chưa thanh toán… (giữ tối đa 5 phút)" + nút **Thanh toán** mở lại PIN với đúng `paymentId`/`amount`. Không gọi checkout lại nên vẫn dùng cùng `Idempotency-Key`.
+- Banner tự xoá khi đổi tab, đổi nội dung form, tra cứu hóa đơn khác, hoặc bấm "Thực hiện giao dịch khác".
+- `walletKeys.me()` được invalidate ngay sau confirm thành công và mỗi khi `status` đơn đổi; client không tự cộng/trừ số dư.
+- `orderId` chỉ nằm trong bộ nhớ: reload trang sẽ mất liên kết đơn (BE không có endpoint danh sách đơn). Xem câu hỏi hở cuối mục 3.
+
 ### Trạng thái UI
 
 `QueryBoundary` cho ví: loading (`Đang tải thông tin ví…`), error (`Không thể tải dữ liệu` + nút thử lại), empty (`Chưa có thông tin ví`), success (workspace). Tra cứu hóa đơn có loading/error/empty/success riêng; đơn hàng có loading + 8 trạng thái backend.
 
+### Kiểm thử luồng (N16)
+
+`src/test/utilitiesFlow.test.tsx` (Vitest + MSW + Testing Library, chạy bằng `npm run test:unit`): PIN nhận đúng `paymentId`/`amount` từ đơn; confirm gửi `X-Transaction-Token` và token không nằm trong storage/Zustand; double-click chỉ 1 checkout; retry 502 dùng cùng key; chuỗi trạng thái + hoàn tiền + số dư ví; `PROVIDER_PENDING` quá 60 giây (renderHook + fake timers) bật `slowPolling` và giãn poll; 410/409/403 không mở lại PIN, `TXN_TOKEN_EXPIRED` có nút xác thực lại; bill dùng đúng số tiền lookup và map `BILL_NOT_FOUND`/504.
+
 ## 3. Câu hỏi hở Contract / TODO(contract)
 
-- [ ] **`PHONE_TOPUP` / `BILL_PAYMENT` chưa được payment-service chấp nhận (K13)**: `payment.validation.ts` hiện chỉ nhận `CARD_TOPUP`, `BUS_TICKET`, `MOVIE_TICKET`, `TRAIN_TICKET`, `WALLET_TRANSFER`. Vì vậy checkout thật sẽ trả 4xx xác định và đơn chuyển `FAILED`. Frontend đã gọi đúng endpoint; cần backend bổ sung hai loại này để chạy T1/T2 thật.
+- [x] **`PHONE_TOPUP` / `BILL_PAYMENT` đã được payment-service chấp nhận** trên `origin/main` (bbdf0e6 trở đi); utilities-service gọi checkout với `Idempotency-Key = util-<orderId>`. FE không cần đổi endpoint; TODO(contract) cũ đã bỏ.
 - [ ] **Chiết khấu 3% chỉ được ghi nhận**: `amount` là mệnh giá đầy đủ, `discountAmount` được lưu trên đơn nhưng không trừ vào số tiền thanh toán và không cộng vào ví. UI ghi rõ "chiết khấu ghi nhận", không hiển thị như giảm giá. Cần xác nhận nghiệp vụ nếu muốn thực sự ưu đãi.
 - [ ] **Không có endpoint danh mục nhà cung cấp**: `EVN`/`SAWACO`/`FPT` là bộ mã sandbox cố định trong `constants.ts`; backend chỉ validate hình thức chuỗi `[A-Za-z0-9._-]{2,32}`.
 - [ ] **Không có trường nhà mạng / địa chỉ / hạn thanh toán**: API topup chỉ nhận `phone` + `amount`; bill lookup chỉ trả `provider`, `customerCode`, `customerName`, `amount`, `period`. Vì vậy bộ chọn nhà mạng, địa chỉ và hạn thanh toán hardcode của bản thiết kế đã bị bỏ (xem mục 4).
