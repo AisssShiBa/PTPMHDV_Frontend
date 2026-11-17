@@ -18,7 +18,14 @@ import type { UtilityOrderView } from '../types'
 interface OrderStatusPanelProps {
   order: UtilityOrderView
   onReset: () => void
+  /** True when `PROVIDER_PENDING` lasted more than 60 seconds. */
+  slowPolling?: boolean
+  /** Extra context from the flow that redirected here (e.g. expired payment). */
+  notice?: string
 }
+
+const PROVIDER_PENDING_NOTE =
+  'Nhà cung cấp chưa phản hồi. Tiền đang được giữ, FinVault sẽ tự kiểm tra. Bạn có thể rời trang, mã đơn:'
 
 const badgeClass = (status: UtilityOrderView['status']): string => {
   if (status === 'SUCCESS') {
@@ -65,10 +72,16 @@ const panelDescription = (status: UtilityOrderView['status']): string => {
   return 'FinVault đang tự động cập nhật trạng thái đơn hàng từ nhà cung cấp.'
 }
 
-export function OrderStatusPanel({ order, onReset }: OrderStatusPanelProps) {
+export function OrderStatusPanel({
+  order,
+  onReset,
+  slowPolling = false,
+  notice
+}: OrderStatusPanelProps) {
   const terminal = isTerminalOrderStatus(order.status)
   const failure = failureReasonMessage(order.failureReason)
   const isFailure = order.status === 'FAILED' || order.status === 'REFUND_FAILED'
+  const waitingForProvider = order.status === 'PROVIDER_PENDING' && slowPolling
 
   return (
     <div className="mx-auto max-w-2xl animate-in zoom-in-95 duration-200">
@@ -136,6 +149,25 @@ export function OrderStatusPanel({ order, onReset }: OrderStatusPanelProps) {
               {formatVnd(order.amount)}
             </span>
           </div>
+
+          {!failure && notice && (
+            <p
+              role="alert"
+              className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-medium text-amber-800 dark:text-amber-300"
+            >
+              {notice}
+            </p>
+          )}
+
+          {waitingForProvider && (
+            <p
+              role="status"
+              className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-medium text-amber-800 dark:text-amber-300"
+            >
+              {PROVIDER_PENDING_NOTE}{' '}
+              <strong className="break-all font-mono">{order.orderId}</strong>
+            </p>
+          )}
 
           {failure && (
             <p
