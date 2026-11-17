@@ -37,7 +37,13 @@ const messages: Record<string, string> = {
   TXN_TOKEN_EXPIRED: 'Mã xác thực giao dịch đã hết hạn. Vui lòng xác thực PIN lại.',
   TXN_TOKEN_INVALID: 'Mã xác thực giao dịch không hợp lệ. Vui lòng xác thực PIN lại.',
   PAYMENT_PROCESSING:
-    'Thanh toán đang được xử lý. Vui lòng không thực hiện lại, FinVault sẽ tự cập nhật kết quả.'
+    'Thanh toán đang được xử lý. Vui lòng không thực hiện lại, FinVault sẽ tự cập nhật kết quả.',
+  PAYMENT_EXPIRED:
+    'Đơn đã hết hạn thanh toán. FinVault sẽ cập nhật kết quả cuối cùng, vui lòng không nhập PIN lại.',
+  PAYMENT_ALREADY_CONFIRMED:
+    'Giao dịch đã được xác nhận trước đó. FinVault đang cập nhật kết quả, vui lòng không thực hiện lại.',
+  TXN_TOKEN_REUSED:
+    'Mã xác thực giao dịch đã được sử dụng. FinVault đang cập nhật kết quả, vui lòng không thực hiện lại.'
 }
 
 const prefixMessages: Array<{ prefix: string; message: string }> = [
@@ -89,16 +95,53 @@ export function isRetryableCheckoutError(error: unknown): boolean {
  * still complete, so the page starts polling the order instead of confirming
  * again with a fresh token.
  */
-export function isRetryableConfirmError(error: unknown): boolean {
-  if (!axios.isAxiosError(error)) return false
-  if (!error.response) return true
+export type ConfirmErrorClass = 'RESUME_POLLING' | 'EXPIRED' | 'REAUTH' | 'FATAL'
+
+/**
+ * Errors that only prove the transaction token is unusable; the same payment
+ * (same `paymentId` + `amount`) can still be confirmed with a fresh PIN.
+ */
+const REAUTH_CONFIRM_CODES = [
+  'TXN_TOKEN_EXPIRED',
+  'TXN_TOKEN_INVALID',
+  'TXN_TOKEN_MISSING'
+] as const
+
+/**
+ * Classifies a `POST /api/payments/:id/confirm` failure without retrying:
+ * - RESUME_POLLING: outcome unknown or already handled -> watch the order;
+ * - EXPIRED: payment hold is gone -> watch the order, never ask for PIN again;
+ * - REAUTH: only the token is invalid -> a fresh PIN is safe;
+ * - FATAL: a definite rejection (403/409 CONFLICT, ...) -> just show the error.
+ */
+export function classifyConfirmError(error: unknown): ConfirmErrorClass {
   const code = errorCode(error)
-  return (
-    error.response.status === 408 ||
-    error.response.status === 502 ||
-    error.response.status === 504 ||
+  if (code && (REAUTH_CONFIRM_CODES as readonly string[]).includes(code)) {
+    return 'REAUTH'
+  }
+  if (code === 'PAYMENT_EXPIRED') return 'EXPIRED'
+
+  if (!axios.isAxiosError(error)) {
+    // A thrown non-HTTP error has no server verdict; treat it as unknown.
+    return code ? 'FATAL' : 'RESUME_POLLING'
+  }
+  if (!error.response) return 'RESUME_POLLING'
+
+  const status = error.response.status
+  if (status === 410) return 'EXPIRED'
+  if (status === 408 || status === 502 || status === 504) return 'RESUME_POLLING'
+  if (
     code === 'PAYMENT_PROCESSING' ||
+    code === 'PAYMENT_ALREADY_CONFIRMED' ||
+    code === 'TXN_TOKEN_REUSED' ||
     code === 'GATEWAY_TIMEOUT' ||
     code === 'UPSTREAM_UNAVAILABLE'
-  )
+  ) {
+    return 'RESUME_POLLING'
+  }
+  return 'FATAL'
+}
+
+export function isRetryableConfirmError(error: unknown): boolean {
+  return classifyConfirmError(error) === 'RESUME_POLLING'
 }
