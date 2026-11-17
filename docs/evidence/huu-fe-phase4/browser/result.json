@@ -1,6 +1,6 @@
 {
   "status": "MOCK_HTTP_BROWSER_PASS",
-  "testedAt": "2026-11-12T13:21:48.866Z",
+  "testedAt": "2026-11-17T15:11:05.507Z",
   "checks": [
     "Cookie refresh, real HTTP create with string money and one idempotency key for double click, REQUESTED is not success; recovery UUID in URL",
     "PIN bound to order/amount, one confirm with token header, receipt and wallet from server",
@@ -16,7 +16,15 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -24,19 +32,19 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/a5d94f74-500d-48dd-b23b-0a8c9f7acace"
+      "path": "/api/funding/cash-out/a9192360-7a40-4f39-b6a5-aa4b9421791f"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -44,15 +52,15 @@
     },
     {
       "method": "POST",
-      "path": "/api/funding/cash-out/a5d94f74-500d-48dd-b23b-0a8c9f7acace/confirm"
+      "path": "/api/funding/cash-out/a9192360-7a40-4f39-b6a5-aa4b9421791f/confirm"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -60,7 +68,15 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -72,19 +88,19 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/3142b7cd-88b6-41cf-94f5-ca08cc40d79b"
+      "path": "/api/funding/cash-out/14f319fb-f056-43ca-8518-adea08b3dc20"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -92,19 +108,19 @@
     },
     {
       "method": "POST",
-      "path": "/api/funding/cash-out/3142b7cd-88b6-41cf-94f5-ca08cc40d79b/confirm"
+      "path": "/api/funding/cash-out/14f319fb-f056-43ca-8518-adea08b3dc20/confirm"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/3142b7cd-88b6-41cf-94f5-ca08cc40d79b"
+      "path": "/api/funding/cash-out/14f319fb-f056-43ca-8518-adea08b3dc20"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -112,31 +128,39 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/3142b7cd-88b6-41cf-94f5-ca08cc40d79b"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/3142b7cd-88b6-41cf-94f5-ca08cc40d79b"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/funding/cash-out/14f319fb-f056-43ca-8518-adea08b3dc20"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/funding/cash-out/14f319fb-f056-43ca-8518-adea08b3dc20"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/3142b7cd-88b6-41cf-94f5-ca08cc40d79b"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/funding/cash-out/14f319fb-f056-43ca-8518-adea08b3dc20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -144,7 +168,15 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -152,19 +184,19 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/0bd9cd41-60e4-4c77-b218-d3e72d28bd1b"
+      "path": "/api/funding/cash-out/31384731-b8fd-4a12-8b68-3c8a5c49a3b2"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -172,19 +204,19 @@
     },
     {
       "method": "POST",
-      "path": "/api/funding/cash-out/0bd9cd41-60e4-4c77-b218-d3e72d28bd1b/confirm"
+      "path": "/api/funding/cash-out/31384731-b8fd-4a12-8b68-3c8a5c49a3b2/confirm"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/0bd9cd41-60e4-4c77-b218-d3e72d28bd1b"
+      "path": "/api/funding/cash-out/31384731-b8fd-4a12-8b68-3c8a5c49a3b2"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "POST",
@@ -192,15 +224,23 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000002/balance"
+      "path": "/api/notifications/me"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/3142b7cd-88b6-41cf-94f5-ca08cc40d79b"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
-      "path": "/api/funding/cash-out/3142b7cd-88b6-41cf-94f5-ca08cc40d79b"
+      "path": "/api/wallets/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/funding/cash-out/14f319fb-f056-43ca-8518-adea08b3dc20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/funding/cash-out/14f319fb-f056-43ca-8518-adea08b3dc20"
     },
     {
       "method": "POST",
@@ -208,7 +248,15 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000002/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     }
   ],
   "liveGatewayCashOut": "BLOCKED_WHITELIST",

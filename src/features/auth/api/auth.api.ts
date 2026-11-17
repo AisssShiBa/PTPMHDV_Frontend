@@ -29,7 +29,7 @@ export interface QrInitResponse {
 }
 
 export interface QrStatusResponse {
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SCANNED' | 'CONFIRMED' | 'EXPIRED'
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
   accessToken?: string
   user?: User
   expiresAt?: string

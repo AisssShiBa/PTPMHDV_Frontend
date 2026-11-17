@@ -39,13 +39,18 @@ export function KycForm({ profile, rejectionReason, onSaved, onReload }: {
       const saved = await userService.submitKyc(values)
       if (useAuthStore.getState().user?.id !== profile.authUserId) return
       onSaved(saved)
+      await onReload()
       toast.success('Đã gửi hồ sơ xác thực, vui lòng chờ xét duyệt.')
     } catch (reason) {
       if (useAuthStore.getState().user?.id !== profile.authUserId) return
       setError('root', { message: errorMessage(reason) })
       // Reload before retrying an upload whose outcome could be ambiguous.
-      if (!['INVALID_IMAGE', 'INVALID_UPLOAD', 'KYC_DOCUMENT_REQUIRED', 'KYC_DOCUMENTS_REQUIRED', 'FILE_TOO_LARGE', 'VALIDATION_ERROR'].includes(errorCode(reason) ?? '')) {
+      const code = errorCode(reason) ?? ''
+      if (!['INVALID_IMAGE', 'INVALID_UPLOAD', 'KYC_DOCUMENT_REQUIRED', 'KYC_DOCUMENTS_REQUIRED', 'FILE_TOO_LARGE', 'VALIDATION_ERROR'].includes(code)) {
         setNeedsReload(true)
+      } else if (code) {
+        // For validation errors, auto-reload to get latest status
+        await onReload()
       }
     } finally { busy.current = false }
   }

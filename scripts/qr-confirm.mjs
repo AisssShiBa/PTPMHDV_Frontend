@@ -62,7 +62,7 @@ async function getQrPayload() {
         }
       }
     }
-  } catch (err) {
+  } catch {
     // Bỏ qua lỗi Docker nếu không gọi được exec
   }
 

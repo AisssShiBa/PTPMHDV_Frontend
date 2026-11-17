@@ -31,14 +31,13 @@ import {
   isValidMoneyInput,
   validateTransferAmount
 } from '@/lib/format'
-import { errorDetails } from '@/lib/apiResponse'
+import { errorDetails, isApiAxiosError } from '@/lib/apiResponse'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import axios from 'axios'
 
 const QUICK_AMOUNTS = [
   { label: '50.000 ₫', value: '50000' },
@@ -195,7 +194,7 @@ export function TransferPage() {
       setCurrentStep(2)
       toast.success('Báo giá giao dịch thành công (có hiệu lực trong 60 giây).')
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 422) {
+      if (isApiAxiosError(err) && err.response?.status === 422) {
         const details = errorDetails<LimitExceededDetails>(err)
         if (details?.limitType) {
           let limitMsg = ''
@@ -251,7 +250,7 @@ export function TransferPage() {
 
   // Kiểm tra lỗi timeout hoặc sự cố mạng
   const isNetworkOrTimeout = (err: unknown): boolean => {
-    if (axios.isAxiosError(err)) {
+    if (isApiAxiosError(err)) {
       if (err.code === 'ECONNABORTED' || err.message?.toLowerCase().includes('timeout')) return true
       if (!err.response) return true
       const status = err.response.status
@@ -399,7 +398,7 @@ export function TransferPage() {
         return
       }
 
-      if (axios.isAxiosError(err)) {
+      if (isApiAxiosError(err)) {
         const errorData = err.response?.data?.error || err.response?.data
         const code = errorData?.code
         const details = (errorDetails(err) || errorData?.details) as LimitExceededDetails | undefined
@@ -477,7 +476,7 @@ export function TransferPage() {
         return
       }
 
-      if (axios.isAxiosError(err)) {
+      if (isApiAxiosError(err)) {
         const errorData = err.response?.data?.error || err.response?.data
         const code = errorData?.code
 

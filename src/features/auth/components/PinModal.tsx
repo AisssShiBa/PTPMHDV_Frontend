@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { useState, useRef, useEffect } from 'react'
 import {
   Dialog,
@@ -9,8 +8,12 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, Lock, AlertTriangle, Eye, EyeOff, Delete } from 'lucide-react'
-import { formatVnd } from '@/lib/format'
+import { formatVndExact } from '@/lib/format'
 import { authApi } from '@/features/auth/api/auth.api'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { errorMessage, errorCode } from '@/lib/apiResponse'
+
+const currentTimeMs = () => Date.now()
 
 export interface PinModalProps {
   open: boolean
@@ -35,7 +38,6 @@ function PinModalSession({
   description = 'Vui lòng nhập mã PIN bảo mật 6 số để tiếp tục giao dịch.',
   paymentId,
   amount,
-  paymentId,
   onSuccess,
   onCancel
 }: PinModalProps) {
@@ -148,68 +150,51 @@ function PinModalSession({
     setIsLoading(true)
     setErrorMsg(null)
     try {
-      const pId = paymentId || `pay_${Date.now()}`
-      const amt = amount || '1'
-
       const res = await authApi.verifyPin({
         pin: inputPin,
-        paymentId: pId,
-        amount: amt
+        paymentId,
+        amount
       })
+      if (!active.current) return
+      setPin(Array(6).fill(''))
 
       // Nhập đúng mã PIN: nhận transactionToken ES256 dùng 1 lần (TTL 5 phút)
       onSuccess(res.transactionToken)
       onOpenChange?.(false)
     } catch (err: unknown) {
-      const errorObj = err as {
-        code?: string
-        message?: string
-        lockedUntil?: string
-        attemptsRemaining?: number
-        response?: {
-          data?: {
-            error?: {
-              code?: string
-              message?: string
-              lockedUntil?: string
-              attemptsRemaining?: number
-            }
+      if (!active.current) return
+      setPin(Array(6).fill(''))
+
+      const anyErr = err && typeof err === 'object' ? (err as Record<string, unknown>) : undefined
+      const resData = (anyErr?.response as { data?: { error?: { code?: string; details?: Record<string, unknown>; lockedUntil?: string } } } | undefined)?.data
+      const errDetails = (resData?.error?.details || anyErr?.details) as Record<string, unknown> | undefined
+      const remaining = (errDetails?.remainingAttempts ?? errDetails?.attemptsRemaining) as number | undefined
+      const errCode = errorCode(err) || resData?.error?.code
+
+      if (errCode === 'INVALID_PIN' && typeof remaining === 'number' && remaining > 0) {
+        setErrorMsg(`Mã PIN không chính xác. Bạn còn ${remaining} lần thử.`)
+      } else {
+        setErrorMsg(errorMessage(err))
+      }
+
+      try {
+        const status = await authApi.getPinStatus()
+        if (!active.current) return
+        const deadline = status.lockedUntil ? Date.parse(status.lockedUntil) : NaN
+        setNow(currentTimeMs())
+        setLockedUntil(status.isLocked && Number.isFinite(deadline) ? deadline : null)
+      } catch {
+        if (errCode === 'PIN_LOCKED') {
+          const lockTime = resData?.error?.lockedUntil || (anyErr?.lockedUntil as string | undefined)
+          if (lockTime) {
+            const diffSec = Math.max(0, Math.ceil((new Date(lockTime).getTime() - currentTimeMs()) / 1000))
+            setLockedUntil(currentTimeMs() + (diffSec || 1800) * 1000)
+          } else {
+            setLockedUntil(currentTimeMs() + 1800 * 1000)
           }
         }
       }
-      const errorCode = errorObj?.code || errorObj?.response?.data?.error?.code
-      const serverMsg = errorObj?.message || errorObj?.response?.data?.error?.message
 
-      if (errorCode === 'PIN_LOCKED') {
-        setIsLocked(true)
-        const lockedUntil = errorObj?.lockedUntil || errorObj?.response?.data?.error?.lockedUntil
-        if (lockedUntil) {
-          const diffSec = Math.max(0, Math.ceil((new Date(lockedUntil).getTime() - Date.now()) / 1000))
-          setLockCountdown(diffSec || 1800)
-        } else {
-          setLockCountdown(1800)
-        }
-        setErrorMsg('Tài khoản bị tạm khóa giao dịch do nhập sai mã PIN quá 5 lần.')
-      } else if (errorCode === 'INVALID_PIN') {
-        const remaining =
-          errorObj?.attemptsRemaining ??
-          errorObj?.response?.data?.error?.attemptsRemaining ??
-          (attemptsRemaining - 1)
-        setAttemptsRemaining(Math.max(0, remaining))
-        if (remaining <= 0) {
-          setIsLocked(true)
-          setLockCountdown(1800)
-          setErrorMsg('Tài khoản bị tạm khóa giao dịch do nhập sai mã PIN quá 5 lần.')
-        } else {
-          setErrorMsg(`Mã PIN không chính xác. Bạn còn ${remaining} lần thử.`)
-        }
-      } else if (errorCode === 'PIN_NOT_SETUP') {
-        setErrorMsg('Bạn chưa thiết lập mã PIN giao dịch. Vui lòng cài đặt mã PIN trong Cài đặt bảo mật.')
-      } else {
-        setErrorMsg(serverMsg || 'Xác thực mã PIN thất bại. Vui lòng thử lại.')
-      }
-
-      setPin(Array(6).fill(''))
       inputRefs.current[0]?.focus()
     } finally {
       verifying.current = false

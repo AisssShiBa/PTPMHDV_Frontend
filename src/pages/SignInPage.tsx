@@ -66,7 +66,7 @@ export function SignInPage() {
   // Khi chuyển sang tab 'qr' thì kích hoạt tạo mã QR thật
   useEffect(() => {
     if (activeTab === 'qr') {
-      initQrSession()
+      queueMicrotask(() => { void initQrSession() })
     } else {
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
@@ -86,7 +86,7 @@ export function SignInPage() {
     if (activeTab !== 'qr' || isQrLoading || isQrExpired) return
 
     if (qrCountdown <= 0) {
-      setIsQrExpired(true)
+      queueMicrotask(() => setIsQrExpired(true))
       return
     }
 

@@ -55,7 +55,7 @@ export function QrLoginPage() {
 
   // Khởi tạo mã QR khi vừa vào trang
   useEffect(() => {
-    initQrSession()
+    queueMicrotask(() => { void initQrSession() })
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
