@@ -43,14 +43,15 @@ export function errorCode(error: unknown): string | undefined {
   return isApiAxiosError(error) ? error.response?.data?.error?.code : undefined
 }
 
-export function errorMessage(error: unknown): string {
-  const messages: Record<string, string> = {
+const errorMessages: Record<string, string> = {
     MERCHANT_NOT_APPROVED: 'Đối tác chưa được duyệt. Vui lòng tải lại trạng thái.',
     MERCHANT_INVALID_RESPONSE: 'Phản hồi đối tác chưa hợp lệ. Vui lòng kiểm tra trạng thái trước khi gửi lại.',
     MERCHANT_INVALID_INPUT: 'Thông tin đăng ký chưa hợp lệ. Vui lòng kiểm tra lại.',
     INVALID_PIN: 'Mã PIN không đúng. Vui lòng nhập lại.',
     PIN_INVALID: 'Mã PIN không đúng. Vui lòng nhập lại.',
     TRANSACTION_TOKEN_EXPIRED: 'Xác thực đã hết hạn. Chỉ nhập PIN mới khi máy chủ xác nhận lệnh vẫn chờ xác nhận.',
+    TXN_TOKEN_MISMATCH: 'Xác thực không khớp giao dịch. Vui lòng kiểm tra trạng thái.',
+    TXN_TOKEN_REUSED: 'Xác thực đã được sử dụng. Vui lòng kiểm tra trạng thái, không gửi lại.',
     INVALID_TRANSACTION_TOKEN: 'Xác thực giao dịch không hợp lệ. Vui lòng kiểm tra trạng thái.',
     BANK_DECLINED: 'Ngân hàng mô phỏng đã từ chối lệnh rút. Kiểm tra số dư hiện tại từ máy chủ.',
     CASHOUT_FAILED: 'Lệnh rút không thành công. Vui lòng kiểm tra trạng thái và số dư từ máy chủ.',
@@ -94,19 +95,18 @@ export function errorMessage(error: unknown): string {
     FORBIDDEN: 'Bạn không có quyền thực hiện chức năng này.',
     QR_EXPIRED: 'Mã QR đăng nhập đã hết hạn hoặc không tồn tại. Vui lòng tạo mã mới.',
     TXN_TOKEN_EXPIRED: 'Mã xác thực giao dịch đã hết hạn (chỉ có hiệu lực trong 60 giây). Vui lòng thử lại.',
-    TXN_TOKEN_MISMATCH: 'Mã xác thực giao dịch không khớp với thông tin thanh toán.',
-    TXN_TOKEN_REUSED: 'Mã xác thực giao dịch đã được sử dụng. Vui lòng tạo giao dịch mới.',
     TXN_TOKEN_INVALID: 'Mã xác thực giao dịch không hợp lệ.'
-  }
+}
 
+function localizedErrorMessage(error: unknown): string {
   const code = errorCode(error)
   if (error instanceof Error && ['FundingError', 'MerchantError'].includes(error.name)) {
-    const message = code && messages[code] ? messages[code] : 'Chưa thể hoàn tất yêu cầu. Vui lòng kiểm tra trạng thái.'
+    const message = code && errorMessages[code] ? errorMessages[code] : 'Chưa thể hoàn tất yêu cầu. Vui lòng kiểm tra trạng thái.'
     const id = 'requestId' in error && typeof error.requestId === 'string' ? error.requestId : undefined
     return id && /^[a-zA-Z0-9_.:-]{1,128}$/.test(id) ? `${message} Mã yêu cầu: ${id}` : message
   }
   if (code) {
-    if (messages[code]) return messages[code]
+    if (Object.hasOwn(errorMessages, code)) return errorMessages[code]
     if (code.startsWith('TXN_TOKEN_')) return 'Mã xác thực giao dịch không hợp lệ hoặc đã hết hạn.'
   }
 
@@ -132,4 +132,18 @@ export function errorMessage(error: unknown): string {
   }
 
   return 'Không thể hoàn tất thao tác. Vui lòng thử lại.'
+}
+
+export function errorMessage(error: unknown): string {
+  const message = localizedErrorMessage(error)
+  const requestId = error instanceof Error && error.name === 'FundingError' && 'requestId' in error
+    ? error.requestId
+    : axios.isAxiosError<ApiResponse<unknown>>(error)
+      ? error.response?.data?.error?.traceId
+      : undefined
+
+  // Include only a bounded correlation ID, never the backend's raw error message.
+  return typeof requestId === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(requestId)
+    ? `${message} Mã yêu cầu: ${requestId}`
+    : message
 }

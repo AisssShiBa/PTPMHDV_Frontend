@@ -64,7 +64,7 @@ export interface CheckoutAttempt {
 
 export type UtilityNoticeKind = 'info' | 'error' | 'retry'
 
-export type UtilityNoticeAction = 'CHECKOUT' | 'REAUTH'
+export type UtilityNoticeAction = 'CHECKOUT' | 'REAUTH' | 'RESUME_PAY'
 
 export interface UtilityNotice {
   kind: UtilityNoticeKind

@@ -17,6 +17,7 @@ import { authApi, type QrInitResponse } from '@/features/auth/api/auth.api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { errorCode, errorMessage } from '@/lib/apiResponse'
 
 export function QrLoginPage() {
   const [qrData, setQrData] = useState<QrInitResponse | null>(null)
@@ -24,65 +25,72 @@ export function QrLoginPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isExpired, setIsExpired] = useState(false)
   const [isRejected, setIsRejected] = useState(false)
+  const [initError, setInitError] = useState<string | null>(null)
   const { setSession } = useAuthStore()
   const navigate = useNavigate()
-  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const generation = useRef(0)
 
-  // Khởi tạo phiên mã QR thật từ Auth Service
-  const initQrSession = useCallback(async () => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
-    }
+  // Ignore initialization responses belonging to an older or unmounted session.
+  const initQrSession = useCallback(() => {
+    const current = ++generation.current
+    return authApi.initQrLogin()
+      .then((res) => {
+        if (current !== generation.current) return
+        const expiresAt = Date.parse(res.expiresAt)
+        if (!res.qrId || !res.nonce || !res.pollSecret || !Number.isFinite(expiresAt)) {
+          setInitError('Phản hồi mã QR chưa hợp lệ. Vui lòng tạo lại mã.')
+          return
+        }
+        setQrData(res)
+        const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
+        setCountdown(remaining)
+        setIsExpired(remaining === 0)
+      })
+      .catch((error: unknown) => {
+        if (current !== generation.current) return
+        setInitError(errorMessage(errorCode(error) ? error : undefined))
+      })
+      .finally(() => {
+        if (current === generation.current) setIsLoading(false)
+      })
+  }, [])
+
+  const refreshQrSession = () => {
+    if (pollingRef.current) clearInterval(pollingRef.current)
+    pollingRef.current = null
+    setQrData(null)
     setIsLoading(true)
     setIsExpired(false)
     setIsRejected(false)
+    setInitError(null)
+    void initQrSession()
+  }
 
-    try {
-      const res = await authApi.initQrLogin()
-      setQrData(res)
-
-      // Tính thời gian hiệu lực còn lại theo expiresAt từ backend (120s)
-      const diffSec = Math.max(0, Math.ceil((new Date(res.expiresAt).getTime() - Date.now()) / 1000))
-      setCountdown(diffSec > 0 ? diffSec : 120)
-    } catch {
-      toast.error('Không thể tạo mã QR đăng nhập. Vui lòng thử lại.')
-      setIsExpired(true)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  // Khởi tạo mã QR khi vừa vào trang
+  // Initial loading state is declared above; state updates happen after the request.
   useEffect(() => {
-    queueMicrotask(() => { void initQrSession() })
+    void initQrSession()
     return () => {
+      generation.current += 1
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
+        pollingRef.current = null
       }
     }
   }, [initQrSession])
 
-  // Bộ đếm ngược thời gian hiệu lực
+  // Recompute against the server deadline so delayed ticks cannot extend the QR lifetime.
   useEffect(() => {
-    if (isLoading || isExpired || isRejected) return
-
-    if (countdown <= 0) {
-      return
-    }
-
+    if (!qrData || isLoading || isExpired || isRejected) return
+    const expiresAt = Date.parse(qrData.expiresAt)
     const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          setIsExpired(true)
-          return 0
-        }
-        return prev - 1
-      })
+      const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
+      setCountdown(remaining)
+      if (remaining === 0) setIsExpired(true)
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [countdown, isLoading, isExpired, isRejected])
+  }, [qrData, isLoading, isExpired, isRejected])
 
   // Polling kiểm tra trạng thái mã QR mỗi 2 giây
   useEffect(() => {
@@ -94,10 +102,28 @@ export function QrLoginPage() {
       return
     }
 
+    const current = generation.current
+    let cancelled = false
+    let inFlight = false
+    let terminal = false
     const pollStatus = async () => {
+      if (cancelled || inFlight || terminal || current !== generation.current) return
+      if (Date.now() >= Date.parse(qrData.expiresAt)) {
+        terminal = true
+        setIsExpired(true)
+        return
+      }
+      inFlight = true
       try {
         const res = await authApi.getQrStatus(qrData.qrId, qrData.pollSecret)
+        if (cancelled || current !== generation.current) return
+        if (Date.now() >= Date.parse(qrData.expiresAt)) {
+          terminal = true
+          setIsExpired(true)
+          return
+        }
         if (res.status === 'APPROVED' && res.accessToken && res.user) {
+          terminal = true
           if (pollingRef.current) clearInterval(pollingRef.current)
           setSession({
             accessToken: res.accessToken,
@@ -107,23 +133,27 @@ export function QrLoginPage() {
           const isRoleAdmin = res.user.role === 'ADMIN'
           navigate(isRoleAdmin ? '/admin' : '/app', { replace: true })
         } else if (res.status === 'REJECTED') {
+          terminal = true
           if (pollingRef.current) clearInterval(pollingRef.current)
           setIsRejected(true)
           toast.error('Yêu cầu đăng nhập đã bị từ chối từ thiết bị.')
         }
       } catch (err: unknown) {
-        // Nếu mã QR đã hết hạn trên backend (410 QR_EXPIRED)
-        const errorObj = err as { response?: { status?: number; data?: { error?: { code?: string } } } }
-        if (errorObj?.response?.status === 410 || errorObj?.response?.data?.error?.code === 'QR_EXPIRED') {
+        if (cancelled || current !== generation.current) return
+        if (errorCode(err) === 'QR_EXPIRED') {
+          terminal = true
           if (pollingRef.current) clearInterval(pollingRef.current)
           setIsExpired(true)
         }
+      } finally {
+        inFlight = false
       }
     }
 
     pollingRef.current = setInterval(pollStatus, 2000)
 
     return () => {
+      cancelled = true
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
         pollingRef.current = null
@@ -177,6 +207,12 @@ export function QrLoginPage() {
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 <p className="text-xs text-slate-500 font-medium">Đang tạo mã QR bảo mật...</p>
               </div>
+            ) : initError ? (
+              <div className="flex flex-col items-center justify-center p-4 text-center space-y-3">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+                <p role="alert" className="text-xs text-destructive">{initError}</p>
+                <Button size="sm" onClick={refreshQrSession}>Thử tạo lại mã QR</Button>
+              </div>
             ) : isExpired ? (
               /* Trạng thái mã QR hết hạn */
               <div className="flex flex-col items-center justify-center p-4 text-center space-y-3">
@@ -189,7 +225,7 @@ export function QrLoginPage() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={initQrSession}
+                  onClick={refreshQrSession}
                   className="gap-1.5 text-xs font-medium shadow-sm cursor-pointer"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
@@ -208,7 +244,7 @@ export function QrLoginPage() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={initQrSession}
+                  onClick={refreshQrSession}
                   className="gap-1.5 text-xs font-medium shadow-sm cursor-pointer"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
@@ -236,7 +272,7 @@ export function QrLoginPage() {
           </div>
 
           {/* Bộ đếm thời gian */}
-          {!isLoading && !isExpired && !isRejected && (
+          {qrData && !isLoading && !isExpired && !isRejected && (
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" />
               <span>

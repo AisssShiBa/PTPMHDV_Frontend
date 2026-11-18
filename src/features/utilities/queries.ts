@@ -1,6 +1,9 @@
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { UseQueryResult } from '@tanstack/react-query'
 import { paymentApi } from '@/features/payment'
 import type { ConfirmPaymentResult } from '@/features/payment'
+import { ORDER_SLOW_POLL_AFTER_MS } from './constants'
 import { utilitiesApi } from './api'
 import { orderPollInterval } from './status'
 import type {
@@ -39,12 +42,28 @@ export function useBillLookup(request: BillLookupRequest | null) {
   })
 }
 
+export type UtilityOrderQuery = UseQueryResult<UtilityOrderView, Error> & {
+  /** True once the order has stayed 60s in `PROVIDER_PENDING`. */
+  slowPolling: boolean
+}
+
 /**
  * GET /api/utilities/orders/:id
  * Polling follows the backend state machine and stops at any terminal status.
+ * While the provider keeps the order pending, polling slows down after 60s and
+ * the caller can render a "provider has not answered yet" note.
  */
-export function useUtilityOrder(orderId: string | null) {
-  return useQuery<UtilityOrderView, Error>({
+export function useUtilityOrder(orderId: string | null): UtilityOrderQuery {
+  const pendingRef = useRef<{ orderId: string | null; since: number | null }>({
+    orderId: null,
+    since: null
+  })
+  const [slowState, setSlowState] = useState<{ orderId: string | null; slow: boolean }>({
+    orderId: null,
+    slow: false
+  })
+
+  const query = useQuery<UtilityOrderView, Error>({
     queryKey: utilitiesKeys.order(orderId ?? ''),
     queryFn: ({ signal }) => {
       if (!orderId) throw new Error('Chưa có mã đơn hàng.')
@@ -52,7 +71,31 @@ export function useUtilityOrder(orderId: string | null) {
     },
     enabled: Boolean(orderId),
     staleTime: 0,
-    refetchInterval: (query) => orderPollInterval(query.state.data?.status)
+    refetchInterval: (current) => {
+      const status = current.state.data?.status
+      const now = Date.now()
+
+      // Timers and refs are reset per order without an effect on purpose.
+      if (pendingRef.current.orderId !== orderId) {
+        pendingRef.current = { orderId, since: null }
+      }
+      const alreadySlow = slowState.orderId === orderId && slowState.slow
+
+      if (status === 'PROVIDER_PENDING') {
+        if (pendingRef.current.since === null) pendingRef.current.since = now
+        const slow = now - pendingRef.current.since >= ORDER_SLOW_POLL_AFTER_MS
+        if (slow !== alreadySlow) setSlowState({ orderId, slow })
+        return orderPollInterval(status, pendingRef.current.since, now)
+      }
+
+      pendingRef.current.since = null
+      if (alreadySlow) setSlowState({ orderId, slow: false })
+      return orderPollInterval(status)
+    }
+  })
+
+  return Object.assign(query, {
+    slowPolling: slowState.orderId === orderId && slowState.slow
   })
 }
 
