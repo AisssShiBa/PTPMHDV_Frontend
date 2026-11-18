@@ -36,16 +36,14 @@ Confirmed and now encoded in the contract:
   the field is `expiresIn` (seconds), not `expiresInSeconds`.
 - `GET /auth/pin/status` returns `{ hasPin, isLocked, remainingLockSeconds }`.
 
-Still to fix or confirm:
+Resolved locally:
 
-- **QR polling secret mismatch (bug).** The Backend reads the polling secret from
-  `?pollSecret=` or the `x-poll-secret` header. `src/features/auth/api/auth.api.ts`
-  sends `?secret=`, which the Backend ignores and rejects with `400 BAD_REQUEST`.
-  The contract documents `pollSecret`. Fix the client query name (or add a
-  Backend alias) before shipping QR sign-in.
-- **QR status enum mismatch (bug).** Backend statuses are exactly
-  `PENDING | APPROVED | REJECTED`; an expired session is `410 QR_EXPIRED`.
-  The FE type also lists `SCANNED | CONFIRMED | EXPIRED`, which never occur.
+- QR polling now sends `pollSecret` in the query and `x-poll-secret` header,
+  matching the Backend contract.
+- `QrStatusResponse.status` now models the real Backend values
+  `PENDING | APPROVED | REJECTED`; an expired session remains the HTTP 410
+  `QR_EXPIRED` error path. Legacy `SCANNED | CONFIRMED | EXPIRED` values remain
+  only in mock fixtures for compatibility and are not accepted from the API.
 - Confirm the exact `AuthUser` fields the FE may rely on (`id`, `username`,
   `email`, `firstName`, `lastName`, `role` are documented).
 - `/admin/*` paths, query parameters and bodies are confirmed. The KYC `status`

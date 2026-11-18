@@ -1,6 +1,6 @@
 {
   "status": "MOCK_HTTP_BROWSER_PASS",
-  "testedAt": "2026-11-12T17:03:37.532Z",
+  "testedAt": "2026-11-17T15:16:17.962Z",
   "checks": [
     "GET /me null is the only unregistered state, authenticated session restored",
     "One strict registration POST for double click, PENDING from refetched /me, real owner authorization and duplicate protection where live",
@@ -16,7 +16,11 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
@@ -28,7 +32,11 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
@@ -48,7 +56,11 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
@@ -61,6 +73,26 @@
     {
       "method": "GET",
       "path": "/api/merchants/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/a8350406-4a47-4817-8004-1bef87e683c4/outlets"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
@@ -72,7 +104,11 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
@@ -84,11 +120,19 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",
       "path": "/api/merchants/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/merchants/a8350406-4a47-4817-8004-1bef87e683c4/outlets"
     },
     {
       "method": "POST",
@@ -96,19 +140,11 @@
     },
     {
       "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000001/balance"
+      "path": "/api/notifications/me"
     },
     {
       "method": "GET",
-      "path": "/api/merchants/me"
-    },
-    {
-      "method": "POST",
-      "path": "/api/auth/refresh"
-    },
-    {
-      "method": "GET",
-      "path": "/api/wallets/10000000-0000-4000-8000-000000000002/balance"
+      "path": "/api/wallets/me"
     },
     {
       "method": "GET",

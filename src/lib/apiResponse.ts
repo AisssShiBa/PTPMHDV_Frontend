@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
 
 export interface ApiErrorObject {
   code: string
@@ -14,8 +14,17 @@ export interface ApiResponse<T> {
   message?: string | null
 }
 
+type ApiErrorResponse = ApiResponse<unknown> & {
+  code?: string
+  details?: unknown
+}
+
+export function isApiAxiosError(error: unknown): error is AxiosError<ApiErrorResponse> {
+  return axios.isAxiosError<ApiErrorResponse>(error)
+}
+
 export function errorDetails<T = unknown>(error: unknown): T | undefined {
-  if (axios.isAxiosError(error)) {
+  if (isApiAxiosError(error)) {
     return (error.response?.data as ApiResponse<unknown> | undefined)?.error?.details as T | undefined
   }
   return undefined
@@ -31,14 +40,13 @@ export function unwrap<T>(body: ApiResponse<T>): T {
 
 export function errorCode(error: unknown): string | undefined {
   if (error instanceof Error && ['FundingError', 'MerchantError'].includes(error.name) && 'code' in error && typeof error.code === 'string') return error.code
-  return axios.isAxiosError<ApiResponse<unknown>>(error) ? error.response?.data?.error?.code : undefined
+  return isApiAxiosError(error) ? error.response?.data?.error?.code : undefined
 }
 
 const errorMessages: Record<string, string> = {
     MERCHANT_NOT_APPROVED: 'Đối tác chưa được duyệt. Vui lòng tải lại trạng thái.',
     MERCHANT_INVALID_RESPONSE: 'Phản hồi đối tác chưa hợp lệ. Vui lòng kiểm tra trạng thái trước khi gửi lại.',
     MERCHANT_INVALID_INPUT: 'Thông tin đăng ký chưa hợp lệ. Vui lòng kiểm tra lại.',
-    PIN_NOT_SETUP: 'Tài khoản chưa có mã PIN giao dịch. Vui lòng thiết lập trước khi xác nhận.',
     INVALID_PIN: 'Mã PIN không đúng. Vui lòng nhập lại.',
     PIN_INVALID: 'Mã PIN không đúng. Vui lòng nhập lại.',
     TRANSACTION_TOKEN_EXPIRED: 'Xác thực đã hết hạn. Chỉ nhập PIN mới khi máy chủ xác nhận lệnh vẫn chờ xác nhận.',
@@ -76,6 +84,7 @@ const errorMessages: Record<string, string> = {
     CONCURRENT_UPDATE: 'Hồ sơ vừa được cập nhật. Vui lòng tải lại trước khi gửi.',
     INVALID_CREDENTIALS: 'Tên đăng nhập hoặc mật khẩu không đúng.',
     PIN_LOCKED: 'Mã PIN đã bị tạm khóa do nhập sai nhiều lần. Vui lòng thử lại sau.',
+    PIN_NOT_SETUP: 'Bạn chưa thiết lập mã PIN giao dịch. Vui lòng cài đặt mã PIN trước.',
     LIMIT_EXCEEDED: 'Giao dịch vượt quá hạn mức cho phép. Vui lòng nâng cấp gói KYC.',
     RATE_LIMIT_EXCEEDED: 'Bạn thao tác quá nhanh. Vui lòng đợi một lát rồi thử lại.',
     INSUFFICIENT_FUNDS: 'Số dư khả dụng trong ví không đủ để thực hiện giao dịch.',
@@ -91,12 +100,17 @@ const errorMessages: Record<string, string> = {
 
 function localizedErrorMessage(error: unknown): string {
   const code = errorCode(error)
+  if (error instanceof Error && ['FundingError', 'MerchantError'].includes(error.name)) {
+    const message = code && errorMessages[code] ? errorMessages[code] : 'Chưa thể hoàn tất yêu cầu. Vui lòng kiểm tra trạng thái.'
+    const id = 'requestId' in error && typeof error.requestId === 'string' ? error.requestId : undefined
+    return id && /^[a-zA-Z0-9_.:-]{1,128}$/.test(id) ? `${message} Mã yêu cầu: ${id}` : message
+  }
   if (code) {
     if (Object.hasOwn(errorMessages, code)) return errorMessages[code]
     if (code.startsWith('TXN_TOKEN_')) return 'Mã xác thực giao dịch không hợp lệ hoặc đã hết hạn.'
   }
 
-  if (axios.isAxiosError(error)) {
+  if (isApiAxiosError(error)) {
     if (!error.response) return 'Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.'
     switch (error.response.status) {
       case 400: return 'Thông tin chưa hợp lệ. Vui lòng kiểm tra các trường và thử lại.'

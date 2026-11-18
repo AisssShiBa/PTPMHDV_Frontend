@@ -19,12 +19,15 @@ type PinLock = number | 'unknown' | null
 function pinFailureDetails(error: unknown) {
   const details = errorDetails<unknown>(error)
   const record = details && typeof details === 'object' ? details : {}
-  const remaining = 'remainingAttempts' in record ? record.remainingAttempts : undefined
+  const anyErr = error && typeof error === 'object' ? (error as Record<string, unknown>) : undefined
+  const resData = (anyErr?.response as { data?: { error?: { code?: string; details?: Record<string, unknown>; lockedUntil?: string } } } | undefined)?.data
+  const errDetails = (resData?.error?.details || record) as Record<string, unknown> | undefined
+  const remaining = errDetails?.remainingAttempts ?? errDetails?.attemptsRemaining
   const remainingAttempts = typeof remaining === 'number' && Number.isInteger(remaining) && remaining >= 0
     ? remaining : undefined
-  const timestamp = 'lockedUntil' in record && typeof record.lockedUntil === 'string'
-    ? Date.parse(record.lockedUntil) : NaN
-  const seconds = 'remainingSeconds' in record ? record.remainingSeconds : undefined
+  const lockTime = resData?.error?.lockedUntil || (record && 'lockedUntil' in record && typeof record.lockedUntil === 'string' ? record.lockedUntil : undefined)
+  const timestamp = typeof lockTime === 'string' ? Date.parse(lockTime) : NaN
+  const seconds = 'remainingSeconds' in (errDetails || {}) ? (errDetails as { remainingSeconds?: number }).remainingSeconds : undefined
   const deadline: PinLock = Number.isFinite(timestamp) ? timestamp
     : typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0
       ? Date.now() + seconds * 1000 : 'unknown'
@@ -206,6 +209,8 @@ function PinModalSession({
         paymentId,
         amount
       })
+      if (!active.current) return
+      setPin(Array(6).fill(''))
 
       // Deliver the server's single-use, 60-second token only to its active session.
       if (!isCurrentSession()) return
@@ -228,7 +233,7 @@ function PinModalSession({
       } else if (code === 'INVALID_PIN' && remainingAttempts !== undefined) {
         setErrorMsg(`Mã PIN không chính xác. Bạn còn ${remainingAttempts} lần thử.`)
       } else {
-        setErrorMsg(errorMessage(axios.isAxiosError(err) ? err : undefined))
+        setErrorMsg(errorMessage(err))
       }
 
       if (!isCurrentSession()) return

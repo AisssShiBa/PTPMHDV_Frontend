@@ -78,3 +78,24 @@ Video là các đoạn CDP sau đăng nhập, có cắt để loại màn creden
 - Khoa: active `/app/transfer` còn demo, thiếu paymentId binding, còn timer receipt/fallback money. API/P2P tests không thay kiểm UI; xem review local. Chốt mapping K18 cuối với owner.
 - VNPAY sandbox thật NOT_RUN: thiếu terminal/return reachable/exact deployment endpoint; không bịa cấu hình.
 - Review chéo/commit/push/PR/merge chưa thực hiện. Không gọi full Phase 7–8 DoD đã đạt; không giao reviewer một báo cáo mock dưới nhãn live.
+
+## Cập nhật nghiệm thu 15/11/2026
+
+Đã chạy lại trên source hiện tại và DB/Compose acceptance cô lập:
+
+| Hạng mục | Kết quả | Bằng chứng |
+|---|---|---|
+| Backend phase4: Compose, health, seed N20, S11–S13, K1, B6-1..B6-6 | **19 PASS, 0 FAIL, 0 BLOCKED** | `PTPMHDV_Backend/.cache/acceptance-week2/finvault-acceptance-ce853af494ce/result.json` |
+| Payment top-up/VNPAY/cash-out backend | **34/34 PASS** | `services/payment-service/tests/topup-create.test.ts`, `topup-vnpay-ipn.test.ts`, `cashout-state-machine.test.ts` |
+| N20 seed unit | **8/8 PASS** | `tests/acceptance/week4/seed-nguyen.test.mjs` |
+| Cash-out browser synthetic | **PASS** | `tests/cashout-browser.mjs` |
+| Merchant browser synthetic | **PASS** | `tests/merchant-browser.mjs` |
+
+Các sửa/fix đã ghi nhận trong lần chạy này gồm: loader secrets `.cjs`, retry migration/storage/broker, healthcheck Docker, polling provisioning profile, trả lại giá trị từ helper `until()`, và bổ sung secret files cho regression harness. Không có credential, PIN, token hoặc signed URL được đưa vào evidence.
+
+### Trạng thái còn mở
+
+- Top-up browser **live** cần chạy cùng FE/BE stack; lần chạy riêng không có backend trả HTTP 503. Synthetic browser evidence không thay thế live.
+- H18 Profile/KYC browser live với Admin approve/reject chưa chạy trong revision này.
+- VNPAY sandbox thật: **NOT_RUN**, vì chưa có endpoint/merchant credentials.
+- K03/K04-REVIEW, demo 2 lượt và review/merge owner vẫn cần phối hợp nhóm.
