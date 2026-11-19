@@ -38,6 +38,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       if (refreshInFlight) await refreshInFlight
+      // A replacement session invalidates this attempt before it can change the refresh cookie.
+      if (current !== generation) return false
 
       const session = await authApi.signIn({ username, password })
 
@@ -50,7 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       toast.success('Đăng nhập thành công')
       return true
     } catch (error) {
-      toast.error(errorMessage(error))
+      if (current === generation) toast.error(errorMessage(error))
       return false
     } finally {
       set({ loading: false })

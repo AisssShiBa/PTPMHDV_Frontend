@@ -133,9 +133,10 @@ export const authApi = {
    * 6. Khởi tạo phiên quét mã QR Đăng nhập (Web)
    * Endpoint: POST /api/auth/qr-login/init
    * Khớp chính xác backend: trả về { qrId, nonce, pollSecret, expiresAt }
+   * signal cho phép caller hủy request khi rời màn hoặc thay phiên QR.
    */
-  async initQrLogin(): Promise<QrInitResponse> {
-    const res = await api.post<ApiResponse<QrInitResponse>>('/auth/qr-login/init', {})
+  async initQrLogin(signal?: AbortSignal): Promise<QrInitResponse> {
+    const res = await api.post<ApiResponse<QrInitResponse>>('/auth/qr-login/init', {}, { signal })
     const data = unwrap(res.data)
     return {
       ...data,
@@ -148,11 +149,13 @@ export const authApi = {
    * 7. Polling kiểm tra trạng thái phiên mã QR
    * Endpoint: GET /api/auth/qr-login/:id/status
    * Khớp chính xác backend: gửi pollSecret qua cả query parameter và header x-poll-secret
+   * Truyền signal từ queryFn để hủy request khi query bị hủy.
    */
-  async getQrStatus(qrId: string, pollSecret: string): Promise<QrStatusResponse> {
+  async getQrStatus(qrId: string, pollSecret: string, signal?: AbortSignal): Promise<QrStatusResponse> {
     const res = await api.get<ApiResponse<QrStatusResponse>>(
       `/auth/qr-login/${encodeURIComponent(qrId)}/status`,
       {
+        signal,
         params: { pollSecret },
         headers: { 'x-poll-secret': pollSecret }
       }
