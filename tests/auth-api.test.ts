@@ -1,7 +1,12 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { setImmediate as nextTurn } from 'node:timers/promises'
+import { MutationObserver, QueryClient, onlineManager } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { AxiosError, isCancel, type InternalAxiosRequestConfig } from 'axios'
 import api from '../src/lib/axios'
+import { authApi } from '../src/features/auth/api/auth.api'
+import { qrLoginMutationOptions } from '../src/features/auth/api/auth.queries'
 import { useAuthStore } from '../src/features/auth/stores/useAuthStore'
 import { userService } from '../src/features/user/services/userService'
 import { merchantService } from '../src/features/merchant/services/merchantService'
@@ -40,6 +45,66 @@ test('failed signin returns false so the form does not navigate', async () => {
   api.defaults.adapter = async (config) => reject(config, 401)
   assert.equal(await useAuthStore.getState().signIn('user', 'wrong'), false)
   assert.equal(useAuthStore.getState().accessToken, null)
+})
+
+test('signin waiting for refresh is not sent after a replacement session', async () => {
+  session()
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => { release = resolve })
+  let started!: () => void
+  const entered = new Promise<void>((resolve) => { started = resolve })
+  const calls: string[] = []
+  api.defaults.adapter = async (config) => {
+    calls.push(config.url!)
+    if (config.url === '/auth/refresh') {
+      started(); await gate
+    }
+    return response(config, { success: true, data: { user, accessToken: 'old-session-response' } })
+  }
+
+  const refreshing = useAuthStore.getState().refresh()
+  await entered
+  const signingIn = useAuthStore.getState().signIn('user', 'password')
+  const replacement = { user: { ...user, id: '20000000-0000-4000-8000-000000000002' }, accessToken: 'replacement-token' }
+  useAuthStore.getState().setSession(replacement)
+  release()
+
+  assert.equal(await refreshing, false)
+  assert.equal(await signingIn, false)
+  assert.deepEqual(calls, ['/auth/refresh'])
+  assert.equal(useAuthStore.getState().user?.id, replacement.user.id)
+  assert.equal(useAuthStore.getState().accessToken, replacement.accessToken)
+  assert.equal(useAuthStore.getState().loading, false)
+})
+
+test('a stale signin failure is silent while a current failure still shows an error', async (t) => {
+  const errors = t.mock.method(toast, 'error', () => 'synthetic-toast')
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => { release = resolve })
+  let started!: () => void
+  const entered = new Promise<void>((resolve) => { started = resolve })
+  api.defaults.adapter = async (config) => {
+    assert.equal(config.url, '/auth/signin')
+    started(); await gate
+    return reject(config, 401)
+  }
+
+  const signingIn = useAuthStore.getState().signIn('user', 'wrong')
+  await entered
+  const replacement = { user: { ...user, id: '20000000-0000-4000-8000-000000000002' }, accessToken: 'replacement-token' }
+  useAuthStore.getState().setSession(replacement)
+  release()
+
+  assert.equal(await signingIn, false)
+  assert.equal(errors.mock.callCount(), 0)
+  assert.equal(useAuthStore.getState().user?.id, replacement.user.id)
+  assert.equal(useAuthStore.getState().accessToken, replacement.accessToken)
+  assert.equal(useAuthStore.getState().loading, false)
+
+  // Suppressing a stale failure must not hide errors from a current attempt.
+  api.defaults.adapter = async (config) => reject(config, 401)
+  assert.equal(await useAuthStore.getState().signIn('user', 'wrong'), false)
+  assert.equal(errors.mock.callCount(), 1)
 })
 
 test('initialization restores the session once even with duplicate mount effects', async () => {
@@ -147,6 +212,104 @@ test('old account request is never retried with a new account session', async ()
   }
   await assert.rejects(api.get('/users/profile'))
   assert.equal(calls, 1)
+})
+
+test('QR creation fails offline without pausing and reconnect requires explicit retry', async () => {
+  const previousOnline = onlineManager.isOnline()
+  const previousInit = authApi.initQrLogin
+  const client = new QueryClient()
+  const observer = new MutationObserver(client, qrLoginMutationOptions)
+  const offlineError = new AxiosError('Synthetic offline failure', 'ERR_NETWORK')
+  const firstSignal = new AbortController().signal
+  let calls = 0
+  authApi.initQrLogin = async signal => {
+    calls++
+    assert.equal(signal, firstSignal)
+    throw offlineError
+  }
+  client.mount()
+  onlineManager.setOnline(false)
+  // Handle rejection immediately, including when checking a paused-regression variant.
+  const pending = observer.mutate(firstSignal).catch((error: unknown) => error)
+  try {
+    await nextTurn()
+    assert.equal(calls, 1, 'offline creation must reach the API instead of waiting for reconnect')
+    assert.equal(observer.getCurrentResult().isPaused, false)
+    assert.equal(await pending, offlineError)
+    assert.equal(observer.getCurrentResult().status, 'error')
+    onlineManager.setOnline(true)
+    await nextTurn()
+    assert.equal(calls, 1, 'reconnect must not automatically create another QR')
+    assert.equal(observer.getCurrentResult().status, 'error')
+
+    const retrySignal = new AbortController().signal
+    const qr = { qrId: 'synthetic-fresh-qr', nonce: 'synthetic-nonce', pollSecret: 'synthetic-secret', expiresAt: new Date(Date.now() + 120000).toISOString() }
+    authApi.initQrLogin = async signal => {
+      calls++
+      assert.equal(signal, retrySignal)
+      return qr
+    }
+    assert.deepEqual(await observer.mutate(retrySignal), qr)
+    assert.equal(calls, 2)
+    assert.equal(observer.getCurrentResult().status, 'success')
+  } finally {
+    // Resume a queued regression while the API is still mocked, then restore global state.
+    onlineManager.setOnline(true)
+    await pending
+    observer.reset()
+    client.unmount()
+    client.clear()
+    authApi.initQrLogin = previousInit
+    onlineManager.setOnline(previousOnline)
+  }
+})
+
+test('QR init and polling forward cancellation and reject a late response after abort', async () => {
+  const operations = [
+    { run: (signal: AbortSignal) => authApi.initQrLogin(signal), url: '/auth/qr-login/init' },
+    { run: (signal: AbortSignal) => authApi.getQrStatus('synthetic/qr', 'synthetic-secret', signal), url: '/auth/qr-login/synthetic%2Fqr/status' }
+  ]
+  for (const operation of operations) {
+    const controller = new AbortController()
+    let entered!: () => void
+    let release!: () => void
+    const started = new Promise<void>(resolve => { entered = resolve })
+    const gate = new Promise<void>(resolve => { release = resolve })
+    api.defaults.adapter = async config => {
+      entered()
+      assert.equal(config.url, operation.url)
+      assert.equal(config.signal, controller.signal)
+      if (config.method === 'get') {
+        assert.deepEqual(config.params, { pollSecret: 'synthetic-secret' })
+        assert.equal(config.headers.get('x-poll-secret'), 'synthetic-secret')
+      }
+      await gate
+      return response(config, { success: true, data: { status: 'PENDING' } })
+    }
+    const rejected = assert.rejects(operation.run(controller.signal), error => isCancel(error))
+    try {
+      await started
+      controller.abort()
+      release()
+      await rejected
+    } finally {
+      release()
+      await rejected.catch(() => {})
+    }
+  }
+})
+
+test('already-aborted QR init and polling never reach the adapter', async () => {
+  let calls = 0
+  api.defaults.adapter = async config => {
+    calls++
+    return response(config, { success: true, data: { status: 'PENDING' } })
+  }
+  const controller = new AbortController()
+  controller.abort()
+  await assert.rejects(authApi.initQrLogin(controller.signal), error => isCancel(error))
+  await assert.rejects(authApi.getQrStatus('synthetic-qr', 'synthetic-secret', controller.signal), error => isCancel(error))
+  assert.equal(calls, 0)
 })
 
 test('KYC service sends both images and idNumber to the current-user endpoint with bearer auth', async () => {
