@@ -44,6 +44,10 @@ export function errorCode(error: unknown): string | undefined {
 }
 
 const errorMessages: Record<string, string> = {
+    TOPUP_OUTCOME_UNKNOWN: 'Chưa xác định được kết quả lệnh nạp. Vui lòng kiểm tra trạng thái trước khi gửi lại.',
+    TOPUP_PROCESSING: 'Lệnh nạp đang được xử lý. Vui lòng kiểm tra trạng thái, không gửi lại yêu cầu.',
+    SERVICE_UNAVAILABLE: 'Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.',
+    KYC_OUTCOME_UNKNOWN: 'Chưa xác định được kết quả cập nhật hồ sơ. Vui lòng kiểm tra trạng thái trước khi gửi lại.',
     MERCHANT_NOT_APPROVED: 'Đối tác chưa được duyệt. Vui lòng tải lại trạng thái.',
     MERCHANT_INVALID_RESPONSE: 'Phản hồi đối tác chưa hợp lệ. Vui lòng kiểm tra trạng thái trước khi gửi lại.',
     MERCHANT_INVALID_INPUT: 'Thông tin đăng ký chưa hợp lệ. Vui lòng kiểm tra lại.',
@@ -124,7 +128,11 @@ function localizedErrorMessage(error: unknown): string {
       case 423: return 'Tài khoản hoặc tính năng đang bị tạm khóa. Vui lòng thử lại sau.'
       case 429: return 'Bạn thao tác quá nhanh. Vui lòng đợi một lát rồi thử lại.'
       case 500: return 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
+      case 502:
+      case 503:
+      case 504: return 'Máy chủ đang xử lý hoặc tạm gián đoạn. Vui lòng kiểm tra trạng thái.'
     }
+    return 'Không thể hoàn tất thao tác. Vui lòng thử lại.'
   }
 
   if (error instanceof Error && error.message) {

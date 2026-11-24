@@ -1,2 +1,4 @@
 // Feature: home
-export {}
+
+
+export { HomeLanding } from './components/HomeLanding'

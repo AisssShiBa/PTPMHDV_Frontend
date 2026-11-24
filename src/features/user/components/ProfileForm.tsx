@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { useAuthStore } from '@/features/auth'
 import { errorMessage } from '@/lib/apiResponse'
 import { buildProfileUpdate, createProfileSchema, profileDefaults, type ProfileFormValues } from '../schemas/user.schema'
-import { userService } from '../services/userService'
+import { userApi } from '../api/user.api'
 import type { UserProfile } from '../types/user.types'
 
 export function ProfileForm({ profile, onSaved }: { profile: UserProfile; onSaved: (profile: UserProfile) => void }) {
@@ -23,7 +23,7 @@ export function ProfileForm({ profile, onSaved }: { profile: UserProfile; onSave
     if (!Object.keys(payload).length) { toast.info('Không có thông tin thay đổi.'); return }
     busy.current = true
     try {
-      const saved = await userService.updateProfile(profile.authUserId, payload)
+      const saved = await userApi.updateProfile(profile.authUserId, payload)
       if (useAuthStore.getState().user?.id !== profile.authUserId) return
       reset(profileDefaults(saved))
       onSaved(saved)

@@ -161,7 +161,7 @@ describe('Reconciliation adjustment [N18]', () => {
     fireEvent.change(screen.getByLabelText(/Lý do điều chỉnh/), {
       target: { value: '  Bù lệch theo biên bản BB-01  ' }
     })
-    fireEvent.click(screen.getByRole('button', { name: /Ký duyệt & Tạo bút toán/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Xác nhận khôi phục số dư/ }))
 
     await waitFor(() => expect(calls).toBe(1))
     expect(body).toEqual({
@@ -195,7 +195,7 @@ describe('Reconciliation adjustment [N18]', () => {
     fireEvent.change(screen.getByLabelText(/Lý do điều chỉnh/), {
       target: { value: 'Bù lệch hợp lệ' }
     })
-    fireEvent.click(screen.getByRole('button', { name: /Ký duyệt & Tạo bút toán/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Xác nhận khôi phục số dư/ }))
 
     expect(
       await screen.findByText('Số tiền phải là số nguyên dương, không có dấu chấm hay dấu âm.')
@@ -224,7 +224,7 @@ describe('Reconciliation adjustment [N18]', () => {
       target: { value: 'Bù lệch theo biên bản BB-01' }
     })
     const before = detailCalls
-    fireEvent.click(screen.getByRole('button', { name: /Ký duyệt & Tạo bút toán/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Xác nhận khôi phục số dư/ }))
 
     expect(
       await screen.findByText(/Bất thường này đã được điều chỉnh trước đó/)
@@ -252,7 +252,7 @@ describe('Reconciliation adjustment [N18]', () => {
     fireEvent.change(screen.getByLabelText(/Lý do điều chỉnh/), {
       target: { value: 'Bù lệch theo biên bản BB-01' }
     })
-    fireEvent.click(screen.getByRole('button', { name: /Ký duyệt & Tạo bút toán/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Xác nhận khôi phục số dư/ }))
 
     expect(
       await screen.findByText(/Chưa rõ kết quả điều chỉnh/)
@@ -298,7 +298,7 @@ describe('Reconciliation adjustment [N18]', () => {
     fireEvent.change(screen.getByLabelText(/Lý do điều chỉnh/), {
       target: { value: 'Bù lệch theo biên bản BB-01' }
     })
-    const submit = screen.getByRole('button', { name: /Ký duyệt & Tạo bút toán/ })
+    const submit = screen.getByRole('button', { name: /Xác nhận khôi phục số dư/ })
     fireEvent.click(submit)
     fireEvent.click(submit)
     await waitFor(() => expect(calls).toBe(1))
@@ -320,6 +320,9 @@ describe('Reconciliation error messages and cache keys [N18]', () => {
       'chưa rõ kết quả'
     )
     expect(reconciliationErrorMessage(withCode('WALLET_TIMEOUT'))).not.toBe('raw english')
+    expect(reconciliationErrorMessage(withCode('REPAIR_CONFLICTS_WITH_HOLDS'))).toContain('tiền đang giữ')
+    expect(reconciliationErrorMessage(withCode('DIRECTION_MISMATCH'))).toContain('chênh lệch hiện tại')
+    expect(reconciliationErrorMessage(withCode('AMOUNT_MISMATCH'))).toContain('chênh lệch hiện tại')
   })
 
   it('query keys tách danh sách và chi tiết báo cáo', () => {

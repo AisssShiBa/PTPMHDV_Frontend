@@ -1,5 +1,19 @@
 # Phase 5 — Merchant onboarding/status (2026-11-13)
 
+## Hiện trạng bàn giao 23/11/2026 — H19
+
+Hữu → Đạt/Nguyên. Phần Phase 5/6/8 bên dưới là evidence lịch sử theo revision đã ghi, không phải lượt regression hôm nay.
+
+- `/merchant/register` và `/merchant` ghép component qua `features/merchant/index.ts`. GET `/api/merchants/me`: chỉ data null là chưa đăng ký; lỗi 404/network không được biến thành form đăng ký.
+- Đăng ký POST `/api/merchants/register`; công cụ POST `/api/merchants/{id}/outlets`, GET `.../outlets/{outletId}/qr`, POST `.../api-keys`, DELETE `.../api-keys/{keyId}`. Contract/cache và hook của tool xem [merchant-tools.md](merchant-tools.md).
+- Query merchant có account key; bỏ kết quả cũ/abort khi đổi owner. PENDING/REJECTED/APPROVED theo server; POST chưa rõ kết quả thì đọc lại `/me`. Secret key chỉ hiện ở response tạo, không ghi storage/log. QR outlet chỉ hiển thị trên Web.
+- Kiểm web: user chưa đăng ký → submit một lần → trạng thái server; merchant chưa APPROVED bị chặn thao tác; approved tạo outlet/QR/key, secret không đọc lại sau đóng/reload; user khác không đọc được tài nguyên.
+- Còn mở: phục hồi metadata sau mất response key; không tự thêm API list keys. Chưa có regression H19 mới trong lượt tài liệu. [Contract hiện tại](../CONTRACT_OPEN_QUESTIONS.md); không sửa nghiệp vụ Merchant trong lượt này.
+
+### Lịch sử và bằng chứng Merchant
+
+---
+
 ## Kết quả
 
 Đã nối đăng ký và portal vào API thật, tái dùng MerchantRegisterForm/MerchantStatusCard. Không còn form Highlands mặc định, setTimeout báo đăng ký giả, isRegistered/merchantId hardcoded, số liệu doanh thu/voucher/webhook ping giả hoặc thao tác toast không gọi server.

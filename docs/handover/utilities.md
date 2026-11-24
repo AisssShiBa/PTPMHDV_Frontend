@@ -1,5 +1,39 @@
 # Bàn giao Feature: Utilities (Nạp điện thoại & Thanh toán hóa đơn)
 
+## Cập nhật N16/N19 ngày 23/11/2026
+
+Đã thêm UtilityOutbox và migration `202611230001_utility_outbox`. SUCCESS,
+FAILED/REFUND_FAILED và REFUNDED ghi sự kiện cùng transaction với trạng thái/lịch
+sử. Publisher có lease, SKIP LOCKED, broker confirm và eventId ổn định khi retry.
+Notification đã đăng ký schema/binding/handler ba utility.order_*; Utilities
+nhận payment.refunded để cập nhật REFUNDED ngay, giữ recovery làm đường dự phòng.
+
+42 test Utilities trên PostgreSQL riêng PASS, gồm rollback thật khi outbox lỗi,
+claim đồng thời và lost acknowledgement/dedupe. Live UI T1/T2 kiểm tiền, trạng
+thái và thông báo. A7 dừng RabbitMQ, chạy recovery thật cho provider timeout,
+khôi phục broker và replay cùng eventId: chỉ một Notification. Scope utilities kiểm cả DB và owner WebSocket: hai mẫu 372ms/90ms,
+không phải p95. File result ghi rõ transport; không gọi API-only là UI test.
+
+Deploy consumer/schema trước, rồi migration và Utilities image mới. Không tạo
+sự kiện giả cho đơn lịch sử; không sửa chiết khấu 3% thành giảm tiền ví.
+
+
+## Hiện trạng bàn giao 23/11/2026 — N16
+
+Nguyên → Đạt/Hữu/Khoa. Phần kỹ thuật phía dưới mô tả luồng hiện có; các trạng thái nghiệm thu lịch sử không thay T1/T2 trên revision mới.
+
+- `/app/utilities` → UtilitiesWorkspace qua `features/utilities/index.ts`. Adapter `features/utilities/api.ts`, TanStack Query trong `queries.ts`, factory `utilitiesKeys`; giữ nhãn Mô phỏng.
+- POST `/api/utilities/topup`, GET `/api/utilities/bills/lookup`, POST `/api/utilities/bills/pay`, GET `/api/utilities/orders/{id}`; confirm qua Payment với X-Transaction-Token. Amount là string; bill dùng số tiền lookup, không cho UI tự thay.
+- Create giữ Idempotency-Key theo intent, khóa gửi; PinModal dùng paymentId/amount server trả. Unknown confirm chuyển đọc order, không gửi lại token. Order polling dừng ở terminal; invalidate Wallet khi trạng thái xác định.
+- Các trạng thái loading/error/empty/success của ví/lookup và các trạng thái đơn được mô tả bên dưới. REFUNDED cần đối chiếu tiền thật/ledger, không chỉ đổi nhãn UI. Chiết khấu 3% hiện ghi nhận, không phải giảm tiền thanh toán.
+- Gateway source đã định tuyến utilities đúng service. Không dùng câu hỏi “có cần service token FE riêng” làm blocker: Web gửi Bearer qua Axios; Gateway tự thiết lập identity nội bộ.
+- Kiểm web: T1 số đuôi 00 thành công; T2 đuôi 11 theo fixture provider dẫn tới hoàn; kiểm balance/ledger, double-click và retry cùng key. Chưa có T1/T2 UI mới trong lượt tài liệu; không tự kết luận event utility đã phát chỉ vì có mapper.
+- Còn mở: recovery reload mất orderId khi chưa có list API đã xác nhận, và kiểm event/latency theo N19. [Contract hiện tại](../CONTRACT_OPEN_QUESTIONS.md).
+
+### Chi tiết triển khai và ghi nhận trước cập nhật
+
+---
+
 ## 1. Trang và Component đã dựng
 
 - **Routes**:
@@ -86,7 +120,7 @@
 - [ ] **Không có endpoint danh mục nhà cung cấp**: `EVN`/`SAWACO`/`FPT` là bộ mã sandbox cố định trong `constants.ts`; backend chỉ validate hình thức chuỗi `[A-Za-z0-9._-]{2,32}`.
 - [ ] **Không có trường nhà mạng / địa chỉ / hạn thanh toán**: API topup chỉ nhận `phone` + `amount`; bill lookup chỉ trả `provider`, `customerCode`, `customerName`, `amount`, `period`. Vì vậy bộ chọn nhà mạng, địa chỉ và hạn thanh toán hardcode của bản thiết kế đã bị bỏ (xem mục 4).
 - [ ] **`amountFormatted`** có trong response mẫu nhưng không bắt buộc; UI luôn tự format từ `amount` bằng `formatVnd` để tránh lệch đơn vị.
-- [ ] **Gateway token**: frontend không tự lấy token sang Gateway; mọi request đi qua `lib/axios` hiện có (Bearer access token trong bộ nhớ). Nếu Gateway yêu cầu service token riêng cho `/api/utilities` thì cần bổ sung ở tầng hạ tầng, không phải feature này.
+- [x] **Gateway identity**: Web gửi Bearer access token trong bộ nhớ qua `lib/axios`; Gateway xác thực và thiết lập identity nội bộ cho Utilities. FE không tự tạo service token. Định tuyến Utilities đã sửa trong source; request/UI live vẫn cần kiểm riêng.
 - [ ] **Hạn mức KYC**: backend trả `LIMIT_EXCEEDED`; UI chỉ map thông báo, chưa hiển thị trước hạn mức còn lại vì payment-service chưa có endpoint tra hạn mức dùng chung.
 
 ## 4. Thay đổi giao diện sau khi gắn API (nếu có)

@@ -9,7 +9,7 @@ import { deflateSync } from 'node:zlib'
 import { openBrowser, until } from './browser-support.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
-const backend = resolve(root, '../PTPMHDV_Backend')
+const backend = resolve(root, '../Backend')
 const runFile = process.env.LIVE_ACCEPTANCE_RUN_FILE
 assert.ok(runFile, 'Set LIVE_ACCEPTANCE_RUN_FILE to the fresh backend acceptance run.json')
 const run = JSON.parse(readFileSync(runFile, 'utf8'))

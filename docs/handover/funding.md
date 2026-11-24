@@ -1,5 +1,39 @@
 # Funding — Phase 2 (2026-11-12)
 
+## Nghiệm thu hiện tại 23/11/2026
+
+`funding-live.mjs` PASS trên Gateway thật với tài khoản tổng hợp: alias/string/
+idempotency, forged HMAC 97, return chỉ đọc, 20 IPN trùng chỉ một credit; ba kết
+quả rút SUCCEEDED/FAILED/PAYOUT_PENDING, token replay 409, ownership và ledger.
+`phase3-live.mjs` scope cashout PASS cả ba kết quả qua UI: nhấn đúp chỉ một lệnh,
+PIN thật, kiểm balance/held/ledger; đọc lại PENDING chỉ GET. Bank là stand-in chỉ
+bật trong override test, không phải VNPAY hoặc ngân hàng thật.
+
+Gateway đã sửa GET trạng thái không tiêu hao quota POST cashout; 41 security
+test PASS. Cấu hình sản phẩm vẫn fail closed nếu provider chưa được thiết lập.
+Đường dẫn harness đã đổi sang Backend và hỗ trợ npm.cmd trên Windows.
+
+N17 manual topup đã triển khai; xem [admin.md](admin.md). Sandbox VNPAY thật còn
+NOT_RUN vì IPN/return cấu hình hiện tại là localhost, không dùng synthetic PASS
+để thay nghiệm thu sandbox.
+
+
+## Hiện trạng bàn giao 23/11/2026 — H16/H17
+
+Hữu → Đạt/Khoa/Nguyên. Nội dung Phase 2–8 phía dưới là lịch sử; dùng mục này và [topup.md](topup.md), [cashout.md](cashout.md) để ghép vào source hiện tại.
+
+- `/app/topup`, `/app/topup/result`, `/app/withdraw`; public entry `features/funding/index.ts` export TopupWorkspace/CashOutWorkspace, status query/hook. Adapter ở `features/funding/api/funding.api.ts`; factory `fundingKeys` ở `api/funding.queries.ts` phân theo account.
+- FE create nạp hiện dùng POST `/api/payments/topups` với amount string và Idempotency-Key; GET cùng nhóm theo UUID/list. Backend còn alias `/api/funding/vnpay/create`; không ghi route FE đó là bịa hoặc amount bắt buộc number.
+- Rút: POST `/api/funding/cash-out`, POST `/{id}/confirm` với X-Transaction-Token và GET `/{id}` để phục hồi. PinModal nhận paymentId/amount từ create; không tự confirm lại token cũ. Giữ nhãn Mô phỏng.
+- Thành công/thất bại/processing lấy từ server, không tin return query để cộng tiền. Cache theo owner, khóa gửi, retry create cùng intent/key; không tự suy diễn kết quả timeout. Số dư Web qua Wallet `/me`; mô tả dùng route named-owner trong Phase 2 là lịch sử.
+- Kiểm web: nạp tạo URL đúng, return/F5 đọc trạng thái thật; cashout đuôi 000/111/222 cho C1–C3, kiểm balance/held/ledger và không double capture. Không chạy harness có reset lên dữ liệu nhóm.
+- Seed H15/N20 đã chạy thật trên Compose riêng ngày 22/11, gồm 3 topup synthetic IPN APPROVED và replay một lần. Không dùng kết quả đó để ghi VNPAY sandbox thật PASS hoặc C1–C3 UI mới PASS.
+- Còn mở: sandbox thật; cashout timeout create rồi reload mất UUID/key; owner review/rollout. [Contract hiện tại](../CONTRACT_OPEN_QUESTIONS.md) và [seed evidence](../../../Backend/tests/acceptance/README.md).
+
+### Lịch sử các Phase Funding
+
+---
+
 ## Kết quả và phạm vi
 
 Hoàn thành nền tảng FE dùng chung cho nạp/rút: DTO suy ra từ Zod, tiền chuỗi/BigInt, adapter duy nhất, query factory theo tài khoản, hook tạo lệnh và recovery. Chưa nghiệm thu nạp VNPAY sandbox hoặc rút live. Trang demo TopupPage/WithdrawPage được tích hợp ở Phase 3–4.

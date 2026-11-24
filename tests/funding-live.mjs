@@ -6,7 +6,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parseEnv } from 'node:util'
 const root = fileURLToPath(new URL('../', import.meta.url))
-const backend = resolve(root, '../PTPMHDV_Backend')
+const backend = resolve(root, '../Backend')
 assert.ok(process.env.LIVE_ACCEPTANCE_RUN_FILE, 'Provide isolated acceptance run.json')
 const runFile = resolve(process.env.LIVE_ACCEPTANCE_RUN_FILE)
 const run = JSON.parse(readFileSync(runFile, 'utf8'))

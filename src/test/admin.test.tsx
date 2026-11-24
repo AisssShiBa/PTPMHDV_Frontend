@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
@@ -52,7 +52,7 @@ const topup: AdminTopup = {
   amount: '100000.00',
   code: 'TOPUP-1',
   status: 'PENDING',
-  expiresAt: '2026-11-12T10:00:00.000Z',
+  expiresAt: new Date(Date.now() + 60000).toISOString(),
   approvedBy: null,
   approvedAt: null,
   rejectReason: null,
@@ -127,6 +127,18 @@ describe('Admin KYC schemas [N17]', () => {
     expect(errorMessage(axiosError(409, 'INVALID_TRANSITION'))).toBe(
       'Trạng thái đã thay đổi. Vui lòng tải lại thông tin.'
     )
+  })
+})
+
+describe('Admin failure message regressions', () => {
+  it.each([
+    [503, 'SERVICE_UNAVAILABLE'], [503, 'KYC_OUTCOME_UNKNOWN'],
+    [502, 'UNKNOWN'], [503, 'UNKNOWN'], [504, 'UNKNOWN'], [501, 'UNKNOWN']
+  ])('localises HTTP %s / %s without raw Axios text', (status, code) => {
+    const message = errorMessage(axiosError(status as number, code as string))
+    expect(message).not.toContain('Request failed')
+    expect(message).not.toContain('raw english')
+    expect(message).toMatch(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i)
   })
 })
 
@@ -225,6 +237,75 @@ describe('Admin KYC UI [N17]', () => {
   })
 })
 
+describe('Admin KYC duplicate and unknown outcome regressions', () => {
+  it.each(['review', 'tier'] as const)('blocks two synchronous %s submissions before React renders loading', async (operation) => {
+    let writes = 0
+    let release: (() => void) | undefined
+    const pending = new Promise<void>(resolve => { release = resolve })
+    server.use(
+      http.get('*/api/admin/kyc', () => HttpResponse.json({ success: true, data: { content: [kycItem], totalElements: 1, totalPages: 1 } })),
+      http[operation === 'review' ? 'post' : 'patch'](`*/api/admin/kyc/${userId}/${operation}`, async () => {
+        writes++
+        await pending
+        return HttpResponse.json({ success: true, data: { ...kycItem, kycStatus: 'APPROVED', kycTier: operation === 'review' ? 1 : 2 } })
+      })
+    )
+    renderWithClient(<AdminKycManager />)
+    await screen.findAllByText('Nguyễn Văn A')
+    fireEvent.click(screen.getByRole('button', { name: operation === 'review' ? 'Duyệt' : 'Nâng Cấp 2' }))
+    if (operation === 'tier') fireEvent.change(screen.getByLabelText('Lý do (bắt buộc, 1 đến 500 ký tự)'), { target: { value: 'Xác minh mô phỏng' } })
+    const form = screen.getByRole('button', { name: 'Xác nhận' }).closest('form')!
+    act(() => { form.requestSubmit(); form.requestSubmit() })
+    await waitFor(() => expect(writes).toBe(1))
+    release!()
+    await waitFor(() => expect(screen.queryByLabelText('Ghi chú duyệt (không bắt buộc, tối đa 500 ký tự)')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByPlaceholderText('Nhập lý do để lưu vào nhật ký kiểm toán')).not.toBeInTheDocument())
+    expect(writes).toBe(1)
+  })
+
+  it('keeps unknown writes locked; checks with GET only and unlocks after the exact profile confirms the intended outcome', async () => {
+    let writes = 0
+    let reads = 0
+    let applied = false
+    let readFails = false
+    server.use(
+      http.get('*/api/admin/kyc', () => {
+        reads++
+        if (readFails) return HttpResponse.json({ success: false, error: { code: 'SERVICE_UNAVAILABLE' } }, { status: 503 })
+        return HttpResponse.json({ success: true, data: { content: [{ ...kycItem, kycStatus: applied ? 'APPROVED' : 'PENDING', kycTier: applied ? 1 : 0 }], totalElements: 1, totalPages: 1 } })
+      }),
+      http.post(`*/api/admin/kyc/${userId}/review`, () => {
+        writes++
+        return HttpResponse.json({ success: false, error: { code: 'KYC_OUTCOME_UNKNOWN' } }, { status: 503 })
+      })
+    )
+    renderWithClient(<AdminKycManager />)
+    await screen.findAllByText('Nguyễn Văn A')
+    fireEvent.click(screen.getByRole('button', { name: 'Duyệt' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận' }))
+    await screen.findByText('Yêu cầu cập nhật hồ sơ chưa rõ kết quả. Các thao tác cập nhật đang bị khóa.')
+    expect(screen.getByRole('button', { name: 'Xác nhận' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Hủy' })).toBeDisabled()
+    expect(screen.getByPlaceholderText('Nhập lý do để lưu vào nhật ký kiểm toán')).toBeDisabled()
+    const before = reads
+    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra trạng thái hồ sơ' }))
+    await screen.findByText('Chưa xác minh được kết quả yêu cầu trước. Tiếp tục kiểm tra trạng thái; không gửi lại yêu cầu cập nhật.')
+    expect(reads).toBeGreaterThan(before)
+    expect(writes).toBe(1)
+    expect(screen.getByRole('button', { name: 'Xác nhận' })).toBeDisabled()
+    readFails = true
+    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra trạng thái hồ sơ' }))
+    await screen.findByText('Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.')
+    expect(screen.getByRole('button', { name: 'Xác nhận' })).toBeDisabled()
+    readFails = false
+    applied = true
+    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra trạng thái hồ sơ' }))
+    await waitFor(() => expect(screen.queryByText('Yêu cầu cập nhật hồ sơ chưa rõ kết quả. Các thao tác cập nhật đang bị khóa.')).not.toBeInTheDocument())
+    expect(writes).toBe(1)
+    expect(screen.queryByPlaceholderText('Nhập lý do để lưu vào nhật ký kiểm toán')).not.toBeInTheDocument()
+  })
+})
+
 describe('Admin KYC documents viewer [N17]', () => {
   it('tải ảnh qua endpoint audit và không ghi storage', async () => {
     localStorage.clear()
@@ -236,7 +317,7 @@ describe('Admin KYC documents viewer [N17]', () => {
           data: {
             frontUrl: 'https://cdn.example.com/front.jpg',
             backUrl: 'https://cdn.example.com/back.jpg',
-            expiresAt: '2026-11-12T10:00:00.000Z'
+            expiresAt: new Date(Date.now() + 60000).toISOString()
           }
         })
       )
@@ -252,6 +333,30 @@ describe('Admin KYC documents viewer [N17]', () => {
     expect(screen.getByAltText('CCCD mặt sau')).toBeInTheDocument()
     expect(localStorage.length).toBe(0)
     expect(sessionStorage.length).toBe(0)
+  })
+})
+
+describe('Admin KYC document expiry regression', () => {
+  it('removes expired images and requests fresh audited URLs only on explicit retry', async () => {
+    let reads = 0
+    server.use(http.get(`*/api/admin/kyc/${userId}/documents`, () => {
+      reads++
+      return HttpResponse.json({ success: true, data: { frontUrl: 'https://cdn.example.com/front.jpg', backUrl: 'https://cdn.example.com/back.jpg', expiresAt: new Date(Date.now() + 60000).toISOString() } })
+    }))
+    renderWithClient(<AdminKycDocumentsViewer userId={userId} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Xem hai mặt CCCD' }))
+    await screen.findByAltText('CCCD mặt trước')
+    const future = Date.now() + 61000
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(future)
+    try {
+      fireEvent(window, new Event('focus'))
+      expect(screen.queryByAltText('CCCD mặt trước')).not.toBeInTheDocument()
+      expect(screen.queryByAltText('CCCD mặt sau')).not.toBeInTheDocument()
+      expect(reads).toBe(1)
+      fireEvent.click(screen.getByRole('button', { name: 'Tải lại ảnh' }))
+      await screen.findByAltText('CCCD mặt sau')
+      expect(reads).toBe(2)
+    } finally { clock.mockRestore() }
   })
 })
 
@@ -309,6 +414,79 @@ describe('Admin Topups UI [N17]', () => {
         'Thao tác duyệt/từ chối thủ công đã bị tắt cho tích hợp VNPAY. Lệnh nạp được xử lý tự động qua IPN.'
       )
     ).toBeInTheDocument()
+  })
+})
+
+describe('Manual topup approval regressions', () => {
+  it.each(['approve', 'reject'] as const)('submits %s once and refreshes terminal state', async operation => {
+    let writes = 0
+    let status: AdminTopup['status'] = 'PENDING'
+    server.use(
+      http.get('*/api/payments/admin/topups', () => HttpResponse.json({ success: true, data: [{ ...topup, status }] })),
+      http.post(`*/api/payments/admin/topups/${topupId}/${operation}`, async ({ request }) => {
+        writes++
+        if (operation === 'reject') expect(await request.json()).toEqual({ reason: 'Synthetic rejection' })
+        status = operation === 'approve' ? 'APPROVED' : 'REJECTED'
+        return HttpResponse.json({ success: true, message: 'ok' })
+      })
+    )
+    renderWithClient(<AdminTopupManager />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Chi tiết' }))
+    if (operation === 'reject') {
+      fireEvent.click(screen.getByRole('button', { name: 'Từ chối' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Xác nhận từ chối' }))
+      expect(writes).toBe(0)
+      fireEvent.change(screen.getByLabelText('Lý do từ chối (bắt buộc, 1 đến 500 ký tự)'), { target: { value: '  Synthetic rejection  ' } })
+    }
+    const button = screen.getByRole('button', { name: operation === 'approve' ? 'Duyệt lệnh' : 'Xác nhận từ chối' })
+    act(() => { button.click(); button.click() })
+    await waitFor(() => expect(writes).toBe(1))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(status).toBe(operation === 'approve' ? 'APPROVED' : 'REJECTED')
+  })
+
+  it('unknown approval locks the dialog and reads status without posting approval twice', async () => {
+    let writes = 0
+    let status: AdminTopup['status'] = 'PENDING'
+    const reads: string[] = []
+    server.use(
+      http.get('*/api/payments/admin/topups', ({ request }) => {
+        reads.push(request.url)
+        return HttpResponse.json({ success: true, data: [{ ...topup, status }] })
+      }),
+      http.post(`*/api/payments/admin/topups/${topupId}/approve`, () => {
+        writes++; status = 'PROCESSING'
+        return HttpResponse.json({ success: false, error: { code: 'TOPUP_OUTCOME_UNKNOWN' } }, { status: 503 })
+      })
+    )
+    renderWithClient(<AdminTopupManager />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Chi tiết' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Duyệt lệnh' }))
+    await screen.findByText('Chưa xác định được kết quả lệnh nạp. Kiểm tra trạng thái lệnh cũ trước khi thao tác tiếp.')
+    expect(screen.getByRole('button', { name: 'Duyệt lệnh' })).toBeDisabled()
+    const closeButtons = screen.getAllByRole('button', { name: 'Đóng' })
+    expect(closeButtons.some(button => (button as HTMLButtonElement).disabled)).toBe(true)
+    for (const button of closeButtons) fireEvent.click(button)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    const before = reads.length
+    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra trạng thái lệnh nạp' }))
+    await screen.findByText('Lệnh nạp chưa có kết quả cuối cùng. Tiếp tục kiểm tra, không gửi lại duyệt/từ chối.')
+    expect(reads.length).toBeGreaterThan(before)
+    expect(new URL(reads.at(-1)!).searchParams.get('status')).toBeNull()
+    expect(writes).toBe(1)
+    status = 'APPROVED'
+    fireEvent.click(screen.getByRole('button', { name: 'Kiểm tra trạng thái lệnh nạp' }))
+    await screen.findByText('Đã đối chiếu kết quả lệnh nạp từ máy chủ.')
+    expect(screen.queryByRole('button', { name: 'Duyệt lệnh' })).not.toBeInTheDocument()
+    expect(writes).toBe(1)
+  })
+
+  it('does not offer approve/reject for an already processing request', async () => {
+    server.use(http.get('*/api/payments/admin/topups', () => HttpResponse.json({ success: true, data: [{ ...topup, status: 'PROCESSING' }] })))
+    renderWithClient(<AdminTopupManager />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Chi tiết' }))
+    expect(screen.queryByRole('button', { name: 'Duyệt lệnh' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Từ chối' })).not.toBeInTheDocument()
   })
 })
 

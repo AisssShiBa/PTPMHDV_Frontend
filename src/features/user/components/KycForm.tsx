@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { errorCode, errorMessage } from '@/lib/apiResponse'
 import { useAuthStore } from '@/features/auth'
 import { kycSchema, MAX_KYC_FILE_SIZE, type KycFormValues } from '../schemas/user.schema'
-import { userService } from '../services/userService'
+import { userApi } from '../api/user.api'
 import type { UserProfile } from '../types/user.types'
 import { KycDocumentViewer } from './KycDocumentViewer'
 
@@ -36,7 +36,7 @@ export function KycForm({ profile, rejectionReason, onSaved, onReload }: {
     if (busy.current || needsReload || !['NONE', 'REJECTED'].includes(profile.kycStatus)) return
     busy.current = true
     try {
-      const saved = await userService.submitKyc(values)
+      const saved = await userApi.submitKyc(values)
       if (useAuthStore.getState().user?.id !== profile.authUserId) return
       onSaved(saved)
       await onReload()

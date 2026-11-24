@@ -21,7 +21,8 @@ import {
   validateTopupRedirect,
   topupNavigation,
 } from '@/features/funding/api/topupRedirect'
-import { useAuthStore, MOCK_USER } from '@/features/auth/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { MOCK_AUTH_USER as MOCK_USER } from '@/features/auth/fixtures/auth.fixtures'
 const owner = '10000000-0000-4000-8000-000000000001'
 const id = '20000000-0000-4000-8000-000000000001'
 const endpoint = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'

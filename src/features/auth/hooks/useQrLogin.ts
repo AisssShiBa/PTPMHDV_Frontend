@@ -91,7 +91,7 @@ export function useQrLogin({ enabled = true, onApproved }: QrLoginOptions) {
   const { qrData } = initialization
   const countdown = qrData ? Math.max(0, Math.ceil((Date.parse(qrData.expiresAt) - now) / 1000)) : 0
   const status = useQrLoginStatus(qrData, active && countdown > 0)
-  const isExpired = Boolean(qrData && (countdown === 0 || status.data?.status === 'EXPIRED' || errorCode(status.error) === 'QR_EXPIRED'))
+  const isExpired = Boolean(qrData && (countdown === 0 || errorCode(status.error) === 'QR_EXPIRED'))
   const isRejected = status.data?.status === 'REJECTED'
 
   useEffect(() => {

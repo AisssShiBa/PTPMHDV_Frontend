@@ -1,14 +1,14 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { setImmediate as nextTurn } from 'node:timers/promises'
-import { MutationObserver, QueryClient, onlineManager } from '@tanstack/react-query'
+import { MutationObserver, QueryClient, QueryObserver, onlineManager } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { AxiosError, isCancel, type InternalAxiosRequestConfig } from 'axios'
 import api from '../src/lib/axios'
 import { authApi } from '../src/features/auth/api/auth.api'
-import { qrLoginMutationOptions } from '../src/features/auth/api/auth.queries'
+import { qrLoginMutationOptions, qrStatusQueryOptions } from '../src/features/auth/api/auth.queries'
 import { useAuthStore } from '../src/features/auth/stores/useAuthStore'
-import { userService } from '../src/features/user/services/userService'
+import { userApi } from '../src/features/user/api/user.api'
 import { merchantService } from '../src/features/merchant/services/merchantService'
 import { adminApi } from '../src/features/admin/api/admin.api'
 
@@ -312,6 +312,110 @@ test('already-aborted QR init and polling never reach the adapter', async () => 
   assert.equal(calls, 0)
 })
 
+test('expired QR polling rejects before sending a request or caching success', async () => {
+  const client = new QueryClient()
+  const qr = { qrId: 'expired-qr', nonce: 'nonce', pollSecret: 'secret', expiresAt: new Date(0).toISOString() }
+  const options = qrStatusQueryOptions(qr)
+  const observer = new QueryObserver(client, options)
+  let calls = 0
+  api.defaults.adapter = async config => {
+    calls++
+    return response(config, { success: true, data: { status: 'PENDING' } })
+  }
+  try {
+    assert.equal(options.enabled(observer.getCurrentQuery()), false)
+    assert.equal(options.refetchInterval(observer.getCurrentQuery()), false)
+    await assert.rejects(client.fetchQuery(options))
+    assert.equal(calls, 0)
+    assert.equal(client.getQueryData(options.queryKey), undefined)
+    assert.equal(observer.getCurrentQuery().state.status, 'error')
+  } finally {
+    observer.destroy()
+    client.clear()
+  }
+})
+
+test('QR approval received at the deadline cannot become successful query data', async t => {
+  const client = new QueryClient()
+  let now = 1000000
+  t.mock.method(Date, 'now', () => now)
+  const deadline = now + 120000
+  const qr = { qrId: 'late-qr', nonce: 'nonce', pollSecret: 'secret', expiresAt: new Date(deadline).toISOString() }
+  const options = qrStatusQueryOptions(qr)
+  let calls = 0
+  api.defaults.adapter = async config => {
+    calls++
+    assert.equal(config.url, '/auth/qr-login/late-qr/status')
+    assert.ok(config.signal instanceof AbortSignal)
+    now = deadline
+    return response(config, { success: true, data: { status: 'APPROVED', accessToken: 'late-token', user } })
+  }
+  try {
+    await assert.rejects(client.fetchQuery(options))
+    assert.equal(calls, 1)
+    assert.equal(client.getQueryData(options.queryKey), undefined)
+    assert.equal(client.getQueryState(options.queryKey)?.status, 'error')
+    assert.equal(useAuthStore.getState().accessToken, null)
+  } finally {
+    client.clear()
+  }
+})
+
+test('QR polling preserves API states and stops after approval or rejection', async () => {
+  const client = new QueryClient()
+  const qr = { qrId: 'active-qr', nonce: 'nonce', pollSecret: 'private-poll-secret', expiresAt: new Date(Date.now() + 120000).toISOString() }
+  const options = qrStatusQueryOptions(qr)
+  const observer = new QueryObserver(client, options)
+  let calls = 0
+  try {
+    assert.deepEqual(options.queryKey, ['auth', 'qr-login', 'status', qr.qrId])
+    for (const status of ['PENDING', 'APPROVED', 'REJECTED'] as const) {
+      const result = status === 'APPROVED' ? { status, accessToken: 'approved-token', user } : { status }
+      api.defaults.adapter = async config => {
+        calls++
+        assert.deepEqual(config.params, { pollSecret: qr.pollSecret })
+        assert.equal(config.headers.get('x-poll-secret'), qr.pollSecret)
+        return response(config, { success: true, data: result })
+      }
+      assert.deepEqual(await client.fetchQuery(options), result)
+      assert.equal(options.refetchInterval(observer.getCurrentQuery()), status === 'PENDING' ? 2000 : false)
+      assert.equal(options.enabled(observer.getCurrentQuery()), status === 'PENDING')
+    }
+    assert.equal(calls, 3)
+    const disabled = qrStatusQueryOptions(qr, false)
+    assert.equal(disabled.enabled(observer.getCurrentQuery()), false)
+    assert.equal(disabled.refetchInterval(observer.getCurrentQuery()), false)
+  } finally {
+    observer.destroy()
+    client.clear()
+  }
+})
+
+test('backend QR_EXPIRED stops polling even before the local deadline', async () => {
+  const client = new QueryClient()
+  const qr = { qrId: 'server-expired-qr', nonce: 'nonce', pollSecret: 'secret', expiresAt: new Date(Date.now() + 120000).toISOString() }
+  const options = qrStatusQueryOptions(qr)
+  const observer = new QueryObserver(client, options)
+  let calls = 0
+  api.defaults.adapter = async config => {
+    calls++
+    throw new AxiosError('Expired QR', 'ERR_BAD_RESPONSE', config, undefined, {
+      ...response(config, { success: false, error: { code: 'QR_EXPIRED' } }), status: 410
+    })
+  }
+  try {
+    await assert.rejects(client.fetchQuery(options), error =>
+      error instanceof AxiosError && error.response?.status === 410)
+    assert.equal(calls, 1, 'expired sessions must not retry automatically')
+    assert.equal(options.enabled(observer.getCurrentQuery()), false)
+    assert.equal(options.refetchInterval(observer.getCurrentQuery()), false)
+    assert.equal(client.getQueryData(options.queryKey), undefined)
+  } finally {
+    observer.destroy()
+    client.clear()
+  }
+})
+
 test('KYC service sends both images and idNumber to the current-user endpoint with bearer auth', async () => {
   session()
   api.defaults.adapter = async (config) => {
@@ -328,7 +432,7 @@ test('KYC service sends both images and idNumber to the current-user endpoint wi
     assert.equal(back.name, 'back.png')
     return response(config, { success: true, data: { kycStatus: 'PENDING' } })
   }
-  const saved = await userService.submitKyc({ idNumber: ' B123 ', front: new File(['image'], 'id.png', { type: 'image/png' }), back: new File(['back'], 'back.png', { type: 'image/png' }) })
+  const saved = await userApi.submitKyc({ idNumber: ' B123 ', front: new File(['image'], 'id.png', { type: 'image/png' }), back: new File(['back'], 'back.png', { type: 'image/png' }) })
   assert.equal(saved.kycStatus, 'PENDING')
 })
 
@@ -373,9 +477,9 @@ test('recipient lookup uses authenticated exact search, cancellation and only th
     assert.equal(config.headers.get('Authorization'), 'Bearer old')
     return response(config, { success: true, data: { authUserId: recipientId, maskedName: 'Nguyễn V. B.', email: 'not-for-display@example.com' } })
   }
-  assert.deepEqual(await userService.lookupRecipient(' +84 912 345 678 ', signal), { authUserId: recipientId, maskedName: 'Nguyễn V. B.' })
-  await assert.rejects(userService.lookupRecipient('partial'))
+  assert.deepEqual(await userApi.lookupRecipient(' +84 912 345 678 ', signal), { authUserId: recipientId, maskedName: 'Nguyễn V. B.' })
+  await assert.rejects(userApi.lookupRecipient('partial'))
   assert.equal(calls, 1)
   api.defaults.adapter = async (config) => response(config, { success: true, data: { authUserId: 'not-an-id', maskedName: 'Name' } })
-  await assert.rejects(userService.lookupRecipient('user@example.com'))
+  await assert.rejects(userApi.lookupRecipient('user@example.com'))
 })

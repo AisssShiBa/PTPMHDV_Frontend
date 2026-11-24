@@ -1,5 +1,80 @@
 # Runbook demo và tái kiểm chứng trục Hữu
 
+## Diễn tập chung Tuần 4 — cập nhật 24/11/2026
+
+Phần này thay các mô tả thiếu P2P/W4 trong lịch sử bên dưới. Web hiện đã có
+kiểm thử P2P/PIN/QR, manual topup, Utilities/Notification, cashout và A8 thật trên
+cụm acceptance riêng. W4 được Đạt chốt **khôi phục cache theo ledger**, không
+đảo giao dịch; giữ nguyên ledger và heldBalance. Tên nút đã sửa theo nghiệp vụ.
+
+### Lịch trình trình bày 15 phút
+
+| Thời gian | Người trình bày làm gì | Bằng chứng/điều phải nói |
+| --- | --- | --- |
+| 00:00–02:00 | Mở `TaiLieu/week4-demo/output.pptx`, trình bày 3 slide | Gateway, checkout/PIN/confirm và outbox/inbox; dùng ghi chú 40 giây/slide. |
+| 02:00–04:00 | Đăng nhập, F5, chuyển P2P và mở biên lai | Khóa nút, cùng idempotency key; số dư người gửi/nhận khớp, không quay PIN/password. |
+| 04:00–06:00 | QR login, xác nhận đúng phiên, chỉ ra hết hạn | QR phải hết hạn tự nhiên 120 giây; che QR còn hiệu lực trong video chia sẻ. |
+| 06:00–08:00 | Nạp tiền, xem trạng thái chờ; Admin duyệt/từ chối | IPN tổng hợp có chữ ký chỉ là phương án dự phòng. Không gọi đó là VNPAY sandbox thật. |
+| 08:00–10:00 | Nạp điện thoại thành công/hoàn tiền và mở thông báo | Provider mô phỏng; tiền và trạng thái thật trong DB, thông báo WebSocket đúng chủ. |
+| 10:00–12:00 | Rút tiền SUCCEEDED/FAILED/UNKNOWN | Payout mô phỏng; UNKNOWN giữ chỗ và chỉ đọc trạng thái, không tạo lệnh mới. |
+| 12:00–14:00 | Admin đối soát, sửa fixture lệch và đối soát lại | A8 chỉ sửa cache; ledger và khoản đang giữ không đổi; audit và reference cố định. |
+| 14:00–15:00 | Đưa số p95/tỷ lệ lỗi và kết luận giới hạn | Đọc `load-result.json` mới nhất; phân biệt đo tải có giãn nhịp với khả năng thông lượng tối đa. |
+
+Hai video tự động là diễn tập kỹ thuật theo thời gian chạy thật, không có lời
+thuyết trình. Đọc thời lượng trong `rehearsal-summary.json`; không coi video
+khoảng 5 phút là đã hoàn thành hai lượt thuyết trình 15 phút. Người demo cần chạy
+lịch trình trên hai lần với đồng hồ và ghi lại sự cố/nếu không có sự cố.
+
+### Chạy kỹ thuật và quay video trên Windows
+
+Docker Desktop phải chạy. Chọn manifest **cụm riêng** do Backend tạo; không dùng
+DB nhóm. Thiết lập payout stand-in chỉ trong override của cụm riêng theo Backend
+acceptance README; giữ production Compose nguyên trạng. Build FE trước khi chạy,
+không build đồng thời với browser test.
+
+```powershell
+# Từ Frontend; thay <id> bằng run vừa dựng, không dùng đường dẫn cũ trong lịch sử.
+$env:LIVE_ACCEPTANCE_RUN_FILE='D:\PTPMHDV\Backend\.cache\acceptance-week2\finvault-acceptance-<id>\run.json'
+$env:LIVE_PHASE3_SCOPE='all'
+$env:LIVE_DEMO_RECORD='1'
+$env:BROWSER_EVIDENCE_DIR='node_modules/.tmp/week4-demo-local'
+node tests/phase3-live.mjs
+```
+
+`result.json` phải PASS trước khi dùng video. File `demo.webm` có nhãn dữ liệu
+tổng hợp/IPN tổng hợp/payout mô phỏng. Recorder thay màn đăng nhập/PIN/QR bằng
+khung che; không thay logic ứng dụng. Chỉ chia sẻ video và JSON đã lược bỏ bí mật;
+không chia sẻ browser profile, `.env`, `secrets` hoặc nguyên thư mục cache.
+
+Kiểm riêng A8: đổi `LIVE_PHASE3_SCOPE='reconciliation'`. Harness tạo hold thật
+50000, chỉ làm lệch cache fixture +5000, bấm đúp khôi phục qua Admin UI, kiểm
+ledger/hold/audit và chạy RC1. Lỗi phải giữ FAIL; không chạy SQL lên DB nhóm để
+làm đẹp báo cáo. Nếu ca thất bại, harness gỡ đúng cache corruption do nó tạo
+và hủy đúng lệnh giữ chỗ của ca thử.
+
+### VNPAY sandbox còn thiếu gì
+
+Đã tìm `.env`, tài liệu text và Word trong workspace: terminal và secret có sẵn,
+`VNP_URL` là sandbox, nhưng IPN/return đều localhost, chưa có URL HTTPS công khai.
+Không thay cấu hình nhóm hoặc sinh callback giả rồi ghi sandbox PASS. Chủ terminal
+cần cấu hình IPN công khai và khớp return/deployment; sau đó chạy nạp 100000 từ Web,
+nhận IPN từ VNPAY, kiểm +100000 đúng một lần và replay không cộng thêm.
+Return chỉ hiển thị, IPN cập nhật trạng thái theo [đặc tả VNPAY](https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html).
+
+Mẫu bàn giao Hữu (thay domain thực; không đưa secret vào đây):
+
+```text
+IPN terminal: https://<gateway-public>/api/payments/topups/vnpay/ipn
+VNP_RETURN_URL: https://<web-public>/app/topup/result
+VITE_VNPAY_PAYMENT_URL: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+```
+
+Chỉ đổi `VNP_IPN_URL` trong `.env` không thay cấu hình IPN đã đăng ký ở terminal
+VNPAY. Return route Backend hiện trả JSON; nếu muốn trở về giao diện thì dùng
+đúng route Web trên. Web tìm lệnh thuộc chủ đang đăng nhập bằng `vnp_TxnRef`,
+rồi GET trạng thái server; không tin `vnp_ResponseCode=00` để tự cộng tiền.
+
+
 > **Cập nhật closeout:** [regression, demo accounts và video đã hoàn tất](huu-fe-closeout.md). Các dòng “chưa seed/chưa video/chưa rerun” bên dưới là trạng thái trước closeout. VNPAY sandbox, active Transfer UI/K18 và review/rollout/merge vẫn còn mở.
 
 13/11/2026. **Đồ án mô phỏng.** Tài khoản Phase 8 chưa seed và chưa diễn tập/video. Các lệnh live ghi thêm dữ liệu synthetic vào đúng project acceptance; không dùng DB dùng chung. Không chụp PIN, password, token, signed KYC URL hoặc modal API key raw.

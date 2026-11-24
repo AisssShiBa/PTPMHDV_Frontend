@@ -6,6 +6,10 @@ import { errorCode, errorMessage } from '@/lib/apiResponse'
  * RECONCILIATION_IN_PROGRESS; 503 ADJUST_OUTCOME_UNKNOWN; 504 WALLET_TIMEOUT.
  */
 const RECONCILIATION_MESSAGES: Record<string, string> = {
+  REPAIR_CONFLICTS_WITH_HOLDS:
+    'Số dư theo sổ cái không đủ bảo đảm tiền đang giữ. Cần tra soát giao dịch đang giữ trước khi khôi phục số dư.',
+  DIRECTION_MISMATCH: 'Hướng điều chỉnh chưa khớp chênh lệch hiện tại. Hãy tải lại báo cáo để kiểm tra.',
+  AMOUNT_MISMATCH: 'Số tiền điều chỉnh chưa khớp chênh lệch hiện tại. Hãy tải lại báo cáo để kiểm tra.',
   ALREADY_ADJUSTED:
     'Bất thường này đã được điều chỉnh trước đó. Dữ liệu báo cáo đã được làm mới, vui lòng kiểm tra lại.',
   ADJUSTMENT_IN_PROGRESS:

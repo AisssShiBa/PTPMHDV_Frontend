@@ -17,7 +17,8 @@ import {
 import { fundingError } from '@/features/funding/api/funding.errors'
 import { topupInputSchema } from '@/features/funding/schemas/topup.schema'
 import { cashoutInputSchema } from '@/features/funding/schemas/cashout.schema'
-import { useAuthStore, MOCK_USER } from '@/features/auth/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { MOCK_AUTH_USER as MOCK_USER } from '@/features/auth/fixtures/auth.fixtures'
 const id = '20000000-0000-4000-8000-000000000001'
 const testUser = { ...MOCK_USER, id: '10000000-0000-4000-8000-000000000001' }
 const order = {

@@ -20,8 +20,8 @@ vi.mock('@/features/auth', () => ({
   )
 }))
 
-vi.mock('@/features/user/services/userService', () => ({
-  userService: {
+vi.mock('@/features/user/api/user.api', () => ({
+  userApi: {
     submitKyc: vi.fn()
   }
 }))
@@ -30,7 +30,7 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
-import { userService } from '@/features/user/services/userService'
+import { userApi } from '@/features/user/api/user.api'
 import { toast } from 'sonner'
 
 function createProfile(overrides: Partial<UserProfile> = {}): UserProfile {
@@ -185,7 +185,7 @@ describe('KycForm', () => {
     const onSaved = vi.fn()
     const onReload = vi.fn().mockResolvedValue(true)
     const savedProfile = createProfile({ kycStatus: 'PENDING', hasKycDocument: true })
-    vi.mocked(userService.submitKyc).mockResolvedValue(savedProfile)
+    vi.mocked(userApi.submitKyc).mockResolvedValue(savedProfile)
 
     renderKycForm(createProfile({ kycStatus: 'NONE' }), onSaved, onReload)
 
@@ -211,7 +211,7 @@ describe('KycForm', () => {
   it('prevents double submit while uploading', async () => {
     let resolveSubmit: (value: UserProfile) => void
     const submitPromise = new Promise<UserProfile>((resolve) => { resolveSubmit = resolve })
-    vi.mocked(userService.submitKyc).mockReturnValue(submitPromise)
+    vi.mocked(userApi.submitKyc).mockReturnValue(submitPromise)
 
     const onSaved = vi.fn()
     const onReload = vi.fn().mockResolvedValue(true)
@@ -237,11 +237,11 @@ describe('KycForm', () => {
     resolveSubmit!(createProfile({ kycStatus: 'PENDING', hasKycDocument: true }))
     await act(async () => { await submitPromise })
 
-    expect(userService.submitKyc).toHaveBeenCalledTimes(1)
+    expect(userApi.submitKyc).toHaveBeenCalledTimes(1)
   })
 
   it('shows reload button on ambiguous error and does not auto-retry', async () => {
-    vi.mocked(userService.submitKyc).mockRejectedValue({ code: 'UNKNOWN_ERROR' })
+    vi.mocked(userApi.submitKyc).mockRejectedValue({ code: 'UNKNOWN_ERROR' })
 
     const onSaved = vi.fn()
     const onReload = vi.fn().mockResolvedValue(true)
@@ -275,7 +275,7 @@ describe('KycForm', () => {
         }
       }
     }
-    vi.mocked(userService.submitKyc).mockRejectedValue(axiosError)
+    vi.mocked(userApi.submitKyc).mockRejectedValue(axiosError)
 
     const onSaved = vi.fn()
     const onReload = vi.fn().mockResolvedValue(true)

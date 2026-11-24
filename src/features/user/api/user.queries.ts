@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useAuthStore } from '@/features/auth'
-import { userService } from '../services/userService'
+import { userApi } from './user.api'
 import type { UserKycStatus, UserProfile } from '../types/user.types'
 
 export const userKeys = {
@@ -15,7 +15,7 @@ export function useProfileQuery(authUserId: string) {
   const query = useQuery({
     queryKey: userKeys.profile(authUserId),
     queryFn: async ({ signal }) => {
-      const profile = await userService.getProfileByAuthUserId(authUserId, signal)
+      const profile = await userApi.getProfileByAuthUserId(authUserId, signal)
       if (profile && profile.authUserId !== authUserId) throw new Error('Không thể đọc hồ sơ của tài khoản hiện tại.')
       return profile
     },
@@ -38,7 +38,7 @@ export function useKycStatus(authUserId: string) {
   const client = useQueryClient()
   const query = useQuery({
     queryKey: userKeys.kyc(authUserId),
-    queryFn: ({ signal }) => userService.getKycStatus(signal),
+    queryFn: ({ signal }) => userApi.getKycStatus(signal),
     enabled: Boolean(authUserId),
     gcTime: 0,
     retry: false

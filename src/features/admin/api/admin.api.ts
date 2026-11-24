@@ -90,7 +90,7 @@ export const adminApi = {
     return unwrap(res.data)
   },
 
-  /** POST /api/payments/admin/topups/:id/approve — endpoint hiện trả NOT_ALLOWED. */
+  /** POST /api/payments/admin/topups/:id/approve — duyệt thủ công lệnh PENDING; Wallet dùng cùng reference với IPN. */
   async approveTopup(id: string, signal?: AbortSignal): Promise<void> {
     const res = await api.post<ApiResponse<unknown>>(`${topupPath(id)}/approve`, undefined, { signal })
     ensureSuccess(res.data)

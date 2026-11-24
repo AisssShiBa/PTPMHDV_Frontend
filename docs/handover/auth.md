@@ -1,32 +1,140 @@
 # Bàn giao Auth, PIN và QR Web — Đạt (Đ20)
 
+## Cập nhật nghiệm thu live 23/11/2026
+
+`tests/phase3-live.mjs` đã chạy scope all trên Compose riêng: đăng nhập, full
+navigation khôi phục refresh cookie, P2P 60.000đ và đăng xuất; Q1 dùng chính
+`scripts/qr-confirm.mjs` rồi kiểm QR hết hạn tự nhiên sau 120 giây và ngừng poll.
+A3 nhập sai PIN năm lần qua UI, kiểm khóa khoảng 1.800 giây; lần sáu kiểm API
+423 vì UI đã chặn nhập. A4 dùng token thật chờ 62 giây, CDP thay header confirm
+cho đúng đơn để kiểm 401 → GET PENDING → PIN mới; replay token đã dùng kiểm qua
+API 409, không quảng bá đó là thao tác replay có sẵn trên UI. Token/PIN/cookie
+không ghi vào artifact hoặc storage. Secret thử nghiệm chỉ ở RAM.
+
+Adapter hồ sơ đã chuyển từ services/userService.ts sang api/user.api.ts, tên
+`userApi`; các caller và mock/test được chuyển cùng nhau, không giữ adapter trùng.
+
+
+## Hiện trạng bàn giao 23/11/2026 — Đ17–Đ20
+
+Đạt → Khoa/Hữu/Nguyên. FE nền `464b017`, BE nền `bfbbf74`, nhánh sửa và working tree chưa commit. Mục này là điểm vào hiện tại; các con số, trạng thái môi trường và câu hỏi bên dưới thuộc mốc ngày được ghi, không phải nghiệm thu mới.
+
+- Trang `/sign-in`, `/sign-up`, `/qr-login`; `SignUpPage` dùng `SignUpForm`; public entry `features/auth/index.ts`. Store/queries dùng authApi thật, access token ở RAM, refresh cookie HttpOnly; initialize/guard không tự cấp phiên từ fixture.
+- Endpoint: POST `/api/auth/signin|signup|refresh|signout`, GET `/api/users/me`, POST `/api/auth/qr-login/init`, GET `/api/auth/qr-login/{id}/status`, POST `/api/auth/qr-login/confirm`; PIN status/setup/change/verify dưới `/api/auth/pin`.
+- PinModal bắt buộc paymentId/amount thật. Verify trả expiresIn 60 giây; lockedUntil dùng cho lỗi khóa; trạng thái PIN trả remainingLockSeconds. Token giao dịch chỉ dùng trong flow, không lưu storage.
+- `useQrLogin` điều phối init/poll 2 giây/expiry; dùng qrId/nonce/pollSecret/expiresAt, bỏ phản hồi cũ và dừng sau APPROVED/REJECTED/hết hạn/unmount. Script `scripts/qr-confirm.mjs` thay điện thoại, không mở rộng Mobile.
+- Kiểm trên web: login USER/ADMIN → F5 → sai vai trò bị chặn → logout/F5 không phục hồi; QR hết hạn 120 giây và duyệt đúng một lần; PIN dùng ID/amount từ checkout. A3/A4 và hai gate Đ22 vẫn cần evidence UI cùng revision.
+- Xem [Payment mới](payment.md), [Home đã có bàn giao](home.md), [contract hiện tại](../CONTRACT_OPEN_QUESTIONS.md). Không tiếp tục dùng nhận xét Home còn placeholder hoặc số lượng unit ở ngày 21/11 như kết quả hôm nay.
+- Các API/query-key Auth và hướng dẫn chi tiết ở phần lịch sử tiếp theo vẫn hữu ích khi đối chiếu source. Chạy `npm run check`/`npm run test:unit`; gate source không thay browser/live.
+
+Gate chạy mới 23/11: `npm run check` exit 0 (lint còn 16 warning, check import 21 trang/typecheck/Node/build đạt); Vitest 248/248, 30 file. Contract lint exit 0 còn 193 warning; xem bảng kiểm và giới hạn trong [contract hiện tại](../CONTRACT_OPEN_QUESTIONS.md). Đây không phải kết quả mới của hai gate browser/phase3-live.
+
+### Lịch sử và bằng chứng đến 21/11/2026
+
+---
+
 Người phụ trách: Đạt. Phạm vi: hướng dẫn tích hợp phần Auth/PIN/QR của Đạt cho nhóm; không xác nhận hoàn thành nghiệp vụ Payment, Funding hoặc Utilities của thành viên khác.
 
-## 0. Đối chiếu nhiệm vụ Tuần 4 của Đạt: đã hoàn thành và việc còn lại
+## 0. Cập nhật bàn giao ngày 21/11/2026
 
-Nguồn yêu cầu: [bản rà soát Tuần 4 theo từng thành viên](../../../FinVault_Ra_Soat_Nhiem_Vu_Tuan_4_Theo_Tung_Thanh_Vien.docx), các mục Đ17–Đ24. File Word là biên bản ở thời điểm trước sửa; các dòng lỗi biên dịch, chưa chạy Q1/Gateway trong đó không còn phản ánh đầy đủ source và bằng chứng hiện tại. Bảng này đối chiếu đúng phạm vi Đạt, không suy ra feature của người khác đã hoàn thành.
+Nguồn yêu cầu: [kế hoạch Tuần 4](../../TaiLieu/FinVault_Ke_hoach_Tuan_4_Web.docx), Đ17–Đ24, và [biên bản rà soát trước sửa](../../../FinVault_Ra_Soat_Nhiem_Vu_Tuan_4_Theo_Tung_Thanh_Vien.docx).
 
-| Mã | Phần đã hoàn thành theo nhiệm vụ Tuần 4 | Phần còn lại / người xử lý | Kết luận |
-| --- | --- | --- | --- |
-| Đ17 — đăng nhập, đăng xuất, khôi phục phiên, quyền | Auth gọi API thật; chờ initialize, chia sẻ refresh và chặn phiên cũ ghi đè. An/Admin đã có nghiệm thu Web, cookie HttpOnly, F5/logout và quyền; đã sửa đường dẫn quay lại. Đã bỏ mật khẩu ghi sẵn ở hai nút demo | Chủ feature chuyển các test còn dùng MOCK_USER; sau đó Đạt bỏ import/export fixture khỏi store. Logout qua UI sau lần tích hợp form cuối chưa chạy lại; có bằng chứng UI logout ở lượt trước | Chức năng chính đã đạt; chưa đóng toàn bộ Đ17 vì còn fixture và mốc nghiệm thu cuối |
-| Đ18 — PinModal và luồng PIN thật | Hết lỗi trùng biến/import/setter/format; props paymentId/amount bắt buộc; không sinh đơn/tiền dự phòng. Đã sửa rollback bộ đếm PIN, A3 khóa 5 lần/30 phút và A4 token 60 giây/chống sai đơn, sai tiền, replay có bằng chứng API/database thật | Đạt kiểm UI status/setup/change/khóa và phản hồi muộn trên bản tích hợp cuối; Khoa/Hữu/Nguyên nghiệm thu call site với mã đơn/số tiền thật trong feature của mình | Lỗi code chính đã sửa; chưa chốt trọn nghiệm thu PIN qua mọi UI/call site |
-| Đ19 — QR và script duyệt | QR đúng qrId/nonce, không lộ pollSecret; script mobile duyệt An/Admin, F5 giữ phiên. Trang QR đã đo hết hạn thật 120 giây, dừng poll và mã cũ bị 410. Confirm thiếu token bị chặn; có tạo lại, hủy request, chống duyệt muộn, xử lý Offline. Hai màn dùng chung query/hook/panel; lint đạt | Các ca mở rộng như auto-discovery Redis, REJECTED live, nhiều client cùng polling và đo 120 giây riêng ở tab SignIn chưa được nghiệm thu live; không ghi chúng là đã chạy | Đạt các tiêu chí cốt lõi Đ19 trong Word; các ca mở rộng còn phải ghi rõ phạm vi kiểm |
-| Đ20 — nền chung, chất lượng, bàn giao | Đã gỡ lỗi chặn lint/typecheck/build, mã lỗi trùng; hai page Auth/QR không còn API/polling trực tiếp và dùng public entry. Có contract, cách kiểm, người nhận và bằng chứng trong tài liệu này. Check/Vitest/thin-pages có kết quả đạt theo từng mốc bên dưới | Chủ feature hoàn thiện bàn giao/kiến trúc của phần mình, gồm home.md còn placeholder; Đạt phối hợp rà contract/OpenAPI và cảnh báo có giá trị. Chunk trên 500 kB chưa được phân tích/tối ưu | Phần sửa Auth và gỡ blocker đã làm; chưa chứng nhận chất lượng/kiến trúc toàn dự án |
-| Đ21 — Gateway utilities/funding/header giả | Utilities tới đúng service; funding có xác thực, exact GET callback public; A5, alias-create, cash-out create/status và QR confirm có kiểm tra request thật. Test Gateway lưu trong repo 4/4; không tin header client giả | Khoa sửa ownership đọc ví khác chủ; chủ User/Wallet đối chiếu profile/ví 404. Đạt probe lại sau khi các bản sửa đó được gộp; không tự sửa nghiệp vụ Wallet | Các ca Gateway thuộc Đạt đã đạt trong phạm vi kiểm; không đồng nghĩa toàn hệ thống phân quyền đã đạt |
-| Đ22 — test trình duyệt và nghiệm thu | Auth/QR có nhiều lượt Chrome/Backend thật, mới nhất 12 nhóm tích hợp cùng 5 kiểm tra mật khẩu/bố cục. A3/A4 có bằng chứng thật; file Frontend Auth 18/18, Node suite 64/64, Vitest 211/211 | Chưa có kết quả mới chạy trọn test:browser và test:phase3:live trên cùng revision tích hợp. Cần phối hợp luồng chuyển An→Bình và PIN/UI; kiểm lại profile/ví đang có 404. Phân biệt API-only với thao tác UI | Chưa đóng Đ22; thiếu nghiệm thu toàn luồng, không kết luận mọi phần còn lại là lỗi code Auth |
-| Đ23 — tải checkout/confirm | Chưa xác nhận thêm kết quả tải trong đợt sửa này | Nếu giữ: chuẩn bị/chạy 50 người ảo trong 5 phút, ghi p95 checkout/confirm, tỷ lệ lỗi và môi trường. Nếu cắt hạng mục Could: nhóm phải ghi quyết định, không ghi PASS | Chưa xác nhận hoàn thành; chưa tự quyết định cắt |
-| Đ24 — diễn tập, slide, video | Word ghi có runbook/video một phần; đợt Auth này không thay đổi hoặc nghiệm thu thêm artifact đó | Đạt điều phối hai lượt demo khoảng 15 phút liên tiếp cùng revision; nhóm hoàn thiện slide/video/seed manifest và biên bản | Chưa xác nhận đủ tiêu chí; đây là bàn giao/diễn tập, không phải lỗi code Auth |
+**Phạm vi phiên bản:** các thay đổi hiện nằm ở working tree của nhánh `fix/week4-integration` trong hai repository riêng. HEAD nền Frontend là `464b017`, Backend là `bfbbf74`; chưa tạo commit cho đợt sửa này. Kết quả dưới đây áp dụng cho working tree đã kiểm tra, chưa phải kết quả nghiệm thu trên main. Sau khi merge cần ghi nhận SHA mới.
 
-### Việc còn cần sửa code, kiểm tra và phối hợp
+Các phần từ mục 1 trở đi lưu bằng chứng và hướng dẫn ở các mốc trước. Những con số test, lỗi còn mở và revision trong các phần đó là lịch sử; dùng bảng hiện tại dưới đây để xác định trạng thái bàn giao.
 
-- Code còn lại trong Auth: giữ export MOCK_USER để test hiện có không hỏng; chỉ xóa tại useAuthStore.ts sau khi chủ feature chuyển hết import trên revision thực sự merge. Không xóa trước để làm "sạch" store nhưng gây lỗi cho nhóm.
-- Việc kiểm tra của Đạt: đóng nghiệm thu UI PIN và logout ở mốc tích hợp cuối; chạy các suite trình duyệt đúng yêu cầu Đ22 sau khi dữ liệu/service liên quan sẵn sàng. Chỉ sửa phần Auth hoặc harness Auth nếu tái hiện được lỗi, không viết lại nghiệp vụ thành viên khác.
-- Việc phối hợp: Khoa xử lý ownership Wallet; chủ User/Wallet kiểm tra An có định danh Auth đúng nhưng profile/ví trả 404; Khoa/Hữu/Nguyên xác nhận call site PIN. Chủ các feature chuyển test fixture, hoàn thiện handover và xác nhận contract của mình.
-- Việc chất lượng chưa chốt: phân tích cảnh báo chunk trên 500 kB trước khi quyết định tối ưu; không tăng ngưỡng cảnh báo hoặc tắt lint để ghi đạt. Rà các handover/contract còn thiếu theo trách nhiệm tích hợp Đ20.
-- Việc môi trường kiểm thử: một lượt trước có báo lỗi cleanup phiên mobile; cần đối chiếu đúng các phiên thử của Đạt trước khi tuyên bố đã thu hồi mọi phiên lịch sử. Không tự thu hồi phiên khác của người dùng.
-- Đ23/Đ24 giữ thành đầu việc riêng như bảng; chưa có bằng chứng không đồng nghĩa đã xác nhận source có lỗi.
+### 0.1. Các lỗi đã xử lý
 
-Phần code Auth/QR vừa làm đã nối vào cả hai page và qua kiểm tra đã liệt kê; không còn cần viết lại phần đăng nhập/QR chỉ vì trạng thái cũ trong Word. Có thể bàn giao phần sửa đã kiểm chứng để review/merge, nhưng chưa đánh dấu hoàn thành toàn bộ Đ17–Đ24. Các file query/hook/component mới phải đi cùng các page/public entry sử dụng chúng. Thay đổi import cục bộ ở dashboard.test.tsx nằm ngoài gói Auth dự kiến; Đạt không tiếp tục sửa feature đó. Chi tiết bằng chứng, giới hạn và lệnh kiểm tra nằm ở các mục sau.
+| Phần | Thay đổi và kết quả |
+| --- | --- |
+| Store Auth — Đ17 | Đã chuyển 11 file test sang lấy fixture trực tiếp và xóa import/export `MOCK_USER` trong [useAuthStore.ts](../../src/features/auth/stores/useAuthStore.ts). Store không còn phụ thuộc fixture. Các fixture vẫn được dùng hợp lệ trong test. |
+| QR — Đ19 | Đã sửa query/hook sau merge để khớp API `PENDING / APPROVED / REJECTED`. Hết hạn do thời gian hoặc lỗi `QR_EXPIRED`; phản hồi duyệt đến muộn bị chặn. Đã kiểm tra Chrome với Backend thật: tạo QR, polling, hết hạn tự nhiên 120 giây, làm mới, rời trang, duyệt bằng tài khoản thử, cookie HttpOnly, F5 và dùng lại QR đã tiêu thụ trả 410. |
+| Đăng ký | [SignUpPage.tsx](../../src/pages/SignUpPage.tsx) dùng `useSignUp` và schema qua public entry Auth. Có khóa submit đồng bộ, trạng thái pending, thông báo lỗi dùng chung và reset mutation để giải phóng biến chứa thông tin đăng ký. Các ca validation, gửi trùng, lỗi mạng/trùng tài khoản/lỗi máy chủ và chuyển sang đăng nhập đã kiểm tra trên Chrome với HTTP giả lập. |
+| Kiểm tra import — Đ20 | [check-thin-pages.mjs](../../scripts/check-thin-pages.mjs) dùng TypeScript AST để phát hiện import Axios/module API trực tiếp. `npm run check` đã bao gồm bước này. Hiện 21 trang không có vi phạm trong phạm vi script; kết quả này không xác nhận mọi trang đã tách hết logic nghiệp vụ. |
+| Quyền đọc ví | [wallet.routes.ts](../../../Backend/services/wallet-service/src/routes/wallet.routes.ts) kiểm tra ownership tại các route đã khớp `:userId`. Có [test router](../../../Backend/services/wallet-service/tests/wallet-route-ownership.test.ts); kiểm tra qua Gateway thật đã xác nhận USER đọc ví/lịch sử người khác bị 403, thiếu đăng nhập bị 401. Không còn coi lỗi này là việc Khoa chưa sửa. |
+| Gateway — Đ21 | Đã sửa kỳ vọng callback VNPAY cũ, chuẩn hóa hai test Gateway và đưa bộ bảo vệ xác thực vào `npm test`. Đúng GET IPN/return được public; sai phương thức hoặc đường dẫn vẫn cần xác thực. Test K15 dùng Gateway thật với Wallet HTTP giả lập, không phải nghiệm thu tài chính trên database. |
+| Dữ liệu An | Đã khôi phục riêng `an@demo.vn` qua một sự kiện đăng ký, tạo một profile và một ví USER. Auth ID/mật khẩu giữ nguyên; ví mới 0 VND, KYC 0, hồ sơ NONE. Tổng số dư và số bản ghi ledger/hold không đổi. Chạy lại không tạo thêm. API hồ sơ/ví/ledger trả 200; An đăng nhập và mở hồ sơ đúng email trên Chrome. |
+| Môi trường đối soát | Wallet container đã được cập nhật; các file đối soát được kiểm tra khớp source. Admin đăng nhập thật gọi danh sách báo cáo trả 200. Tại lần kiểm tra database có 0 báo cáo và 0 anomaly; chưa chạy tạo báo cáo/điều chỉnh trong đợt này. |
+
+### 0.2. Kết quả kiểm tra gần nhất
+
+| Kiểm tra | Kết quả và giới hạn |
+| --- | --- |
+| Frontend `npm run check` | Đạt lint, kiểm tra import 21 trang, typecheck, 68/68 Node test và build. Lint còn 16 cảnh báo; build có cảnh báo cấu hình Vite và kích thước bundle. |
+| Frontend `npm run test:unit` | 240/240 test, 30 file, đạt sau khi xóa export fixture khỏi store. |
+| Gateway `npm test` | 40 + 6 + 4 = 50 test đạt, tính cả test cha. Có test dùng HTTP giả lập và rate limiter giả lập; các log Redis không chứng minh Redis thật đã được nghiệm thu. |
+| Gateway TypeScript | `npx tsc --noEmit` đạt. |
+| Wallet ownership | 16 tình huống router đạt (Node tính 17 test gồm test cha); source Wallet biên dịch đạt. Lớp xác thực/controller được giả lập trong file test; quyền USER đọc chéo đã được kiểm tra bổ sung qua Gateway thật. |
+| Script khôi phục demo | Kiểm tra cú pháp, dry-run thật, kiểm tra nhánh apply bằng Docker giả lập và khôi phục thật riêng An đều đạt ở các bước trước. Không thực hiện thêm lần apply nào chỉ để cập nhật tài liệu này. |
+| Đ22: bộ browser và phase3 đầy đủ | Chưa có kết quả mới chạy trọn hai lệnh trên cùng revision sau merge. Các lượt Chrome riêng ở trên không thay thế hai gate này. |
+
+### 0.3. Lệnh kiểm tra cho thành viên
+
+Frontend:
+
+```powershell
+cd D:\PTPMHDV\Frontend
+npm run check
+npm run test:unit
+```
+
+Gateway và test quyền ví:
+
+```powershell
+cd D:\PTPMHDV\Backend\gateway
+npm test
+npx tsc --noEmit
+
+cd D:\PTPMHDV\Backend\services\wallet-service
+npx tsx --test tests/wallet-route-ownership.test.ts
+```
+
+Chỉ chạy bộ test database/acceptance khác sau khi kiểm tra phạm vi dữ liệu chúng sử dụng. Một số bộ nghiệm thu có thao tác reset/xóa dữ liệu và cần stack riêng.
+
+### 0.4. Cập nhật container và dữ liệu demo trên máy khác
+
+Git chỉ chuyển source. Profile/ví An vừa khôi phục trong database cục bộ không tự xuất hiện trên máy thành viên khác.
+
+Sau khi lấy code, cập nhật image Wallet để chạy đúng route/controller:
+
+```powershell
+cd D:\PTPMHDV\Backend
+docker compose up -d --build --no-deps wallet-service
+docker compose ps
+```
+
+Wallet chạy migration deploy theo Dockerfile khi khởi động. Kiểm tra log migration nếu dịch vụ không healthy; giữ volume và dữ liệu hiện có.
+
+[scripts/setup-two-users.mjs](../../../Backend/scripts/setup-two-users.mjs) hiện là công cụ kiểm tra/khôi phục tài khoản demo đã có trong Auth, thay cho script reset/funding cũ:
+
+```powershell
+cd D:\PTPMHDV\Backend
+node scripts/setup-two-users.mjs --dry-run --email an@demo.vn
+```
+
+Nếu dry-run báo thiếu dữ liệu, Auth ID/email không xung đột và đúng tài khoản cần khôi phục, lệnh ghi sự kiện là:
+
+```powershell
+node scripts/setup-two-users.mjs --apply --email an@demo.vn
+```
+
+Script không tạo tài khoản Auth mới, không đổi mật khẩu, không nạp tiền và không duyệt KYC. Nó chờ publisher/consumer tạo dữ liệu còn thiếu; khi lỗi, kiểm tra các worker. Profile đã xóa, sai liên kết email/Auth ID và trường hợp cần đối chiếu KYC sẽ bị chặn. Công cụ này không thay thế bộ seed Phụ lục B của Hữu/Nguyên.
+
+Admin hiện vẫn thiếu profile/ví cục bộ nhưng đã đăng nhập và đọc danh sách đối soát được. Không cần tạo ví Admin chỉ để chữa lỗi API báo cáo đã hết.
+
+### 0.5. Người nhận và việc cần xác nhận
+
+| Người | Phần nhận bàn giao | Việc còn cần xác nhận |
+| --- | --- | --- |
+| Đạt | Store/queries Auth, QR, đăng ký, bộ kiểm tra và Gateway | Đóng nghiệm thu PIN/UI và Đ22 trên revision sau merge; ghi rõ ca nào dùng Backend thật. |
+| Khoa | Bản sửa ownership và test router Wallet; metadata ví/đối soát đang chạy | Xác nhận lại P2P, A1/A2/A8/A9, ledger, rollback trên môi trường đúng và luồng điều chỉnh đối soát. Các báo cáo ở revision trước vẫn là bằng chứng của revision đó. |
+| Hữu | Mutation đăng ký, hồ sơ/ví An đã phục hồi và công cụ demo mới | Xác nhận các luồng funding/cashout/KYC/merchant thuộc phần mình; chuẩn bị bộ seed Phụ lục B và bằng chứng VNPAY sandbox. |
+| Nguyên | Gateway utilities, contract PIN và API danh sách báo cáo hiện trả 200 | Xác nhận utilities/refund, Admin KYC/đối soát và thông báo trên dịch vụ thật; đo độ trễ theo tiêu chí tuần 4. |
+| Cả nhóm | Hai repository cùng nhánh sửa, kết quả kiểm tra và giới hạn ở trên | Hoàn thiện handover từng feature (Home còn placeholder), ghi SHA sau merge và giữ source/image/dataset đồng nhất. |
+
+Đ18 chưa được đóng chỉ bằng unit test; cần các ca A3/A4 trên giao diện với mã đơn/số tiền thật. Đ20 còn việc bàn giao và rà kiến trúc ngoài phạm vi script import. Đ23 là hạng mục Could: chạy tải hoặc ghi quyết định cắt của nhóm. Đ24 là diễn tập/slide/video, chưa được nghiệm thu thêm trong đợt sửa code này.
+
+`Frontend/package-lock.json` đã thay đổi từ trước đợt sửa; xem riêng diff khi stage, không gộp tự động vào các commit sửa lỗi. Hiện chưa commit/push các thay đổi của đợt này.
 
 ## 1. Trạng thái và bằng chứng
 

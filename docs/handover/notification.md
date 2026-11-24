@@ -1,5 +1,34 @@
 # Bàn giao Feature: Notification
 
+## Cập nhật N19: Utilities producer và consumer
+
+Ba event utility.order_succeeded/failed/refunded đã có schema, producer outbox,
+publisher và handler Notification; không còn chỉ là mapping. EventId giữ nguyên
+qua retry; inbox + Notification ghi atomically, emit sau commit. Xem
+[EVENTS.md](../../../Backend/services/notification-service/EVENTS.md) để triển khai
+migration và image. Test live A7 kiểm broker outage + replay; result phân biệt
+persisted latency và owner WebSocket, không suy rộng sang mọi nhóm sự kiện.
+
+Suite Notification trên DB test riêng: 98 PASS, 1 SKIP (integration yêu cầu DB
+đuôi _test và RabbitMQ riêng). Kiểm broker xuyên service đã chạy bằng acceptance
+live trên Compose riêng. Không gọi mục SKIP là PASS.
+
+
+## Hiện trạng bàn giao 23/11/2026 — N15/N19
+
+Nguyên → Đạt và chủ producer. Source mới và [event catalog Backend](../../../Backend/services/notification-service/EVENTS.md) là căn cứ trạng thái; các mô tả chưa có producer KYC ở phần cũ bên dưới đã hết hiệu lực cho working tree hiện tại.
+
+- `/app/notifications` → NotificationCenter; MainLayout dùng NotificationBell. `notificationKeys` có owner, phân trang/feed; patch read/read-all và socket đều cập nhật/invalidate danh sách. Dedupe theo id và eventId, không tăng badge hai lần.
+- GET `/api/notifications/me?page&limit`, GET `/api/notifications/socket-ticket`, PATCH `/api/notifications/{id}/read`, PATCH `/api/notifications/me/read-all`; socket auth `{ticket}` mới mỗi lần connect/reconnect. Không lưu ticket/access token vào storage.
+- `user.kyc_reviewed` đã nối User outbox và Notification; `payment.refunded` đã nối publisher/consumer, được kiểm Backend thật ở phiên 22/11. Máy thành viên cần migration/rebuild theo event catalog; không mặc định đã rollout.
+- Nạp tiền đã có đường Wallet outbox → wallet.events → notification. Không tự thêm luồng thứ hai chỉ từ việc thiếu tên funding.topup_succeeded; cần kiểm loại sự kiện/độ trễ và tránh duplicate trước.
+- Kiểm web: chuyển tiền thật trong stack test, người nhận thấy chuông/danh sách; read/read-all rồi F5; reconnect không thêm dòng/badge; đổi tài khoản không lộ cache cũ. Bốn trạng thái trang qua QueryBoundary.
+- Chưa có phép đo đầy đủ mọi nhóm ≤3 giây, A7 tắt/bật broker hoặc N15 UI mới trong lượt tài liệu. Type/unread filter hiện trên các trang đã tải; device route có nhưng chưa có màn Web. [Contract hiện tại](../CONTRACT_OPEN_QUESTIONS.md).
+
+### Chi tiết triển khai và ghi nhận trước cập nhật
+
+---
+
 ## 1. Trang và Component đã dựng
 
 - **Routes**:
@@ -39,7 +68,7 @@
 - [ ] `eventId`: schema Prisma có cột `eventId`; nếu API không trả trường này thì khử trùng vẫn đúng theo `id`.
 - [ ] Thiết bị (`/notifications/devices`): backend có route nhưng chưa có thiết kế màn hình Web → **để ngỏ**, chưa làm.
 - [ ] Loại thông báo `PROMOTION`/khuyến mãi không có trong enum backend nên bộ lọc "Khuyến mãi" của bản thiết kế cũ đã bỏ.
-- [ ] `KYC_APPROVED` / `KYC_REJECTED` chỉ hiển thị được khi backend thực sự phát `user.kyc_reviewed` (xem N19/N21 phía Backend).
+- [x] `KYC_APPROVED` / `KYC_REJECTED`: source đã nối `user.kyc_reviewed`; Backend thật đã được kiểm riêng ngày 22/11. Cần migration/rebuild ở môi trường nhận bàn giao, chưa thay nghiệm thu UI hoặc độ trễ N19.
 
 ## 4. Thay đổi giao diện sau khi gắn API (nếu có)
 

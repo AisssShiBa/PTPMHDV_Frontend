@@ -10,7 +10,7 @@ function userData<T>(body: ApiResponse<T>): T {
 
 const path = (authUserId: string) => '/users/by-auth/' + encodeURIComponent(authUserId)
 
-export const userService = {
+export const userApi = {
   async lookupRecipient(query: string, signal?: AbortSignal): Promise<Recipient> {
     const q = recipientQuerySchema.parse(query)
     const res = await api.get<ApiResponse<Recipient>>('/users/lookup', { params: { q }, signal })
