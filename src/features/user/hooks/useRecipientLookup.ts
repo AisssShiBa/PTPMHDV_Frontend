@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { useAuthStore } from '@/features/auth/stores/useAuthStore'
 import { errorMessage } from '@/lib/apiResponse'
-import { userService } from '../services/userService'
+import { userApi } from '../api/user.api'
 import { lookupRetryAt, recipientQuerySchema, type Recipient } from '../schemas/recipient.schema'
 
 // Keep the server cooldown when closing/reopening the transfer dialog; no
@@ -45,7 +45,7 @@ export function useRecipientLookup(authUserId: string) {
     request.current = controller
     setLoading(true)
     try {
-      const result = await userService.lookupRecipient(parsed.data, controller.signal)
+      const result = await userApi.lookupRecipient(parsed.data, controller.signal)
       if (controller.signal.aborted || useAuthStore.getState().user?.id !== authUserId) return
       if (result.authUserId === authUserId) {
         setError('Không tìm thấy người nhận phù hợp. Vui lòng kiểm tra lại email hoặc số điện thoại.')

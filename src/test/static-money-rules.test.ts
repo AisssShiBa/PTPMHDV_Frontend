@@ -5,6 +5,8 @@ import path from 'node:path'
 describe('Quy tắc quét tĩnh: chặn route ví cũ và Number cho tiền trong phạm vi K18 [K18-5]', () => {
   const K18_SOURCE_FILES = [
     'src/pages/DashboardPage.tsx',
+    'src/features/wallet/components/WalletDashboard.tsx',
+    'src/features/wallet/components/WalletTransactions.tsx',
     'src/features/wallet/api/wallet.api.ts',
     'src/features/wallet/api/wallet.queries.ts',
     'src/features/wallet/services/walletService.ts',
@@ -48,8 +50,8 @@ describe('Quy tắc quét tĩnh: chặn route ví cũ và Number cho tiền tron
     })
   })
 
-  it('DashboardPage chỉ sử dụng tiện ích formatVnd và BigInt từ lib/format hoặc lib/money', () => {
-    const dashboardPath = path.resolve(process.cwd(), 'src/pages/DashboardPage.tsx')
+  it('WalletDashboard chỉ sử dụng tiện ích formatVnd và BigInt từ lib/format hoặc lib/money', () => {
+    const dashboardPath = path.resolve(process.cwd(), 'src/features/wallet/components/WalletDashboard.tsx')
     const content = fs.readFileSync(dashboardPath, 'utf-8')
     expect(content).toContain('formatVnd')
     expect(content).toContain('parseVndToBigInt')

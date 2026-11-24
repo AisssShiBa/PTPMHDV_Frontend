@@ -1,139 +1,100 @@
 /**
- * scripts/check-thin-pages.mjs
- * 
- * Công cụ kiểm tra tự động Tiêu chuẩn "Trang Mỏng" (Thin Pages) cho FinVault (Nhiệm vụ Đ20).
- * Tuân thủ nghiêm ngặt theo Frontend/AGENTS.md:
- * 1. CẤM import axios hoặc *.api.ts trực tiếp trong thư mục src/pages.
- * 2. CẤM sử dụng Number(...) để tính toán tiền tệ trong src/pages (bắt buộc dùng string / lib/format.ts).
- * 
- * Cách chạy:
- *   node scripts/check-thin-pages.mjs
+ * Check direct network imports in pages and flag Number(...) for manual review.
+ * This does not certify business-logic separation or resolve computed imports.
  */
-
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const PAGES_DIR = resolve(__dirname, '../src/pages')
+const ROOT = fileURLToPath(new URL('../', import.meta.url))
+const PAGES_DIR = resolve(ROOT, 'src/pages')
+const config = ts.readConfigFile(resolve(ROOT, 'tsconfig.app.json'), ts.sys.readFile)
+if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'))
+const compilerOptions = ts.parseJsonConfigFileContent(config.config, ts.sys, ROOT).options
 
-// Màu sắc hiển thị terminal (ANSI escape codes)
-const colors = {
-  reset: '\x1b[0m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
-  bold: '\x1b[1m'
+function findPageFiles(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const path = join(directory, entry.name)
+    if (entry.isDirectory()) return findPageFiles(path)
+    return /\.tsx?$/.test(entry.name) ? [path] : []
+  })
 }
 
-function findPageFiles(dir) {
-  let results = []
-  const list = readdirSync(dir)
-
-  for (const file of list) {
-    const fullPath = join(dir, file)
-    const stat = statSync(fullPath)
-    if (stat.isDirectory()) {
-      results = results.concat(findPageFiles(fullPath))
-    } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
-      results.push(fullPath)
+export function inspectPage(filePath, content) {
+  const source = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true)
+  const violations = []
+  function report(node, type, rule, hint) {
+    violations.push({
+      type,
+      line: source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1,
+      rule,
+      hint
+    })
+  }
+  function inspectImport(specifier, node) {
+    const modulePath = specifier.replaceAll('\\', '/')
+    const resolved = ts.resolveModuleName(specifier, filePath, compilerOptions, ts.sys).resolvedModule?.resolvedFileName
+    const target = resolved?.replaceAll('\\', '/')
+    const isAxios = /^axios(?:\/|$)/.test(modulePath)
+      || (target && resolve(target) === resolve(ROOT, 'src/lib/axios.ts'))
+    const isApi = /(?:^|\/)[^/]+\.api(?:\.[cm]?[jt]sx?)?$/.test(modulePath)
+      || (target && /\.api\.[cm]?[jt]sx?$/.test(target))
+    if (isAxios || isApi) {
+      report(node, 'ERROR', 'Import mạng trực tiếp bị cấm: ' + specifier,
+        'Chuyển lời gọi API vào feature; trang ghép component hoặc hook qua index.ts của feature.')
     }
   }
-
-  return results
+  function visit(node) {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
+      && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier)) {
+      inspectImport(node.moduleSpecifier.text, node)
+    } else if (ts.isImportEqualsDeclaration(node)
+      && ts.isExternalModuleReference(node.moduleReference)
+      && node.moduleReference.expression && ts.isStringLiteralLike(node.moduleReference.expression)) {
+      inspectImport(node.moduleReference.expression.text, node)
+    } else if (ts.isCallExpression(node)) {
+      const expression = node.expression
+      if ((expression.kind === ts.SyntaxKind.ImportKeyword
+        || (ts.isIdentifier(expression) && expression.text === 'require'))
+        && node.arguments[0] && ts.isStringLiteralLike(node.arguments[0])) {
+        inspectImport(node.arguments[0].text, node)
+      }
+      if (ts.isIdentifier(expression) && expression.text === 'Number') {
+        report(node, 'WARNING', 'Cần rà soát Number(...); chưa xác định đây có phải tiền tệ.',
+          'Nếu là tiền: giữ dạng string và dùng tiện ích tiền tệ. Nếu là số trang hoặc số đếm: kiểm tra theo nghiệp vụ.')
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return violations
 }
 
 function checkThinPages() {
-  console.log(`${colors.bold}${colors.cyan}====================================================${colors.reset}`)
-  console.log(`${colors.bold}${colors.cyan}🔍 [FinVault Code Quality Gate] KIỂM TRA TRANG MỎNG${colors.reset}`)
-  console.log(`${colors.bold}${colors.cyan}====================================================${colors.reset}\n`)
-
   const files = findPageFiles(PAGES_DIR)
-  let totalErrors = 0
-  let totalWarnings = 0
-
-  const AXIOS_REGEX = /(from\s+['"]axios['"]|import\s+axios|require\(['"]axios['"]\))/
-  const NUMBER_REGEX = /\bNumber\s*\(/
-
-  for (const filePath of files) {
-    const relPath = relative(resolve(__dirname, '..'), filePath)
-    const content = readFileSync(filePath, 'utf-8')
-    const lines = content.split('\n')
-
-    const fileViolations = []
-
-    lines.forEach((line, index) => {
-      const lineNum = index + 1
-      const trimmed = line.trim()
-
-      // Bỏ qua dòng comment
-      if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')) {
-        return
-      }
-
-      // 1. Kiểm tra vi phạm Axios (Nghiêm trọng - Cấm hoàn toàn)
-      if (AXIOS_REGEX.test(line)) {
-        fileViolations.push({
-          type: 'ERROR',
-          line: lineNum,
-          rule: 'CẤM import axios trực tiếp trong src/pages',
-          code: trimmed,
-          hint: 'Chuyển logic gọi mạng vào features/<feature>/api/*.api.ts'
-        })
-        totalErrors++
-      }
-
-      // 2. Kiểm tra vi phạm Number(...) cho tiền tệ
-      if (NUMBER_REGEX.test(line)) {
-        // Loại trừ các trường hợp không phải tiền tệ nếu có ghi chú rõ ràng
-        fileViolations.push({
-          type: 'WARNING',
-          line: lineNum,
-          rule: 'CẢNH BÁO dùng Number(...) trong trang web',
-          code: trimmed,
-          hint: 'Tiền phải là string và định dạng qua lib/format.ts (BigInt), tránh lỗi dấu phẩy động'
-        })
-        totalWarnings++
-      }
-    })
-
-    if (fileViolations.length > 0) {
-      console.log(`📄 ${colors.bold}${relPath}${colors.reset}`)
-      for (const v of fileViolations) {
-        if (v.type === 'ERROR') {
-          console.log(`   ${colors.red}✖ [LỖI - Dòng ${v.line}]: ${v.rule}${colors.reset}`)
-          console.log(`     Đoạn mã: ${colors.yellow}${v.code}${colors.reset}`)
-          console.log(`     👉 Khắc phục: ${v.hint}\n`)
-        } else {
-          console.log(`   ${colors.yellow}▲ [CẢNH BÁO - Dòng ${v.line}]: ${v.rule}${colors.reset}`)
-          console.log(`     Đoạn mã: ${colors.yellow}${v.code}${colors.reset}`)
-          console.log(`     👉 Khắc phục: ${v.hint}\n`)
-        }
-      }
+  let errors = 0
+  let warnings = 0
+  console.log('Kiểm tra import mạng trực tiếp và cảnh báo Number(...) trong src/pages')
+  for (const file of files) {
+    for (const violation of inspectPage(file, readFileSync(file, 'utf8'))) {
+      if (violation.type === 'ERROR') errors++
+      else warnings++
+      console.log(relative(ROOT, file) + ':' + violation.line + ' [' + violation.type + '] ' + violation.rule)
+      console.log('  ' + violation.hint)
     }
   }
-
-  console.log(`${colors.bold}----------------------------------------------------${colors.reset}`)
-  console.log(`📊 Tổng kết:`)
-  console.log(`   • Đã quét: ${colors.bold}${files.length}${colors.reset} trang trong src/pages`)
-  console.log(`   • Lỗi vi phạm axios (Error): ${totalErrors > 0 ? colors.red + totalErrors : colors.green + '0'}${colors.reset}`)
-  console.log(`   • Cảnh báo dùng Number (Warning): ${totalWarnings > 0 ? colors.yellow + totalWarnings : colors.green + '0'}${colors.reset}`)
-  console.log(`${colors.bold}----------------------------------------------------${colors.reset}\n`)
-
-  if (totalErrors > 0) {
-    console.error(`${colors.red}${colors.bold}❌ KIỂM TRA THẤT BẠI: Phát hiện vi phạm kiến trúc nghiêm trọng trong src/pages!${colors.reset}`)
-    process.exit(1)
-  } else if (totalWarnings > 0) {
-    console.log(`${colors.yellow}⚠️  CHÚ Ý: Phát hiện một số trang của đồng đội đang dùng mock Number(). Cần thay thế trước khi đóng gói.${colors.reset}`)
-    console.log(`${colors.green}✔️  Kiến trúc phân tầng Axios: 100% TUÂN THỦ (Trang mỏng chuẩn).${colors.reset}\n`)
-    process.exit(0)
-  } else {
-    console.log(`${colors.green}${colors.bold}🎉 HOÀN HẢO: 100% các trang trong src/pages đạt chuẩn Trang Mỏng (Thin Pages)!${colors.reset}\n`)
-    process.exit(0)
+  console.log('Đã quét ' + files.length + ' file; lỗi import: ' + errors + '; cảnh báo cần rà soát: ' + warnings + '.')
+  console.log('Phạm vi: import có đường dẫn cố định và lời gọi Number(...). Logic nghiệp vụ, import tính toán và mức độ trang mỏng cần được rà soát riêng.')
+  if (errors > 0) {
+    console.error('Không đạt kiểm tra import. Cần sửa các vị trí được liệt kê.')
+    return 1
   }
+  console.log('Không phát hiện import mạng trực tiếp bị cấm trong phạm vi kiểm tra.')
+  return 0
 }
 
-checkThinPages()
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exitCode = checkThinPages()
+}
 

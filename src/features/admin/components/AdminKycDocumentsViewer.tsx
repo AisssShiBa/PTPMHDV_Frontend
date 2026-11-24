@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { errorMessage } from '@/lib/apiResponse'
 import { useKycDocuments } from '../api/admin.queries'
@@ -11,16 +11,34 @@ import { useKycDocuments } from '../api/admin.queries'
 export function AdminKycDocumentsViewer({ userId }: { userId: string }) {
   const [visible, setVisible] = useState(false)
   const documents = useKycDocuments(userId, visible)
+  const [now, setNow] = useState(Date.now)
+  const expiresAt = Date.parse(documents.data?.expiresAt ?? '')
+  const expired = Boolean(documents.data) && (!Number.isFinite(expiresAt) || expiresAt <= now)
+  useEffect(() => {
+    if (!visible || !Number.isFinite(expiresAt)) return
+    // Refresh the clock after suspended/background tabs resume as well.
+    const updateClock = () => setNow(Date.now())
+    const timer = expiresAt > now
+      ? setTimeout(updateClock, Math.min(Math.max(0, expiresAt - Date.now()), 2147483647))
+      : undefined
+    window.addEventListener('focus', updateClock)
+    document.addEventListener('visibilitychange', updateClock)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('focus', updateClock)
+      document.removeEventListener('visibilitychange', updateClock)
+    }
+  }, [visible, expiresAt, now])
 
   return (
     <section aria-label="Ảnh hồ sơ KYC" className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" variant="outline" onClick={() => setVisible((current) => !current)}>
+        <Button type="button" variant="outline" onClick={() => { setNow(Date.now()); setVisible(current => !current) }}>
           {visible ? 'Ẩn ảnh CCCD' : 'Xem hai mặt CCCD'}
         </Button>
-        {documents.isError && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => void documents.refetch()}>
-            Thử lại
+        {(documents.isError || (visible && expired)) && (
+          <Button type="button" variant="ghost" size="sm" disabled={documents.isFetching} onClick={() => void documents.refetch()}>
+            {expired ? 'Tải lại ảnh' : 'Thử lại'}
           </Button>
         )}
         <p className="text-xs text-muted-foreground">
@@ -40,7 +58,9 @@ export function AdminKycDocumentsViewer({ userId }: { userId: string }) {
         </p>
       )}
 
-      {visible && documents.data && (
+      {visible && expired && <p role="status" className="text-sm text-muted-foreground">Liên kết xem ảnh đã hết hạn. Vui lòng tải lại ảnh.</p>}
+
+      {visible && !expired && !documents.isError && documents.data && (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             {(['frontUrl', 'backUrl'] as const).map((side) => (

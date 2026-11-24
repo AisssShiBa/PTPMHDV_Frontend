@@ -1,4 +1,5 @@
-import { useAuthStore, MOCK_USER } from '@/features/auth/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { MOCK_AUTH_USER as MOCK_USER } from '@/features/auth/fixtures/auth.fixtures'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -247,7 +248,7 @@ describe('TransactionsPage - Cursor Pagination & Ledger [K22-1]', () => {
   })
 
   it('kiểm tra tĩnh: TransactionsPage tuyệt đối không dùng Number, parseFloat, parseInt trên tiền', () => {
-    const filePath = path.resolve(__dirname, '../pages/TransactionsPage.tsx')
+    const filePath = path.resolve(__dirname, '../features/wallet/components/WalletTransactions.tsx')
     const content = fs.readFileSync(filePath, 'utf-8')
 
     // Chặn Number(amount), parseFloat(amount), parseInt(amount)

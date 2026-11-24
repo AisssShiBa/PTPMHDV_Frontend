@@ -106,8 +106,8 @@ export function AdminReconciliation() {
     setNotice(null)
     toast.success(
       result.replayed
-        ? 'Điều chỉnh đã được ghi nhận trước đó, không tạo bút toán trùng.'
-        : 'Đã tạo bút toán điều chỉnh và ghi nhật ký kiểm toán.'
+        ? 'Số dư đã được khôi phục trước đó, không xử lý lần hai.'
+        : 'Đã khôi phục số dư theo sổ cái và ghi nhật ký kiểm toán.'
     )
   }
 

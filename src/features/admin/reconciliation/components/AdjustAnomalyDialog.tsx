@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { FileCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -34,6 +34,7 @@ export function AdjustAnomalyDialog({
   onConflict
 }: AdjustAnomalyDialogProps) {
   const adjust = useAdjustAnomaly()
+  const submitting = useRef(false)
   const [direction, setDirection] = useState<'CREDIT' | 'DEBIT'>('CREDIT')
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
@@ -41,13 +42,14 @@ export function AdjustAnomalyDialog({
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (adjust.isPending) return
+    if (submitting.current || adjust.isPending) return
     const parsed = adjustAnomalySchema.safeParse({ direction, amount, reason })
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message ?? 'Dữ liệu chưa hợp lệ.')
       return
     }
     setFormError('')
+    submitting.current = true
     try {
       const result = await adjust.mutateAsync({ anomalyId: anomaly.id, payload: parsed.data })
       onResolved(result)
@@ -61,14 +63,16 @@ export function AdjustAnomalyDialog({
         return
       }
       setFormError(reconciliationErrorMessage(error))
+    } finally {
+      submitting.current = false
     }
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && !submitting.current && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Tạo bút toán điều chỉnh</DialogTitle>
+          <DialogTitle>Khôi phục số dư theo sổ cái</DialogTitle>
           <DialogDescription>
             {anomalyLabel(anomaly.type)} · Mã bất thường {anomaly.id}
             {anomaly.walletId ? ` · Ví ${anomaly.walletId}` : ''}
@@ -78,7 +82,7 @@ export function AdjustAnomalyDialog({
         <form onSubmit={submit} className="space-y-4">
           <fieldset className="space-y-1.5">
             <legend className="text-xs font-semibold text-muted-foreground">
-              Loại điều chỉnh nghiệp vụ
+              Hướng sửa chênh lệch số dư
             </legend>
             <div className="grid grid-cols-2 gap-2.5">
               {(['DEBIT', 'CREDIT'] as const).map((value) => (
@@ -99,7 +103,7 @@ export function AdjustAnomalyDialog({
                     disabled={adjust.isPending}
                     className="size-3.5"
                   />
-                  <span>{value === 'DEBIT' ? 'Ghi Nợ (Giảm số dư)' : 'Ghi Có (Tăng số dư)'}</span>
+                  <span>{value === 'DEBIT' ? 'Giảm số dư về sổ cái' : 'Tăng số dư về sổ cái'}</span>
                 </label>
               ))}
             </div>
@@ -148,7 +152,7 @@ export function AdjustAnomalyDialog({
 
           <div className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
             <FileCheck className="mt-0.5 size-4 shrink-0 text-primary" />
-            <p>Thao tác được ghi vĩnh viễn vào nhật ký kiểm toán cùng mã tham chiếu của bất thường.</p>
+            <p>Chỉ khôi phục số dư theo sổ cái, không tạo giao dịch tiền mới. Giữ nguyên sổ cái và tiền đang giữ; thao tác có nhật ký kiểm toán.</p>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -157,7 +161,7 @@ export function AdjustAnomalyDialog({
             </Button>
             <Button type="submit" disabled={adjust.isPending} className="gap-2 font-bold">
               <FileCheck className="size-4" />
-              {adjust.isPending ? 'Đang gửi…' : 'Ký duyệt & Tạo bút toán'}
+              {adjust.isPending ? 'Đang gửi…' : 'Xác nhận khôi phục số dư'}
             </Button>
           </div>
         </form>

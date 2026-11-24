@@ -1,29 +1,30 @@
-# Bàn giao Profile/KYC — FE-H01
+# Bàn giao Profile/KYC — H18, phối hợp N17/N19
 
-**Đã nghiệm thu Phase 1 trên nguồn hiện tại, 12/11/2026.** [Báo cáo cuối](../evidence/huu-fe-phase1/final/README.md): check PASS, Node 32/32, Vitest 35/35 (12 Profile/KYC), browser HTTP fixtures PASS và 5 nhóm live Gateway/Auth/User/Admin/MinIO PASS. FE/BE chưa commit; SHA256 nguồn nằm trong evidence.
+Cập nhật 23/11/2026. Hữu sở hữu Profile/KYC, Nguyên Admin/Notification, Đạt bàn giao Auth/PIN và harness. Nội dung hiện tại dựa source; evidence ngày 12–13/11 là lịch sử theo revision trong [Phase 1](../evidence/huu-fe-phase1/final/README.md) và [closeout](../evidence/huu-fe-closeout/README.md).
 
-## Chức năng
+## Trang, component và API
 
-- `/app/profile` là page mỏng ghép UserProfilePanel, tái dùng ProfileForm/KycForm/schema. GET/PUT profile theo Auth ID, email read-only và chỉ gửi field thay đổi.
-- GET `/api/users/me/kyc` cung cấp NONE/PENDING/APPROVED/REJECTED, tier và rejection reason. JPEG/PNG mỗi ảnh ≤5 MiB, POST multipart idNumber/front/back; chống trùng, kết quả timeout phải reconcile trước khi retry.
-- Query theo account, abort stale request, gcTime 0, callback kiểm owner. Đổi account bỏ form/file/ảnh cũ. Preview revoke object URL; viewer URL mặt trước chỉ memory, tự đóng khi TTL/error/unmount.
-- Auth signin/refresh/signout đã dùng API, refresh cookie và logout/account switch được kiểm chứng live; không giữ mock token để giả đăng nhập thành công.
-- Giữ header/card/grid và tokens màn 7; bỏ PIN/password fake success, quota/bank/số dư mẫu khỏi Profile. Các phần Auth/PIN/query/router/notification chung đã sửa theo yêu cầu sửa toàn bộ lỗi gate.
+`/app/profile` → `ProfilePage` → `UserProfilePanel` từ [features/user/index.ts](../../src/features/user/index.ts). Triển khai thật nằm trong `features/user`; `features/kyc/index.ts` hiện export rỗng, không được ghi rằng đã có feature KYC độc lập.
 
-## Nghiệm thu
+- `UserProfilePanel`, `ProfileForm`, `KycForm`, badge trạng thái/tier và `KycDocumentViewer` dùng source `features/user/components`.
+- [userService.ts](../../src/features/user/services/userService.ts): GET/PUT `/api/users/by-auth/{authUserId}`, GET `/api/users/me/kyc`, POST `/api/users/kyc/documents`, GET `/api/users/by-auth/{authUserId}/kyc/document`.
+- [user.queries.ts](../../src/features/user/api/user.queries.ts) có `userKeys.account/profile/kyc`, query theo owner, cache replacement/invalidation sau mutation. `useUserProfile` bọc `useProfileQuery`.
+- `services/` ở feature này vẫn còn; không ghi đã chuyển hết sang adapter `api/*.api.ts`. Đây là phần chuẩn hóa kiến trúc còn phải rà riêng.
 
-HU-F01–HU-F04/HU-F15 PASS qua cả lớp component, browser và backend thật. Hai mặt MinIO thật có đọc quyền và TTL; Admin duyệt/từ chối qua API, không claim Admin page đã được tích hợp. Mobile 390px, desktop 1280px và keyboard browser có evidence.
+## Trạng thái, bảo mật và contract
 
-Browser smoke mới đúng route hiện tại; suite cũ giữ nguyên trong tests/browser-smoke-legacy.mjs, các case merchant/Admin UI/P2P lịch sử chưa tính PASS. Nạp VNPAY, cash-out, merchant và các phase tiếp theo vẫn theo contract/plan, chưa được coi đã hoàn thành từ kết quả Phase 1.
+Loading/error/retry do QueryBoundary, profile/form và trạng thái NONE/PENDING/APPROVED/REJECTED từ server. Email read-only; PUT chỉ field được cho phép. Rejection reason đọc từ `/me/kyc`, không bịa từ response profile đã lược bỏ reason.
 
-[Contract matrix](huu-fe-contract-matrix.md), [log/screenshot/live run](../evidence/huu-fe-phase1/final/README.md). Stack acceptance đã dừng, giữ volume; không reset dữ liệu project khác. Package-lock cập nhật bởi người dùng được bảo toàn; chưa commit/push/merge.
+Upload multipart `idNumber`, `front`, `back`; mỗi ảnh JPEG/PNG tối đa 5 MiB. Chặn gửi trùng, không tự báo thành công bằng timer. Preview/object URL được thu hồi; URL có chữ ký và file không lưu persistent storage. Đổi owner phải bỏ form/ảnh/cache liên quan.
 
+User backend đã hỗ trợ cả filter `status` và `kycStatus`, normalize về kycStatus; khi có cả hai, `status` được ưu tiên. Không tiếp tục giao sửa “Admin gửi status nên lọc bị bỏ qua”.
 
-## Bàn giao Phase 8 — 13/11/2026
+## Cách kiểm tra và bàn giao
 
-[Bản tổng hợp hiện trạng/test/blocker](huu-fe-phase8.md) · [Runbook demo và fixture manifest](huu-fe-demo-runbook.md) · [PR FE nháp](huu-fe-pr-draft.md). Kết quả Phase 1–6 ở trên là lịch sử. Các lỗi Gateway/topup contract đã sửa local và có [evidence mới](../evidence/huu-fe-week4/fixes/README.md); không dùng handover lịch sử để kết luận Funding vẫn BLOCKED hoặc mọi P0 đã hoàn thành. Phase 8 chuẩn bị tài liệu/review local, chưa seed demo, quay video, tạo PR hoặc merge.
+1. User mới mở Profile phải thấy trạng thái/cấp thật; F5 vẫn đúng.
+2. Upload hai ảnh tổng hợp hợp lệ: một lần submit, một request; F5 thấy PENDING. Sai loại/quá 5 MiB/thiếu mặt bị chặn.
+3. Admin từ chối có lý do: user thấy REJECTED/reason; duyệt hồ sơ khác thấy APPROVED/tier 1 và thông báo.
+4. Đổi tài khoản khi tải ảnh/form: không lộ dữ liệu user trước. Kiểm ảnh hết TTL và lỗi tải.
+5. Chạy `npm run test:profile:live` chỉ sau khi kiểm cấu hình fixture/stack riêng; đọc [runbook](huu-fe-demo-runbook.md). UI live sau merge vẫn cần evidence Đ22/H18 riêng.
 
-
-## Closeout tự thực hiện — 13/11/2026
-
-[Evidence closeout](../evidence/huu-fe-closeout/README.md): đã chạy lại 9 suite cùng nguồn product, seed 6 tài khoản demo private, rehearsal/video live; 11 P2P + 5 Wallet acceptance cuối đều PASS sau sửa harness. Không sửa nghiệp vụ P2P. Active Transfer UI/K18 mapping, VNPAY sandbox thật và review/rollout/merge vẫn chờ phối hợp.
+KYC review event đã nối schema/outbox/publisher/Notification và được kiểm tra Backend thật ở phiên 22/11; cần migration User `202611220001_user_outbox_event_type_uniqueness` và rebuild/rollout tương ứng. Không tự coi máy thành viên đã cập nhật image. K03 về tier khi PENDING bị từ chối vẫn cần thống nhất nghiệp vụ; thay đổi event không tự đóng K03. Xem [contract](../CONTRACT_OPEN_QUESTIONS.md).

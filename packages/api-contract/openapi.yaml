@@ -1461,6 +1461,7 @@ paths:
     post:
       tags: [Wallets]
       summary: Adjust one wallet anomaly (ADMIN)
+      description: Repairs BALANCE_DRIFT cache against the immutable ledger, preserving holds. No financial reversal or new ledger transaction; transactionId is null. The reference is fixed to adjust-anomaly-<id>.
       x-backend-service: wallet-service
       parameters:
         - $ref: '#/components/parameters/AnomalyId'
@@ -1484,6 +1485,10 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: REPAIR_CONFLICTS_WITH_HOLDS or ALREADY_ADJUSTED; no partial cache or audit change
+        '422':
+          description: ADJUST_NOT_SUPPORTED for non-drift anomalies
 
   # ── Payments ────────────────────────────────────────────────────────────
   /payments:
@@ -1760,7 +1765,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [amount], properties: { amount: { type: string, pattern: '^[1-9][0-9]{0,8}$', description: 'Integer VND from 10000 to 100000000' } } }
+            schema: { type: object, required: [amount], properties: { amount: { type: string, pattern: '^(?:[1-9][0-9]{4,7}|100000000)$', description: 'Integer VND from 10000 to 100000000' } } }
             example: { amount: '50000' }
       responses:
         '201':
@@ -1848,28 +1853,40 @@ paths:
   /payments/admin/topups/{id}/approve:
     post:
       tags: [Payments]
-      summary: Approve a top-up manually (currently disabled by the backend)
+      summary: Approve a pending top-up manually
       description: |
-        The route exists but `TopupService.approveTopup` always throws
-        `400 NOT_ALLOWED` because VNPAY IPN owns crediting. The web client keeps
-        the button and maps `NOT_ALLOWED` to a Vietnamese explanation.
+        ADMIN only. Claims PENDING as PROCESSING and writes the decision audit atomically.
+        Wallet uses the same topup.code reference as VNPAY IPN. Repeated approval of
+        APPROVED returns success without another credit. No Idempotency-Key header is required.
+        On an unknown Wallet outcome, read the existing request; recovery reuses its reference.
       x-backend-service: payment-service
       parameters:
         - $ref: '#/components/parameters/Id'
       responses:
-        '400':
-          description: NOT_ALLOWED — manual approval is disabled
+        '200':
+          description: Approved or already approved, without duplicate credit
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: TOPUP_PROCESSING or INVALID_TRANSITION (including expired pending requests)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '503':
+          description: TOPUP_OUTCOME_UNKNOWN; inspect the same request instead of resubmitting
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
 
   /payments/admin/topups/{id}/reject:
     post:
       tags: [Payments]
-      summary: Reject a top-up manually (currently disabled by the backend)
-      description: Same `400 NOT_ALLOWED` behavior as approve. No `Idempotency-Key` header is accepted.
+      summary: Reject a pending top-up manually
+      description: ADMIN only. PENDING to REJECTED and audit commit atomically; never credits or rejects a PROCESSING/APPROVED request.
       x-backend-service: payment-service
       parameters:
         - $ref: '#/components/parameters/Id'
@@ -1883,13 +1900,20 @@ paths:
               properties:
                 reason: { type: string, minLength: 1, maxLength: 500 }
       responses:
-        '400':
-          description: NOT_ALLOWED — manual review is disabled
+        '200':
+          description: Rejected or already rejected, without moving money
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: TOPUP_PROCESSING or INVALID_TRANSITION
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
 
   # ── Funding ─────────────────────────────────────────────────────────────
   /funding/cash-out:
@@ -2018,7 +2042,7 @@ paths:
               type: object
               required: [amount]
               properties:
-                amount: { type: number, minimum: 10000, maximum: 100000000 }
+                amount: { oneOf: [{ type: string, pattern: '^(?:[1-9][0-9]{4,7}|100000000)$', description: 'Canonical integer VND; 10000 through 100000000' }, { type: integer, minimum: 10000, maximum: 100000000, deprecated: true }] }
       responses:
         '201':
           description: Top-up created
@@ -2051,7 +2075,7 @@ paths:
               type: object
               required: [amount]
               properties:
-                amount: { type: number, minimum: 10000, maximum: 100000000 }
+                amount: { oneOf: [{ type: string, pattern: '^(?:[1-9][0-9]{4,7}|100000000)$', description: 'Canonical integer VND; 10000 through 100000000' }, { type: integer, minimum: 10000, maximum: 100000000, deprecated: true }] }
       responses:
         '201':
           description: Top-up created
@@ -2847,6 +2871,10 @@ paths:
         The backend derives a fixed `referenceId = adjust-anomaly-<id>`; the route
         does not accept `Idempotency-Key`. A repeated successful adjustment is
         `409 ALREADY_ADJUSTED`. An UNKNOWN outcome is not retried automatically.
+        For BALANCE_DRIFT this restores the cache from the immutable ledger;
+        direction and amount describe the current cache difference. It does not
+        reverse a financial transaction. `transactionId` is null. Existing holds
+        are preserved; insufficient ledger coverage returns 409 REPAIR_CONFLICTS_WITH_HOLDS.
       x-backend-service: admin-service
       parameters:
         - $ref: '#/components/parameters/AnomalyId'
@@ -2874,7 +2902,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409':
-          description: ADJUSTMENT_IN_PROGRESS or ALREADY_ADJUSTED
+          description: ADJUSTMENT_IN_PROGRESS, ALREADY_ADJUSTED, or REPAIR_CONFLICTS_WITH_HOLDS
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }

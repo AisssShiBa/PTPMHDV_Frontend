@@ -1,0 +1,33 @@
+{
+  "result": "PASS",
+  "mode": "two-automated-technical-rehearsals",
+  "project": "finvault-acceptance-32c7acf589e5",
+  "checkedAt": "2026-11-23T17:48:33.248Z",
+  "runs": [
+    {
+      "run": 1,
+      "result": "PASS",
+      "checks": 16,
+      "seconds": 310,
+      "file": "rehearsal-1.webm",
+      "playback": "PASS",
+      "sampledAt": 250.50198,
+      "sha256": "e932609d892b54e0ad46018d291786d97c0cbccb9d8ee7c102783f9646914563",
+      "source": "D:/PTPMHDV/Frontend/node_modules/.tmp/week4-demo-release-1/result.json"
+    },
+    {
+      "run": 2,
+      "result": "PASS",
+      "checks": 16,
+      "seconds": 310,
+      "file": "rehearsal-2.webm",
+      "playback": "PASS",
+      "sampledAt": 250.516212,
+      "sha256": "1b93c3957472f896721758ef4977f6c721809747331dfab665d8b6a65af46809",
+      "source": "D:/PTPMHDV/Frontend/node_modules/.tmp/week4-demo-release-2/result.json"
+    }
+  ],
+  "formal15MinutePresentation": "NOT_RUN",
+  "realVnpaySandbox": "BLOCKED_WAIT_H20_OWNER",
+  "note": "Live system; synthetic accounts/balances, signed synthetic IPN, simulated providers. Credentials/PIN/QR excluded. Real durations, no narration."
+}

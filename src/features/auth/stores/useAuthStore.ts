@@ -3,10 +3,6 @@ import { toast } from 'sonner'
 import { authApi } from '../api/auth.api'
 import { errorMessage } from '@/lib/apiResponse'
 import type { AuthState, AuthSession } from '../types/auth.types'
-import { MOCK_AUTH_USER } from '../fixtures/auth.fixtures'
-
-// Re-export tạm thời cho unit test (axios.test.ts) trước khi test chuyển sang import từ fixtures
-export const MOCK_USER = MOCK_AUTH_USER
 
 let refreshInFlight: Promise<boolean> | null = null
 let generation = 0

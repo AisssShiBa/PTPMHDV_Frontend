@@ -12,7 +12,8 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/mocks/server'
-import { useAuthStore, MOCK_USER } from '@/features/auth/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { MOCK_AUTH_USER as MOCK_USER } from '@/features/auth/fixtures/auth.fixtures'
 import {
   UtilitiesWorkspace,
   orderPollInterval,

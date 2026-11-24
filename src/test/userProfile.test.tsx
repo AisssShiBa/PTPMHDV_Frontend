@@ -5,11 +5,12 @@ import { delay, http, HttpResponse } from 'msw'
 import { AxiosError } from 'axios'
 import api from '@/lib/axios'
 import { server } from '@/mocks/server'
-import { useAuthStore, MOCK_USER } from '@/features/auth/stores/useAuthStore'
+import { useAuthStore } from '@/features/auth/stores/useAuthStore'
+import { MOCK_AUTH_USER as MOCK_USER } from '@/features/auth/fixtures/auth.fixtures'
 import { UserProfilePanel } from '@/features/user'
 import { KycDocumentViewer } from '@/features/user/components/KycDocumentViewer'
 import { KycForm } from '@/features/user/components/KycForm'
-import { userService } from '@/features/user/services/userService'
+import { userApi } from '@/features/user/api/user.api'
 import type { UserKycStatus, UserProfile } from '@/features/user/types/user.types'
 
 const accountA = '10000000-0000-4000-8000-000000000001'
@@ -130,7 +131,7 @@ describe('Profile and KYC integration', () => {
       static createObjectURL = vi.fn(() => 'blob:synthetic-preview')
       static revokeObjectURL = vi.fn()
     })
-    const upload = vi.spyOn(userService, 'submitKyc')
+    const upload = vi.spyOn(userApi, 'submitKyc')
       .mockRejectedValueOnce(new AxiosError('Synthetic network timeout'))
       .mockResolvedValue({ ...initialProfile, kycStatus: 'PENDING', version: 1 })
     const reload = vi.fn<() => Promise<boolean>>()
@@ -236,7 +237,7 @@ describe('Signed document lifecycle', () => {
 
   it('hides the URL on TTL expiry and requests a new one when reopened', async () => {
     vi.useFakeTimers()
-    const getDocument = vi.spyOn(userService, 'getKycDocument').mockResolvedValue({ url: 'https://example.test/synthetic-front', expiresIn: 2 })
+    const getDocument = vi.spyOn(userApi, 'getKycDocument').mockResolvedValue({ url: 'https://example.test/synthetic-front', expiresIn: 2 })
     render(<KycDocumentViewer authUserId={accountA} />)
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Xem giấy tờ đã gửi' })) })
     expect(screen.getByRole('img')).toBeInTheDocument()
@@ -247,7 +248,7 @@ describe('Signed document lifecycle', () => {
   })
 
   it('removes an already opened image immediately when the owner changes', async () => {
-    vi.spyOn(userService, 'getKycDocument').mockResolvedValue({ url: 'https://example.test/synthetic-front', expiresIn: 60 })
+    vi.spyOn(userApi, 'getKycDocument').mockResolvedValue({ url: 'https://example.test/synthetic-front', expiresIn: 60 })
     const view = render(<KycDocumentViewer authUserId={accountA} />)
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Xem giấy tờ đã gửi' })) })
     expect(screen.getByRole('img')).toBeInTheDocument()

@@ -22,7 +22,7 @@ const cache = resolve(homedir(), '.cache/ms-playwright')
 const executable = process.env.BROWSER_PATH || (existsSync(cache) ? readdirSync(cache).filter(name => name.startsWith('chromium-')).flatMap(name => ['chrome-linux64/chrome', 'chrome-linux/chrome'].map(binary => resolve(cache, name, binary))).find(existsSync) : undefined)
 assert.ok(executable, 'Install Chromium or provide BROWSER_PATH')
 process.env.BROWSER_PATH = executable
-const build = spawnSync('npm', ['run', 'build'], { cwd: root, env: { ...process.env, VITE_API_BASE_URL: '/api', VITE_USE_MOCK: 'false', VITE_VNPAY_PAYMENT_URL: '' }, stdio: 'inherit' })
+const build = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'build'], { cwd: root, shell: process.platform === 'win32', env: { ...process.env, VITE_API_BASE_URL: '/api', VITE_USE_MOCK: 'false', VITE_VNPAY_PAYMENT_URL: '' }, stdio: 'inherit' })
 assert.equal(build.status, 0, 'Production build')
 const dist = resolve(root, 'dist')
 
@@ -32,7 +32,7 @@ const runFile = process.env.LIVE_ACCEPTANCE_RUN_FILE
 assert.ok(runFile, 'Provide LIVE_ACCEPTANCE_RUN_FILE for an isolated local backend')
 const run = JSON.parse(readFileSync(runFile, 'utf8'))
 assert.match(run.project, /^finvault-acceptance-[0-9a-f]{12}$/)
-const backend = resolve(root, '../PTPMHDV_Backend')
+const backend = resolve(root, '../Backend')
 const directory = resolve(backend, '.cache/acceptance-week2', run.project)
 assert.equal(resolve(runFile), resolve(directory, 'run.json'))
 const gateway = new URL(run.gateway)

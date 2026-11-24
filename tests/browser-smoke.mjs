@@ -9,7 +9,7 @@ import { openBrowser, until } from './browser-support.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const dist = resolve(root, 'dist')
-const artifacts = resolve(root, process.env.BROWSER_EVIDENCE_DIR || 'docs/evidence/huu-fe-phase1/final/browser')
+const artifacts = resolve(root, process.env.BROWSER_EVIDENCE_DIR || 'node_modules/.tmp/browser-smoke')
 const runtime = resolve(root, 'node_modules/.tmp/profile-browser')
 mkdirSync(artifacts, { recursive: true }); mkdirSync(runtime, { recursive: true })
 assert.ok(existsSync(resolve(dist, 'index.html')), 'Build the current frontend first')
@@ -29,10 +29,17 @@ let failDocuments = false
 const recipientId = '40000000-0000-4000-8000-000000000001'
 const lookupQueries = []
 const transfers = []
-let uncertainTransfer = false
+let uncertainTransfer = true
+let confirmations = 0
+let paymentReads = 0
+let pinVerifications = 0
+const ledgerCursors = []
+const fixtureErrors = []
 let refreshes = 0
 const requests = []
 const checks = []
+const regressions = []
+const record = (condition, message) => { if (!condition) regressions.push(message) }
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==', 'base64')
 const imagePath = resolve(runtime, 'synthetic.png')
 writeFileSync(imagePath, png)
@@ -64,28 +71,56 @@ const server = createServer(async (req, res) => {
         lookupQueries.push(query)
         if (query === 'slow@example.com') { await delay(350); return success({ authUserId: recipientId, maskedName: 'Phản hồi cũ' }) }
         if (query === 'limit@example.com') { res.setHeader('Retry-After', '2'); return failure(429, 'RATE_LIMIT_EXCEEDED') }
-        if (query === 'server@example.com') return failure(503, 'UNAVAILABLE')
+        if (query === 'unavailable@example.com') return failure(503, 'SERVICE_UNAVAILABLE')
+        if (query === 'server@example.com') return failure(500, 'INTERNAL_SERVER_ERROR')
         if (!['Binh+wallet@Example.com', '+84 912 345 678'].includes(query)) return failure(404, 'RECIPIENT_NOT_FOUND')
         return success({ authUserId: recipientId, maskedName: 'Nguyễn V. B.' })
       }
-      if (path.startsWith('/api/wallets/')) {
-        if (path.endsWith('/balance')) return success({ balance: '500000', availableBalance: '500000', heldBalance: '0', currency: 'VND', status: 'ACTIVE' })
-        if (path.endsWith('/transfer')) {
-          const body = JSON.parse(raw.toString())
-          assert.equal(body.toUserId, recipientId)
-          transfers.push(body)
-          await delay(100)
-          if (uncertainTransfer) return failure(503, 'UNAVAILABLE')
-          return success({ transactionId: 'fixture-txn', replayed: transfers.length > 1 })
-        }
+      if (path === '/api/wallets/me/ledger') {
+        const cursor = new URL(req.url, origin).searchParams.get('cursor')
+        ledgerCursors.push(cursor)
+        assert.ok(cursor === null || cursor === 'page-two', 'Unexpected ledger cursor')
+        const start = cursor ? 10 : 0
+        return success({ items: Array.from({ length: cursor ? 2 : 10 }, (_, offset) => ({
+          id: 'ledger' + String(start + offset + 1).padStart(2, '0'),
+          walletId: 'fixture-wallet', direction: 'DEBIT', amount: '10000', balanceAfter: '100000',
+          transferType: 'TRANSFER', referenceId: 'payment' + String(start + offset + 1).padStart(2, '0'),
+          createdAt: new Date().toISOString()
+        })), nextCursor: cursor ? null : 'page-two' })
+      }
+      if (path === '/api/payments/p2p/quote') {
+        const body = JSON.parse(raw.toString())
+        assert.equal(body.destinationUserId, recipientId)
+        assert.equal(body.amount, '100000')
+        return success({ amount: body.amount, fee: 0, expiresAt: new Date(Date.now() + 60000).toISOString() })
+      }
+      if (path === '/api/payments/p2p/checkout') {
+        const body = JSON.parse(raw.toString())
+        assert.equal(body.destinationUserId, recipientId)
+        assert.equal(body.amount, '100000')
+        assert.match(req.headers['idempotency-key'] ?? '', /^[0-9a-f-]{36}$/i)
+        transfers.push({ body, key: req.headers['idempotency-key'] })
+        await delay(100)
+        if (uncertainTransfer) return failure(503, 'UNAVAILABLE')
+        return success({ paymentId: 'fixture-payment', status: 'PENDING', holdExpiresAt: new Date(Date.now() + 300000).toISOString() })
+      }
+      if (path === '/api/auth/pin/verify') {
+        pinVerifications++
+        assert.deepEqual(JSON.parse(raw.toString()), { pin: '111111', paymentId: 'fixture-payment', amount: '100000' })
+        return success({ transactionToken: 'fixture-single-use', expiresIn: 60 })
+      }
+      if (path === '/api/payments/fixture-payment/confirm') {
+        confirmations++
+        assert.equal(req.headers['x-transaction-token'], 'fixture-single-use')
+        // The server committed, but its response was lost: UI must reconcile with GET.
+        return failure(504, 'GATEWAY_TIMEOUT')
+      }
+      if (path === '/api/payments/fixture-payment') {
+        paymentReads++
+        return success({ id: 'fixture-payment', userId: user.id, status: 'SUCCESS', amount: '100000', fee: '0',
+          note: 'Synthetic reconciled transfer', createdAt: new Date().toISOString() })
       }
       if (path.startsWith('/api/notifications')) return success({ notifications: [], unreadCount: 0, pagination: { totalPages: 1 } })
-      if (path === '/api/payments' && req.method === 'GET') {
-        return success(Array.from({ length: 12 }, (_, index) => ({
-          id: 'payment' + String(index + 1).padStart(2, '0'), userId: user.id,
-          amount: 10000, type: 'BUS_TICKET', status: 'SUCCESS', createdAt: new Date().toISOString()
-        })))
-      }
       if (path === '/api/admin/kyc') {
         if (user.role !== 'ADMIN') return failure(403, 'FORBIDDEN')
         if (failAdminList) return failure(503, 'UNAVAILABLE')
@@ -167,7 +202,7 @@ const server = createServer(async (req, res) => {
     const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.png': 'image/png' }
     res.writeHead(200, { 'Content-Type': mime[extname(file)] || 'application/octet-stream' })
     res.end(readFileSync(file))
-  } catch (error) { console.error('Synthetic fixture failure:', error); failure(500, 'FIXTURE_ASSERTION_FAILED') }
+  } catch (error) { fixtureErrors.push(error.message); failure(500, 'FIXTURE_ASSERTION_FAILED') }
 })
 let browser
 try {
@@ -181,6 +216,13 @@ try {
   const filePath = imagePath
   await cdp('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false })
 
+  signedIn = false
+  await go('/')
+  await until(() => text('Đăng nhập để xem'), 'public HomeLanding')
+  assert.equal(await text('Chủ tài khoản: An Nguyễn'), false)
+  assert.equal(await text('1.250.000 ₫'), false)
+  checks.push('Public HomeLanding renders without fabricated account identity or balance')
+  signedIn = true
   await go('/app/profile')
   await until(() => evaluate('!!document.querySelector("#profile-email")'), 'profile load')
   assert.equal(await evaluate('document.querySelector("#profile-email").readOnly'), true)
@@ -258,102 +300,100 @@ try {
   await evaluate('document.querySelector("form").requestSubmit()')
   await until(() => evaluate('!!document.querySelector("#profile-email")'), 'login returns to profile')
 
-  // H11: exact lookup, no recipient wallet reads, stale request cancellation,
-  // server cooldown and recipient confirmation before using the existing transfer API.
-  await go('/app')
-  await until(() => text('Chuyển tiền'), 'wallet page')
-  await click('Chuyển tiền')
-  await until(() => has('dialog[open] #transfer-recipient'), 'transfer dialog')
-  assert.equal(await evaluate('document.querySelector("#transfer-confirm").disabled'), true)
-  const canTransfer = () => evaluate('[...document.querySelectorAll("dialog button")].find(b => b.textContent.trim() === "Xác nhận chuyển")?.disabled === false')
-  assert.equal(await canTransfer(), false)
-  await fill('#transfer-recipient', 'partial')
-  await click('Tra cứu')
+  // Current P2P page: lookup -> quote -> idempotent checkout -> PIN -> confirm -> GET reconciliation.
+  await go('/app/transfer')
+  await until(() => has('#recipient'), 'transfer page')
+  const canContinue = () => evaluate('[...document.querySelectorAll("button")].find(b => b.textContent.trim() === "Tiếp tục kiểm tra")?.disabled === false')
+  assert.equal(await canContinue(), false)
+  await fill('#recipient', 'partial')
+  await click('Kiểm tra')
   await until(() => text('Vui lòng nhập email đầy đủ'), 'invalid query')
   assert.equal(lookupQueries.length, 0)
-  await fill('#transfer-recipient', 'Binh+wallet@Example.com')
+  await fill('#recipient', 'Binh+wallet@Example.com')
   assert.equal(lookupQueries.length, 0, 'typing never consumes lookups')
-  await click('Tra cứu', 2)
+  await click('Kiểm tra', 2)
   await until(() => text('Nguyễn V. B.'), 'email lookup')
   assert.deepEqual(lookupQueries, ['Binh+wallet@Example.com'])
   assert.equal(await text(recipientId), false, 'auth ID is not displayed')
-  assert.equal(await canTransfer(), false)
-  await evaluate('document.querySelector("#transfer-confirm").click()')
-  assert.equal(await canTransfer(), true)
-  await fill('#transfer-amount', '100000')
-  assert.equal(await canTransfer(), false, 'changed amount requires confirmation again')
-  await fill('#transfer-recipient', 'slow@example.com')
-  assert.equal(await text('Nguyễn V. B.'), false, 'editing discards the previous recipient')
-  await click('Tra cứu')
+  await fill('#recipient', 'slow@example.com')
+  await click('Kiểm tra')
   await until(() => lookupQueries.includes('slow@example.com'), 'slow lookup started')
-  await fill('#transfer-recipient', '+84 912 345 678')
-  await click('Tra cứu')
+  await fill('#recipient', '+84 912 345 678')
+  await click('Kiểm tra')
   await until(() => text('Nguyễn V. B.'), 'exact phone lookup')
   await delay(450)
   assert.equal(await text('Phản hồi cũ'), false, 'late response cannot replace selection')
   await screenshot('recipient-lookup-mobile')
-  assert.equal(await evaluate('document.querySelector("dialog").scrollWidth <= document.querySelector("dialog").clientWidth'), true)
-
+  assert.equal(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), true)
   const missingMessage = 'Không tìm thấy người nhận phù hợp. Vui lòng kiểm tra lại email hoặc số điện thoại.'
   for (const query of ['missing@example.com', user.email]) {
-    await fill('#transfer-recipient', query)
-    await click('Tra cứu')
+    await fill('#recipient', query)
+    await click('Kiểm tra')
     await until(() => text(missingMessage), 'generic not-found response')
-    assert.equal(await canTransfer(), false)
+    assert.equal(await canContinue(), false)
   }
-  await fill('#transfer-recipient', 'server@example.com')
-  await click('Tra cứu')
-  await until(() => text('Không thể hoàn tất thao tác.'), 'lookup server error')
-  assert.equal(await canTransfer(), false)
-  await fill('#transfer-recipient', 'limit@example.com')
-  await click('Tra cứu')
-  await until(() => text('Bạn đã tra cứu quá nhiều lần.'), 'lookup rate limit')
+  await fill('#recipient', 'unavailable@example.com')
+  await click('Kiểm tra')
+  await until(() => has('[class*="bg-rose-500"]'), '503 feedback rendered')
+  record(!await text('Request failed with status code 503'), 'Lookup SERVICE_UNAVAILABLE/503 exposes raw Axios English instead of a Vietnamese message')
+  await fill('#recipient', 'server@example.com')
+  await click('Kiểm tra')
+  await until(() => text('Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'), 'lookup server error')
+  assert.equal(await canContinue(), false)
+  await fill('#recipient', 'limit@example.com')
+  await click('Kiểm tra')
+  await until(() => text('Bạn đang thao tác quá nhanh.'), 'lookup rate limit')
   const beforeCooldown = lookupQueries.length
-  await evaluate('document.querySelector(\'button[aria-label="Đóng chuyển tiền"]\').click()')
-  await click('Chuyển khoản')
-  await until(() => has('#transfer-recipient'), 'reopened dialog')
-  await fill('#transfer-recipient', 'Binh+wallet@Example.com')
-  assert.equal(await evaluate('[...document.querySelectorAll("dialog button")].find(b => b.textContent.trim() === "Tra cứu").disabled'), true)
-  await click('Tra cứu')
-  assert.equal(lookupQueries.length, beforeCooldown, 'close/reopen cannot reset cooldown')
-  await until(() => evaluate('[...document.querySelectorAll("dialog button")].find(b => b.textContent.trim() === "Tra cứu").disabled === false'), 'Retry-After elapsed')
-  await click('Tra cứu')
+  // Client navigation remounts the page without clearing the per-user in-memory cooldown.
+  await evaluate('history.pushState({}, "", "/app"); dispatchEvent(new PopStateEvent("popstate"))')
+  await until(() => has('a[href="/app/transfer"]'), 'dashboard navigation')
+  await evaluate(`document.querySelector('a[href="/app/transfer"]').click()`)
+  await until(() => has('#recipient'), 'reopened transfer page')
+  await fill('#recipient', 'Binh+wallet@Example.com')
+  await click('Kiểm tra')
+  assert.equal(lookupQueries.length, beforeCooldown, 'navigation cannot reset cooldown')
+  await until(() => evaluate('[...document.querySelectorAll("button")].find(b => b.textContent.trim() === "Kiểm tra").disabled === false'), 'Retry-After elapsed')
+  await click('Kiểm tra')
   await until(() => text('Nguyễn V. B.'), 'lookup after cooldown')
-  await evaluate('document.querySelector("#transfer-confirm").click()')
-  uncertainTransfer = true
-  await click('Xác nhận chuyển', 2)
-  await until(() => text('Chưa xác định được kết quả chuyển tiền.'), 'uncertain transfer')
-  assert.equal(transfers.length, 1)
-  assert.equal(await evaluate('document.querySelector("#transfer-recipient").disabled'), true)
-  assert.equal(await evaluate('document.querySelector("#transfer-amount").disabled'), true)
+  await fill('input[aria-label="Số tiền chuyển (VND)"]', '100000')
+  await click('Tiếp tục kiểm tra', 2)
+  await until(() => text('Xác nhận báo giá chuyển tiền'), 'quote review')
+  assert.equal(transfers.length, 0, 'quote does not create a hold')
+  await click('Xác nhận chuyển tiền', 2)
+  await until(() => text('Chưa xác định được kết quả tạo giao dịch.'), 'uncertain checkout')
+  assert.equal(transfers.length, 1, 'double click creates one request')
+  assert.equal(await evaluate('[...document.querySelectorAll("button")].find(b => b.textContent.trim() === "Quay lại sửa").disabled'), true)
   uncertainTransfer = false
-  await click('Thử lại giao dịch này', 2)
-  await until(() => evaluate('!document.querySelector("dialog[open]")'), 'transfer success')
+  await click('Xác nhận chuyển tiền', 2)
+  await until(() => has('[role="dialog"]'), 'PIN challenge')
   assert.equal(transfers.length, 2)
-  assert.deepEqual(transfers[0], transfers[1], 'retry reuses same recipient/amount/reference')
-  await click('Chuyển khoản')
-  await until(() => has('#transfer-recipient'), 'new transfer dialog')
-  assert.equal(await evaluate('document.querySelector("#transfer-recipient").value'), '')
-  assert.equal(await canTransfer(), false)
-  await evaluate('document.querySelector(\'button[aria-label="Đóng chuyển tiền"]\').click()')
+  assert.deepEqual(transfers[0], transfers[1], 'retry reuses identical body and idempotency key')
+  for (let digit = 0; digit < 6; digit++) await click('1')
+  await until(() => text('Chuyển tiền thành công!'), 'confirm timeout reconciles to receipt')
+  assert.equal(pinVerifications, 1)
+  assert.equal(confirmations, 1, 'single-use token is never replayed')
+  assert.equal(paymentReads, 1)
+  assert.equal(await has('[role="dialog"]'), false)
+  checks.push('P2P: exact lookup, stale cancellation, cooldown/navigation, quote, checkout retry/same key, PIN binding, confirm timeout/GET reconciliation')
 
-  // Regressions for routes and shared auth after merging the Admin/Notification modules.
-  assert.ok(await has('button[aria-label="Thông báo"]'))
   await go('/merchant/register')
   await until(() => text('Cửa hàng Hữu'), 'loads existing merchant')
+  ledgerCursors.length = 0 // Exclude the earlier Dashboard ledger request.
   await go('/app/transactions')
-  await until(() => text('payment01'), 'incoming transactions page loads array response')
+  await until(() => text('payment01'), 'ledger first page')
   assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 10)
-  await evaluate('document.querySelector(\'button[aria-label="Trang sau"]\').click()')
-  await until(() => text('payment11'), 'transaction next page')
-  assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 2)
-  assert.equal(await evaluate('document.querySelector(\'button[aria-label="Trang sau"]\').disabled'), true)
-  await fill('input[placeholder="Tìm kiếm giao dịch..."]', 'payment03')
-  await until(() => text('payment03'), 'transaction filter clamps the page')
-  assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 1)
+  await click('Tải thêm giao dịch')
+  await until(() => text('payment12'), 'cursor next page')
+  assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 12)
+  assert.equal(await text('Tải thêm giao dịch'), false)
+  assert.deepEqual(ledgerCursors, [null, 'page-two'])
+  await fill('input[placeholder="Tìm nội dung, mã bút toán..."]', 'payment03')
+  await until(() => evaluate('document.querySelectorAll("tbody tr").length === 1'), 'ledger local search')
+  assert.ok(await text('payment03'))
+  checks.push('Ledger: cursor forwarded, pages appended, end reached, local search')
   const adminRequestsBefore = requests.filter((request) => request.includes('/api/admin/')).length
   await go('/admin/kyc')
-  await until(() => evaluate('location.pathname === "/"'), 'ordinary user cannot mount admin pages')
+  await until(() => evaluate('location.pathname === "/403"'), 'ordinary user cannot mount admin pages')
   assert.equal(requests.filter((request) => request.includes('/api/admin/')).length, adminRequestsBefore)
   signedIn = false
   await go('/admin/kyc')
@@ -362,93 +402,111 @@ try {
   signedIn = true
   profile = { ...profile, kycStatus: 'PENDING', kycTier: 0 }
   await go('/admin/kyc')
-  await until(() => text('Phê duyệt Định danh KYC'), 'admin route restores session before checking role')
-  await until(() => requests.includes('GET /api/admin/kyc'), 'admin page calls incoming API module')
-
-  await until(() => has('tbody tr button'), 'KYC list loaded')
-  assert.equal(await text('B1234567'), false, 'full ID number is masked')
-  assert.equal(await text('Nâng cấp 2'), false, 'pending KYC cannot change tier')
-  await click('Duyệt')
-  await click('Xác nhận cập nhật')
-  await until(() => text('Vui lòng nhập lý do từ 1 đến 500 ký tự.'), 'admin reason required')
+  const selectAction = async (label) => {
+    // Status filters and review actions may share the same caption. Select the detail action.
+    await evaluate(`[...document.querySelectorAll('button')].filter(button => button.textContent.trim() === ${JSON.stringify(label)}).at(-1).click()`)
+    await until(() => has('#kyc-action-reason'), 'admin action form: ' + label)
+  }
+  await until(() => text('Phê duyệt Định danh Khách hàng'), 'admin session restored before role check')
+  await until(() => requests.includes('GET /api/admin/kyc'), 'admin API module')
+  await click('Tất cả')
+  await until(() => text('Mã hồ sơ:'), 'selected KYC profile')
+  assert.equal(await text('B1234567'), false, 'ID number masked by default')
+  await selectAction('Từ chối')
+  await click('Xác nhận')
+  await until(() => text('Vui lòng nhập lý do từ chối'), 'rejection requires reason')
   assert.equal(adminWrites, 0)
-  await click('Xem hai mặt CCCD', 2)
+  await click('Hủy')
+  await click('Xem hai mặt CCCD')
   await until(() => has('img[alt="CCCD mặt trước"]'), 'admin front image')
   assert.ok(await has('img[alt="CCCD mặt sau"]'))
-  assert.equal(documentReads, 1, 'duplicate image clicks issue one audited request')
+  assert.equal(documentReads, 1)
   assert.equal(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), true)
   await screenshot('admin-kyc-mobile')
-  await until(() => text('Liên kết xem ảnh đã hết hạn. Vui lòng tải lại ảnh.'), 'admin URL expiry')
-  assert.equal(await has('img[alt="CCCD mặt trước"]'), false)
-  assert.equal(await has('img[alt="CCCD mặt sau"]'), false)
-  failDocuments = true
-  await click('Xem hai mặt CCCD')
-  await until(() => text('Hồ sơ chưa có đủ hai mặt giấy tờ.'), 'missing documents feedback')
-  failDocuments = false
-  await click('Xem hai mặt CCCD')
-  await until(() => has('img[alt="CCCD mặt sau"]'), 'document retry')
-  await fill('#kyc-reason', 'Hồ sơ hợp lệ')
-  await click('Xác nhận cập nhật', 2)
-  await until(() => text('Nâng cấp 2'), 'approval refreshes list')
-  assert.equal(adminWrites, 1)
+  await delay(2300)
+  record(!await has('img[alt="CCCD mặt trước"]') && !await has('img[alt="CCCD mặt sau"]'), 'Admin KYC signed images remain in the DOM after their expiresAt deadline')
+  await selectAction('Duyệt')
+  // Approval notes are optional in the current contract; rejection reasons are required.
+  const beforeApprove = adminWrites
+  await click('Xác nhận', 2)
+  await until(async () => profile.kycStatus === 'APPROVED' && await evaluate('!document.querySelector("#kyc-action-reason")'), 'approval refresh')
+  record(adminWrites === beforeApprove + 1, 'Admin approval double click sends duplicate mutations')
+  await until(() => text('Cấp 1'), 'approval tier')
   assert.equal(profile.kycTier, 1)
-  assert.ok(await text('Cấp 1'))
-  assert.equal(await evaluate('[...document.querySelectorAll("tbody button")].find(b => b.textContent.trim() === "Duyệt").disabled'), true)
-
-  await click('Nâng cấp 2')
-  assert.ok(await text('mô phỏng liên kết ngân hàng'))
-  await fill('#kyc-reason', 'Đã mô phỏng liên kết ngân hàng')
-  await click('Xác nhận cập nhật', 2)
-  await until(() => text('Đưa về cấp 1'), 'tier 2 refreshes list')
-  assert.equal(profile.kycTier, 2)
-  assert.equal(adminWrites, 2)
+  assert.equal(await evaluate('[...document.querySelectorAll("button")].find(b => b.textContent.trim() === "Duyệt").disabled'), true)
+  await selectAction('Nâng Cấp 2')
+  await click('Xác nhận')
+  await until(() => text('Vui lòng nhập lý do đổi cấp'), 'tier reason required')
+  await fill('#kyc-action-reason', 'Đã mô phỏng liên kết ngân hàng')
+  const beforeTier = adminWrites
+  await click('Xác nhận', 2)
+  await until(() => profile.kycTier === 2, 'tier upgrade')
+  await until(() => evaluate('!document.querySelector("#kyc-action-reason")'), 'tier form reset')
+  record(adminWrites === beforeTier + 1, 'Admin tier double click sends duplicate mutations')
   await cdp('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false })
-  await click('Đưa về cấp 1')
-  await fill('#kyc-reason', 'Điều chỉnh về cấp 1')
   await screenshot('admin-kyc-desktop')
+  await selectAction('Đặt Cấp 1')
+  await fill('#kyc-action-reason', 'Điều chỉnh về cấp 1')
   failAdminWrite = true
-  await click('Xác nhận cập nhật')
-  await until(() => text('Chưa xác định được kết quả.'), 'uncertain mutation error')
-  assert.equal(adminWrites, 3)
-  assert.equal(profile.kycTier, 2)
-  assert.equal(await has('button[type="submit"]:not(:disabled)'), false, 'uncertain update blocks further submissions')
+  await click('Xác nhận')
+  await until(() => evaluate('!!document.querySelector("[role=alert]")'), 'uncertain mutation feedback')
+  assert.equal(profile.kycTier, 2, 'failed mutation cannot change fixture state')
+  record(await evaluate('document.querySelector("#kyc-action-reason")?.disabled === true'), 'Admin unknown mutation result leaves the form editable and permits a new submit')
+  record(!await text('Request failed with status code 503'), 'Admin KYC_OUTCOME_UNKNOWN/503 exposes raw Axios English')
   failAdminWrite = false
-  await click('Tải lại danh sách')
-  await until(() => text('Đưa về cấp 1'), 'reload after uncertain mutation')
-  await click('Đưa về cấp 1')
-  await fill('#kyc-reason', 'Đã đối chiếu hồ sơ; đưa về cấp 1')
-  await click('Xác nhận cập nhật')
-  await until(() => text('Nâng cấp 2'), 'tier downgrade succeeds')
-  assert.equal(profile.kycTier, 1)
-  await click('Từ chối')
-  assert.ok(await text('đưa cấp KYC về 0'))
-  await fill('#kyc-reason', 'Giấy tờ cần xác minh lại')
-  await click('Xác nhận cập nhật')
-  await until(() => evaluate('!document.querySelector("#kyc-reason")'), 'rejection refreshes list')
+  await go('/admin/kyc')
+  await until(() => text('Phê duyệt Định danh Khách hàng'), 'reload admin')
+  await click('Tất cả')
+  await until(() => text('Mã hồ sơ:'), 'approved profile reloaded')
+  await selectAction('Đặt Cấp 1')
+  await fill('#kyc-action-reason', 'Đã đối chiếu hồ sơ; đưa về cấp 1')
+  await click('Xác nhận')
+  await until(() => profile.kycTier === 1, 'tier downgrade')
+  await until(() => evaluate('!document.querySelector("#kyc-action-reason")'), 'downgrade settled')
+  // Model a new pending submission before testing rejection (approved records cannot be rejected).
+  profile = { ...profile, kycStatus: 'PENDING' }
+  await go('/admin/kyc')
+  await until(() => text('Mã hồ sơ:'), 'new pending submission')
+  await selectAction('Từ chối')
+  await fill('#kyc-action-reason', 'Giấy tờ cần xác minh lại')
+  await click('Xác nhận')
+  await until(() => profile.kycStatus === 'REJECTED', 'rejection')
   assert.equal(profile.kycTier, 0)
-  assert.equal(profile.kycStatus, 'REJECTED')
-  assert.equal(await text('Nâng cấp 2'), false)
-  assert.equal(await evaluate('[...document.querySelectorAll("tbody button")].find(b => b.textContent.trim() === "Duyệt").disabled'), true)
-  assert.equal(await evaluate('[...document.querySelectorAll("tbody button")].find(b => b.textContent.trim() === "Từ chối").disabled'), true)
-
-  await fill('#kyc-search', 'no-match')
-  await click('Tìm kiếm')
-  await until(() => text('Không có hồ sơ phù hợp.'), 'filtered empty state')
-  await fill('#kyc-search', '')
-  await click('Tìm kiếm')
-  await until(() => has('tbody tr button'), 'search reset')
+  await click('Tất cả')
+  await until(() => text('Mã hồ sơ:'), 'rejected profile')
+  await fill('input[placeholder="Tìm theo email, họ tên..."]', 'no-match')
+  await click('Tìm')
+  await until(() => text('Không có hồ sơ nào khớp bộ lọc hiện tại.'), 'filtered empty state')
+  await fill('input[placeholder="Tìm theo email, họ tên..."]', '')
+  await click('Tìm')
+  await until(() => text('Mã hồ sơ:'), 'search reset')
   failAdminList = true
-  await click('Làm mới')
-  await until(() => text('Thử lại'), 'admin list failure')
-  assert.equal(await has('tbody'), false, 'stale rows cannot be acted on after reload fails')
+  await go('/admin/kyc')
+  await until(() => text('Không thể tải dữ liệu'), 'admin list failure')
+  assert.equal(await text('Mã hồ sơ:'), false, 'failed initial query cannot expose editable profiles')
   failAdminList = false
   await click('Thử lại')
-  await until(() => has('tbody tr button'), 'admin list retry')
-
+  await until(() => text('Không có hồ sơ nào khớp bộ lọc hiện tại.'), 'list retry with pending filter')
+  await click('Tất cả')
+  await until(() => text('Mã hồ sơ:'), 'list retry succeeded')
+  failDocuments = true
+  await click('Xem hai mặt CCCD')
+  await until(() => text('Không tìm thấy dữ liệu yêu cầu.'), 'missing documents feedback')
+  failDocuments = false
+  await click('Thử lại')
+  await until(() => has('img[alt="CCCD mặt sau"]'), 'documents retry')
+  checks.push('Admin current master/detail UI: rejection/tier validation, optional approval note, review/tier writes, image error/retry, search, list failure/retry; safety regressions recorded separately')
   assert.deepEqual(runtimeErrors, [])
   assert.ok(!requests.some((request) => request.includes('/user/me')))
-  console.log('PASS: profile; H8 two-sided KYC; H11 email/phone lookup, generic 404, 429 cooldown/reopen, stale response cancellation, explicit confirmation and idempotent transfer retry; merchant; login/roles; Admin KYC; mobile overflow; no runtime exceptions.')
-  console.log('API fixtures only. Screenshots: ' + artifacts)
+  assert.deepEqual(fixtureErrors, [], 'No fixture assertions were swallowed by the HTTP server')
+  checks.push('Profile/KYC two-sided upload and expiry; merchant registration; login/role guards; Admin KYC review/tier/error; mobile overflow; no runtime exceptions')
+  assert.deepEqual(regressions, [], 'Application safety regressions detected')
+  writeFileSync(resolve(artifacts, 'result.json'), JSON.stringify({ result: 'PASS', mode: 'synthetic-http-fixtures', testedAt: new Date().toISOString(), checks, requests }, null, 2))
+  console.log('PASS: current frontend browser smoke against synthetic HTTP fixtures. Evidence: ' + artifacts)
+} catch (error) {
+  if (browser) await browser.screenshot('browser-smoke-failure').catch(() => {})
+  writeFileSync(resolve(artifacts, 'result.json'), JSON.stringify({ result: 'FAIL', mode: 'synthetic-http-fixtures', error: error.message, checks, regressions, fixtureErrors, requests, runtimeErrors: browser?.errors }, null, 2))
+  throw error
 } finally {
   if (browser) await browser.close()
   server.closeAllConnections()

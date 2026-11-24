@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { errorMessage } from '@/lib/apiResponse'
-import { userService } from '../services/userService'
+import { userApi } from '../api/user.api'
 
 export function KycDocumentViewer({ authUserId }: { authUserId: string }) {
   return <AccountDocumentViewer key={authUserId} authUserId={authUserId} />
@@ -21,7 +21,7 @@ function AccountDocumentViewer({ authUserId }: { authUserId: string }) {
     request.current = controller
     setLoading(true); setError(''); setUrl(null)
     try {
-      const document = await userService.getKycDocument(authUserId, controller.signal)
+      const document = await userApi.getKycDocument(authUserId, controller.signal)
       if (controller.signal.aborted) return
       const parsed = new URL(document.url)
       if (!['http:', 'https:'].includes(parsed.protocol) || !(document.expiresIn > 0)) throw new Error('Invalid document URL')

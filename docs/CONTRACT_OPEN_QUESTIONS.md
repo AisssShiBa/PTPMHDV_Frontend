@@ -1,149 +1,80 @@
-# API contract open questions
+# Contract hiện tại và câu hỏi còn mở — Đ20/N21
 
-`packages/api-contract/openapi.yaml` is now the consolidated contract (N21). Every
-path was read from the real Express routers on Backend `origin/main` (`0b78fb5`)
-and cross-checked against the Gateway mount table in `gateway/src/app.ts`.
+Cập nhật 23/11/2026, nhánh `fix/week4-integration`: FE nền `464b017`, BE nền `bfbbf74`, gồm các thay đổi chưa commit. Đối chiếu source hiện tại; không khẳng định main hoặc container của thành viên đã triển khai. Các bằng chứng ngày 12–22/11 chỉ áp dụng phạm vi/revision đã ghi, không tự chuyển thành nghiệm thu UI hôm nay.
 
-- `paths` holds the real route keys **without** the `/api` prefix, and the same
-  path items are repeated under `/api/...` at the end of `paths` so Prism can
-  serve them (Prism serves path keys directly and ignores `servers[].url`).
-- `x-planned-paths` is **empty**: no route the Web client calls is missing from
-  the Backend. It stays in the file so an unknown route can be recorded here and
-  in this document instead of being invented in `paths`.
-- Prism enforces the global `bearerAuth` scheme, so protected mocks answer `401`
-  until the caller sends any `Authorization: Bearer <token>` header.
+## Nguồn và quy ước
 
-## Contract-wide conventions confirmed from the Backend
+- Frontend dùng Axios singleton base `/api`; adapter ghi path không lặp `/api`.
+- OpenAPI tổng hợp: [openapi.yaml](../packages/api-contract/openapi.yaml). Có path dạng không prefix và alias `/api/...` phục vụ Prism. `x-planned-paths` rỗng không chứng minh response, semantics hoặc live test đã đúng.
+- Success thường `{success:true,data,message?}`; lỗi `{success:false,error:{code,message,details?},requestId?}`. Dùng unwrap và errorMessage; không hiển thị message thô hoặc lưu secret.
+- Tiền trên FE giữ string, tính BigInt. Quote có ngoại lệ backend `fee:0` number; Payment adapter chuẩn hóa riêng thành `'0'`. Topup FE gửi amount string; backend nhận string canonical và hỗ trợ legacy integer có giới hạn. Không tiếp tục ghi topup bắt buộc number.
+- Idempotency-Key dùng cho P2P checkout, generic checkout, create topup, cash-out create và tạo đơn Utilities. W4 Admin tự sinh referenceId; không giả lập cơ chế header mà route không yêu cầu.
 
-- Success envelope: `{ success: true, data, message? }`; error envelope:
-  `{ success: false, error: { code, message, details? }, requestId? }`.
-- Money is a decimal **string** in wallet/payment responses. Two exceptions are
-  recorded in the schemas on purpose: P2P `quote.fee` is a JSON number `0`, and
-  the VNPAY top-up `amount` request field is a JSON number.
-- `Idempotency-Key` is required by `/payments/p2p/checkout`, `/payments/checkout`,
-  `/funding/cash-out`, `/utilities/topup`, and `/utilities/bills/pay`. It is
-  **not** accepted by the admin adjust routes below.
+## Những câu hỏi cũ đã có câu trả lời
 
-## Đạt — auth and admin
+| Nội dung | Trạng thái source và cách dùng |
+| --- | --- |
+| Auth thật | Store dùng signin/signout/refresh; access token ở RAM, Web refresh cookie HttpOnly. Guard chờ initialize. Không có MOCK_USER trong store nghiệp vụ. |
+| QR | Init `{qrId,nonce,pollSecret,expiresAt}`; status PENDING/APPROVED/REJECTED; expiry HTTP 410 QR_EXPIRED. Poll gửi pollSecret; confirm cần access token. |
+| PIN | Verify bắt buộc paymentId/amount của đơn server trả; expiresIn=60 giây. Status có hasPin/isLocked/remainingLockSeconds; lỗi khóa có thông tin thời hạn. |
+| P2P | FE checkout theo `/payments/p2p/checkout`, confirm dùng `X-Transaction-Token`, GET trạng thái khi chưa rõ. Không tự replay token/POST confirm khi refresh. |
+| Ví | `/wallets/me` và `/wallets/me/ledger`; backend có filter ngày/loại/hướng, cursor. Các route named-owner còn tồn tại với kiểm quyền; không coi tất cả đã xóa. |
+| Lọc KYC Admin | User validation nhận cả status/kycStatus, normalize về kycStatus; status được ưu tiên khi có cả hai. Lỗi alias bị bỏ qua không còn đúng với source hiện tại. |
+| W2–W4 | Wallet đã có list/detail/adjust. Không giao viết route từ đầu dựa trên comment cũ trong walletReconciliationClient. |
+| Notification | `/notifications/me`, `/me/read-all`, `/{id}/read`, `/socket-ticket`; Socket.IO dùng ticket mới cho mỗi kết nối. |
+| Refund/KYC events | `payment.refunded` và `user.kyc_reviewed` đã nối schema/publisher/consumer; kiểm Backend thật trong phiên 22/11, không đồng nghĩa mọi UI/latency N19 đã đạt. |
+| Seed | H15+N20 đã tích hợp và kiểm live trên stack riêng: đủ dữ liệu, baseline sạch, rerun không trùng, fixture A8 đúng delta. Đây không phải bằng chứng sandbox VNPAY thật. |
 
-Confirmed and now encoded in the contract:
+## Việc còn mở và người nhận
 
-- `POST /auth/signup` answers `201` with `data = { userId, user }`.
-- Web sign-in/refresh put the refresh token in the httpOnly `refreshToken`
-  cookie scoped to `/api/auth`; mobile clients receive it in the body when
-  `x-client-platform: mobile` (or body `platform: mobile`) is sent.
-- `POST /auth/pin/verify` returns `{ transactionToken, expiresIn, message }` —
-  the field is `expiresIn` (seconds), not `expiresInSeconds`.
-- `GET /auth/pin/status` returns `{ hasPin, isLocked, remainingLockSeconds }`.
+| Mã/phần | Cần chốt hoặc kiểm tra tiếp | Phụ trách |
+| --- | --- | --- |
+| K17/N18 — semantics W4 | Đạt chốt sửa cache cho A8, chưa thêm đảo giao dịch. Đồng bộ balance về ledger, giữ nguyên ledger/heldBalance, transactionId null; FE đã đổi nhãn. Live Admin/Wallet/UI A8+RC1 PASS. | Khoa + Nguyên; Đạt điều phối |
+| W4 — heldBalance | Đã có guard 409 REPAIR_CONFLICTS_WITH_HOLDS trước khi ghi; anomaly OPEN, không đổi balance/ledger/adjustment. PostgreSQL test PASS; Admin nhận từ chối xác định, FE có thông báo tiếng Việt. | Khoa + Nguyên |
+| W4 — replay | Wallet cùng reference có replay; Admin sau SUCCEEDED trả 409 ALREADY_ADJUSTED. UNKNOWN chỉ đọc lại, không tự gửi lại. Hai tầng không bắt buộc cùng status HTTP. | Khoa + Nguyên |
+| W4 — anomaly representation | API hiện có BALANCE_DRIFT + detail.mode QUICK/FULL; DB có enum riêng QUICK/FULL. N18 cần hiển thị đúng phân loại, không suy ra từ DB enum mà bỏ qua adapter thực. | Khoa + Nguyên |
+| H20/K03 | PENDING đang có tier rồi bị reject hiện đưa về tier 0; quy tắc chưa thống nhất. Event review mới không tự đóng K03. | Hữu + Khoa + Đạt |
+| N17 Admin Topup | Đã triển khai đầy đủ thủ công theo lựa chọn Đạt: claim + audit atomic, chung reference IPN, recovery unknown; UI/API/PostgreSQL live PASS. | Hữu + Nguyên + Đạt |
+| N19 | Utilities đã có outbox/publisher/schema/binding và nhận payment.refunded; T1/T2/A7 live đã kiểm. Topup vẫn qua Wallet, không tạo thêm event trùng. Latency từng nhóm phải ghi riêng. | Nguyên + Đạt |
+| H20 sandbox | Cần terminal và URL IPN/return công khai phù hợp. IPN synthetic có chữ ký không thay giao dịch sandbox thật. | Hữu; Đạt hỗ trợ Gateway |
+| Cashout recovery | Có GET theo UUID; timeout create rồi reload mất UUID/key chưa có lookup-by-key đã xác nhận. Không tạo đơn mới để che kết quả chưa rõ. | Hữu + chủ Payment |
+| Utilities recovery | FE giữ orderId trong RAM; chưa có API list/recovery được xác nhận cho reload mất ID. Không tự bịa endpoint. | Nguyên + Utilities |
+| Merchant API key | Secret chỉ hiện một lần; metadata sau mất response và API list keys chưa được tự bổ sung. QR outlet chỉ hiển thị trên Web. | Hữu + Merchant |
+| N15 filters/devices | Type/unread lọc trên các trang đã tải; không coi là server filter toàn bộ. Route device tồn tại nhưng Web chưa có màn thiết kế; không tự thêm. | Nguyên |
+| Đ20 Home/kiến trúc | Đã tách HomeLanding, WalletDashboard, WalletTransactions; bỏ thông tin An/số dư giả, adapter User sang api/user.api.ts; caller/mock và guard tiền đổi theo source mới. | Đạt + chủ feature |
+| OpenAPI | Đã cập nhật Admin Topup và amount string/legacy integer của các alias; lint hợp lệ, cảnh báo còn ghi trong log. | Nguyên + Đạt |
+| Đ21/Đ22 | Browser và phase3-live scope all đã PASS trên working tree/Compose riêng: login/F5/P2P/logout, A3/A4 và Q1, KYC, manual topup, Utilities/A7. Không suy ra đã merge main, sandbox thật hoặc W4 đạt. | Đạt |
+| Quy tắc UI | AGENTS.md ghi ẩn nút điều chỉnh, kế hoạch N18 yêu cầu thao tác. Giữ ghi nhận khác biệt, chưa tự sửa AGENTS hoặc quyết định thay phạm vi. | Đạt + Nguyên |
 
-Resolved locally:
+## Ma trận 10 handover chính
 
-- QR polling now sends `pollSecret` in the query and `x-poll-secret` header,
-  matching the Backend contract.
-- `QrStatusResponse.status` now models the real Backend values
-  `PENDING | APPROVED | REJECTED`; an expired session remains the HTTP 410
-  `QR_EXPIRED` error path. Legacy `SCANNED | CONFIRMED | EXPIRED` values remain
-  only in mock fixtures for compatibility and are not accepted from the API.
-- Confirm the exact `AuthUser` fields the FE may rely on (`id`, `username`,
-  `email`, `firstName`, `lastName`, `role` are documented).
-- `/admin/*` paths, query parameters and bodies are confirmed. The KYC `status`
-  filter is still effectively ignored (see below).
+| Feature | Tài liệu | Điểm nhận bàn giao |
+| --- | --- | --- |
+| Auth | [auth.md](handover/auth.md) | Đ17–Đ19, PIN/QR, phiên và guard |
+| Home | [home.md](handover/home.md) | Landing tĩnh, giới hạn hardcode và cách kiểm |
+| Wallet | [wallet.md](handover/wallet.md) | K18/K20, Dashboard/ledger/filter/cache |
+| Payment | [payment.md](handover/payment.md) | K19, component/hook Transfer và retry/token |
+| Funding | [funding.md](handover/funding.md) | H16/H17; chi tiết ở topup.md/cashout.md |
+| KYC/Profile | [kyc.md](handover/kyc.md) | H18 triển khai trong features/user; features/kyc chưa có implementation riêng |
+| Merchant | [merchant.md](handover/merchant.md) | H19; outlet/QR/key ở merchant-tools.md |
+| Notification | [notification.md](handover/notification.md) | N15/N19, ticket/cache/dedupe |
+| Utilities | [utilities.md](handover/utilities.md) | N16, order/PIN/refund mô phỏng |
+| Admin | [admin.md](handover/admin.md) | N17/N18, route thật và W4 đang chờ |
 
-## Khoa — wallets and payments
+Mỗi file mô tả source/endpoint, trạng thái hoặc giới hạn, cách kiểm và người nhận. TEMPLATE.md không tính là feature đã bàn giao. Các file draft/evidence cũ giữ nguyên theo revision; không lấy nhãn PASS lịch sử để đóng toàn bộ tuần 4.
 
-Confirmed and now encoded in the contract:
+## Kiểm tra cho thành viên
 
-- `GET /wallets/me` returns `{ id, userId, balance, heldBalance,
-  availableBalance, currency, status, createdAt, updatedAt }`;
-  `GET /wallets/me/ledger` returns `{ items, nextCursor }` with
-  `id` as a stringified `BigInt`.
-- `GET /wallets/{userId}/balance` has a different, smaller shape (no `id`);
-  `GET /wallets/{userId}/history` is offset-paginated with `from`/`to`.
-- `/wallets/{userId}/{credit,debit,transfer}` are internal-service/ADMIN only.
-- `POST /payments/p2p/quote` returns `{ destinationUserId, amount, fee, expiresAt }`
-  where `fee` is the JSON number `0`.
-- Admin top-up approve/reject always answer `400 NOT_ALLOWED` while VNPAY IPN
-  owns crediting; neither route accepts an `Idempotency-Key`.
-- `POST /funding/cash-out` takes `{ amount, destination? }` and its `GET` status
-  route is the documented recovery path after a timeout.
+Kết quả chạy ngày 23/11/2026 trên working tree đang bàn giao:
 
-Still to confirm:
+| Gate | Kết quả và giới hạn |
+| --- | --- |
+| `npm run check` | Exit 0: lint, check import 21 page, typecheck, Node tests và build đạt. Lint còn 16 warning; build cảnh báo kích thước bundle. |
+| `npm run test:unit` | Exit 0: 248/248 test, 30 file. Có MSW/fixture; không phải toàn bộ browser/backend live. |
+| `npm run contract:lint` | Exit 0, 193 warning về metadata/schema/path; không phải 193 lỗi nghiệp vụ. Chưa sửa OpenAPI trong lượt tài liệu này. |
+| Handover | 10/10 file chính có nội dung/cập nhật, không tính TEMPLATE; kiểm liên kết cục bộ không có link hỏng. |
+| Browser/phase3-live | Không chạy trong lượt tài liệu; tiếp tục thuộc Đ21/Đ22. |
 
-- Admin reconciliation W2–W4 (`/wallets/admin/reconciliation/reports`,
-  `/reports/{id}`, `/anomalies/{id}/adjust`) are implemented in
-  `walletReconciliationClient.ts` but may not be on wallet-service `main` yet.
-  Until they are, the UI surfaces `WALLET_UNAVAILABLE`/`WALLET_TIMEOUT` in
-  Vietnamese. Confirm the rollout with Khoa before RC1 sign-off.
-- `POST /wallets/admin/{userId}/adjust` and
-  `POST /wallets/admin/reconciliation/anomalies/{id}/adjust` derive their
-  `referenceId` server-side and do not accept `Idempotency-Key`; confirm that
-  repeated submissions should surface `409` rather than be retried.
-- Confirm whether manual top-up approval/rejection is permanently disabled so
-  the FE can drop the buttons.
+Tại Frontend: `npm run check`, `npm run test:unit`, `npm run contract:lint`. Hai lệnh browser/phase3-live chỉ chạy sau khi xác nhận stack riêng và seed phù hợp; một số harness có thao tác tạo/reset dữ liệu. Xem [runbook](handover/huu-fe-demo-runbook.md) trước khi chạy.
 
-## Hữu — users and merchants
-
-Confirmed and now encoded in the contract:
-
-- `GET /users/{id}` resolves either a local profile id or an auth user id and
-  answers `409 AMBIGUOUS_IDENTIFIER` when both match; the Web client prefers
-  `/users/by-auth/{id}`.
-- `GET /users/me` and `/users/me/kyc` are the owner routes; `POST /users/me/kyc`
-  and `/users/kyc/documents` accept `multipart/form-data` with `idNumber`,
-  `front`, `back` (each image capped at 5 MB).
-- `GET /merchants/me` returns `data: null` when the owner has not registered;
-  a `404` is a deployment/API error, not "not registered".
-- `GET /merchants/{id}/outlets/{outletId}/qr` returns the signed QR payload.
-  **QR điểm bán chỉ hiển thị, không có route xác minh trên Web** — the client
-  renders it and never validates or redeems it.
-
-Still to confirm:
-
-- Whether merchant KYC/profile fields will gain `taxId`/`bankAccount`
-  validation rules beyond length (the Backend only checks length today).
-
-## Frontend follow-up
-
-- Notification routes are `/notifications/me`, `/me/read-all`, `/{id}/read`, and
-  `/socket-ticket`; Socket.IO authenticates with `auth: { ticket }`. The
-  Backend has no `type` or `unread` query filter, so the Web page filters the
-  loaded pages in the browser.
-- Device registration (`/notifications/devices`) exists on the Backend but has
-  no Web design yet; the Web app does not call it.
-- Admin KYC list (N17): the FE sends `status` as documented, but admin-service
-  forwards it while user-service reads `kycStatus`, so the server-side filter is
-  effectively ignored. The FE does not filter client-side, to avoid masking the
-  bug.
-- AGENTS.md §6.6 still says to hide the reconciliation adjustment button, but the
-  Week-4 plan (N18) requires it. The implementation follows the Week-4 plan;
-  Đạt needs to confirm and update AGENTS.md.
-- Amount types differ per flow and must not be conflated: utilities top-up
-  `amount` is a **string** denomination, VNPAY top-up `amount` accepts a **string** (bounded legacy integers remain compatible),
-  and every wallet/payment response amount is a **string**.
-
-
-## Cập nhật trục Hữu — 13/11/2026 (source local chưa commit)
-
-| Vấn đề | Trạng thái hiện tại / nguồn | Còn phải làm |
-|---|---|---|
-| Funding wildcard public | FIXED local: BE `gateway/src/middlewares/authenticate.ts`; chỉ GET IPN/return public | Owner Đạt review và deploy; không suy ra đã merge |
-| Amount topup | FIXED local: BE `src/validations/topup.validation.ts`; FE gửi string, legacy integer được normalize | Khoa/Đạt review; đối chiếu spec đã cập nhật |
-| Idempotency create topup | FIXED local: `TopupRequest` unique `(userId,idempotencyKey)`, URL/lệnh cùng ghi, payload conflict 422 | Chạy migration `20261113090000_topup_idempotency` ở môi trường đích trước rollout |
-| Provisioning profile sau signup | Harness `phase3-live` đã bounded wait profile/wallet; profile route `/app/profile`, signin `/sign-in` | Không xem signup response là profile đã sẵn sàng |
-| Funding REAL_VNPAY_SANDBOX | OPEN | Terminal sandbox thật, return URL reachable và exact FE redirect endpoint — Đạt/Khoa |
-| Cashout create timeout rồi reload mất UUID | OPEN | Chốt list/lookup theo idempotency key — Khoa/Đạt |
-| Full K18 regression / Transfer UI | OPEN | Harness cũ có dialog không còn active; H11 hiện chỉ kiểm API, không claim UI/P2P đã nghiệm thu — Khoa/Hữu |
-
-Nguồn và kết quả test: [Phase 7 fixes](evidence/huu-fe-week4/fixes/README.md). Không có PR/issue URL vì chưa tạo/push; các trạng thái FIXED local không tương đương owner review hoặc release.
-
-
-## Phase 8 — bàn giao trạng thái 13/11/2026
-
-[Bàn giao](handover/huu-fe-phase8.md) và [runbook demo](handover/huu-fe-demo-runbook.md) là điểm vào hiện hành. Gateway identity, string amount và idempotency đã có LIVE_GATEWAY_FUNDING_PASS trong evidence bản sửa; review/rollout vẫn pending. Các câu hỏi legacy phía trên giữ cho owner đối chiếu, không phải khẳng định API trục Hữu chưa tích hợp.
-
-Còn mở: VNPAY sandbox thật; full K18/active transfer UI; full Must cùng revision sau review; lookup cashout theo idempotency khi reload mất UUID; phục hồi metadata key sau mất response. Tài khoản demo tier 0/1/2, merchant pending/approved và rehearsal/video Phase 8 chưa chuẩn bị. Không tự đóng câu hỏi Auth/Admin/notification của owner khác. Chưa có link PR/issue remote vì hiện chỉ có [draft FE](handover/huu-fe-pr-draft.md) và [draft BE](handover/huu-be-funding-pr-draft.md), chưa publish.
-
-
-## Sau closeout tự chủ — 13/11/2026
-
-[Evidence mới nhất](evidence/huu-fe-closeout/README.md): regression 9 suite, demo/video, ma trận Wallet/P2P hiện hữu đã thực thi, kết quả cuối PASS sau sửa harness. Các mục demo chưa seed/video chưa quay ở trên là lịch sử. Còn mở: VNPAY sandbox thật, active Transfer UI/mapping K18 với Khoa, lookup cashout mất UUID/key, owner review/rollout và PR/merge. Không coi backend regression PASS là active P2P UI đã tích hợp.
+Nguồn Backend gần nhất: [seed H15/N20 và kết quả live](../../Backend/tests/acceptance/README.md), [event catalog/rollout](../../Backend/services/notification-service/EVENTS.md). Không có thay đổi nghiệp vụ service hoặc quyết định đóng W4 trong lượt cập nhật này.

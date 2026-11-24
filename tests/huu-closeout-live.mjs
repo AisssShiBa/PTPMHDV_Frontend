@@ -7,7 +7,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parseEnv } from 'node:util'
 const root = fileURLToPath(new URL('../', import.meta.url))
-const backend = resolve(root, '../PTPMHDV_Backend')
+const backend = resolve(root, '../Backend')
 const mode = process.argv[2]
 assert.ok(['demo', 'p2p', 'wallet'].includes(mode), 'Use demo, p2p or wallet')
 assert.ok(process.env.LIVE_ACCEPTANCE_RUN_FILE, 'Provide isolated run.json')

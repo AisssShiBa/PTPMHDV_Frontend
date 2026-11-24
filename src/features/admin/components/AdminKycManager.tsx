@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   BadgeCheck,
   CheckCircle2,
@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { QueryBoundary } from '@/components/common/QueryBoundary'
-import { errorMessage } from '@/lib/apiResponse'
+import { errorCode, errorMessage, isApiAxiosError } from '@/lib/apiResponse'
 import { formatDateTime } from '@/lib/format'
 import type { KycStatus } from '@/features/user/types/user.types'
 import { useAdminKycList, useChangeKycTier, useReviewKyc } from '../api/admin.queries'
@@ -76,32 +76,77 @@ export function AdminKycManager() {
   const [action, setAction] = useState<KycAction | null>(null)
   const [reason, setReason] = useState('')
   const [formError, setFormError] = useState('')
+  const requestInFlight = useRef(false)
+  const unresolved = useRef(false)
+  const [unknownOutcome, setUnknownOutcome] = useState<{ id: string; email: string; action: KycAction } | null>(null)
+  const [checkingOutcome, setCheckingOutcome] = useState(false)
 
   const list = useAdminKycList({ page, limit: PAGE_SIZE, status: status || undefined, search })
   const reviewKyc = useReviewKyc()
   const changeTier = useChangeKycTier()
-  const submitting = reviewKyc.isPending || changeTier.isPending
+  const submitting = reviewKyc.isPending || changeTier.isPending || unknownOutcome !== null
+  const outcome = useAdminKycList({ page: 1, limit: PAGE_SIZE, search: unknownOutcome?.email }, { enabled: false })
+  const blocked = () => requestInFlight.current || unresolved.current
+  const handleFailure = (error: unknown, item: AdminKycItem, attemptedAction: KycAction) => {
+    if (!isApiAxiosError(error) || !error.response || error.response.status >= 500 || errorCode(error) === 'KYC_OUTCOME_UNKNOWN') {
+      unresolved.current = true
+      setUnknownOutcome({ id: item.id, email: item.email, action: attemptedAction })
+      setFormError('Chưa xác định được kết quả cập nhật hồ sơ. Vui lòng kiểm tra trạng thái trước khi gửi lại.')
+    } else setFormError(errorMessage(error))
+  }
+  const checkOutcome = async () => {
+    if (!unknownOutcome || requestInFlight.current) return
+    requestInFlight.current = true
+    setCheckingOutcome(true)
+    try {
+      const result = await outcome.refetch({ throwOnError: true })
+      const current = result.data?.content.find(item => item.id === unknownOutcome.id)
+      const expected = unknownOutcome.action
+      const confirmed = current && (typeof expected === 'number'
+        ? current.kycStatus === 'APPROVED' && current.kycTier === expected
+        : current.kycStatus === expected && current.kycTier === (expected === 'APPROVED' ? 1 : 0))
+      if (!confirmed) {
+        setFormError('Chưa xác minh được kết quả yêu cầu trước. Tiếp tục kiểm tra trạng thái; không gửi lại yêu cầu cập nhật.')
+        return
+      }
+      await list.refetch({ throwOnError: true })
+      unresolved.current = false
+      setUnknownOutcome(null)
+      setAction(null)
+      setReason('')
+      setFormError('')
+      toast.success('Đã đối chiếu kết quả cập nhật từ máy chủ.')
+    } catch (error) {
+      setFormError(errorMessage(error))
+    } finally {
+      requestInFlight.current = false
+      setCheckingOutcome(false)
+    }
+  }
 
   const resetForm = () => {
+    if (blocked()) return
     setAction(null)
     setReason('')
     setFormError('')
   }
 
   const selectProfile = (item: AdminKycItem) => {
+    if (blocked()) return
     setSelectedId(item.id)
     setShowId(false)
     resetForm()
   }
 
   const submit = async (item: AdminKycItem) => {
-    if (action === null || submitting) return
+    if (action === null || submitting || blocked()) return
     if (action === 'APPROVED' || action === 'REJECTED') {
       const parsed = kycReviewSchema.safeParse({ status: action, detail: reason })
       if (!parsed.success) {
         setFormError(parsed.error.issues[0]?.message ?? 'Dữ liệu chưa hợp lệ.')
         return
       }
+      requestInFlight.current = true
       try {
         const updated = await reviewKyc.mutateAsync({
           userId: item.id,
@@ -111,9 +156,13 @@ export function AdminKycManager() {
         toast.success(
           `Đã cập nhật hồ sơ: ${statusLabels[updated.kycStatus]} • Cấp ${updated.kycTier}.`
         )
-        resetForm()
+        setAction(null)
+        setReason('')
+        setFormError('')
       } catch (error) {
-        setFormError(errorMessage(error))
+        handleFailure(error, item, action)
+      } finally {
+        requestInFlight.current = false
       }
       return
     }
@@ -123,6 +172,7 @@ export function AdminKycManager() {
       setFormError(parsed.error.issues[0]?.message ?? 'Dữ liệu chưa hợp lệ.')
       return
     }
+    requestInFlight.current = true
     try {
       const updated = await changeTier.mutateAsync({
         userId: item.id,
@@ -130,9 +180,13 @@ export function AdminKycManager() {
         reason: parsed.data.reason
       })
       toast.success(`Đã đổi cấp KYC thành Cấp ${updated.kycTier}.`)
-      resetForm()
+      setAction(null)
+      setReason('')
+      setFormError('')
     } catch (error) {
-      setFormError(errorMessage(error))
+      handleFailure(error, item, action)
+    } finally {
+      requestInFlight.current = false
     }
   }
 
@@ -158,6 +212,14 @@ export function AdminKycManager() {
         </p>
       </div>
 
+      {unknownOutcome && (
+        <div role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
+          <p>Yêu cầu cập nhật hồ sơ chưa rõ kết quả. Các thao tác cập nhật đang bị khóa.</p>
+          <Button type="button" variant="outline" className="mt-2" disabled={checkingOutcome} onClick={() => void checkOutcome()}>
+            {checkingOutcome ? 'Đang kiểm tra...' : 'Kiểm tra trạng thái hồ sơ'}
+          </Button>
+        </div>
+      )}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <Card className="overflow-hidden border-border shadow-xs lg:col-span-5">
           <CardHeader className="border-b border-border/60 bg-muted/30 pb-3">
@@ -306,7 +368,7 @@ export function AdminKycManager() {
         </Card>
 
         <Card className="overflow-hidden border-border shadow-xs lg:col-span-7">
-          {!list.data || list.data.content.length === 0 ? (
+          {list.isError || !list.data || list.data.content.length === 0 ? (
             <CardContent className="p-10 text-center text-sm text-muted-foreground">
               Chọn một hồ sơ ở hàng đợi để xem chi tiết.
             </CardContent>
@@ -502,7 +564,7 @@ export function AdminKycManager() {
                               disabled={submitting}
                               className="text-xs font-semibold"
                             >
-                              {submitting ? 'Đang lưu…' : 'Xác nhận'}
+                              {reviewKyc.isPending || changeTier.isPending ? 'Đang lưu…' : 'Xác nhận'}
                             </Button>
                             <Button
                               type="button"

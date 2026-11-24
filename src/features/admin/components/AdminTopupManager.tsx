@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -25,7 +25,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { QueryBoundary } from '@/components/common/QueryBoundary'
-import { errorCode, errorMessage } from '@/lib/apiResponse'
+import { errorCode, errorMessage, isApiAxiosError } from '@/lib/apiResponse'
 import { formatDateTime, formatNumber, formatVnd, toBigIntSafe } from '@/lib/format'
 import { useAdminTopups, useApproveTopup, useRejectTopup } from '../api/admin.queries'
 import { topupRejectSchema } from '../schemas/admin.schema'
@@ -79,11 +79,16 @@ export function AdminTopupManager() {
   const [rejectMode, setRejectMode] = useState(false)
   const [reason, setReason] = useState('')
   const [actionErrorText, setActionErrorText] = useState('')
+  const inFlight = useRef(false)
+  const unresolved = useRef(false)
+  const [unknownId, setUnknownId] = useState<string | null>(null)
+  const [checking, setChecking] = useState(false)
 
   const topups = useAdminTopups(status || undefined)
+  const outcome = useAdminTopups(undefined, { enabled: false })
   const approve = useApproveTopup()
   const reject = useRejectTopup()
-  const submitting = approve.isPending || reject.isPending
+  const submitting = approve.isPending || reject.isPending || unknownId !== null
 
   const rows = (topups.data ?? []).filter((item) => {
     const query = searchQuery.trim().toLowerCase()
@@ -99,37 +104,77 @@ export function AdminTopupManager() {
   ).length
 
   const closeDialog = () => {
+    if (inFlight.current || unresolved.current) return
     setSelected(null)
     setRejectMode(false)
     setReason('')
     setActionErrorText('')
   }
 
+  const handleFailure = (error: unknown, id: string) => {
+    if (!isApiAxiosError(error) || !error.response || error.response.status >= 500
+      || ['TOPUP_OUTCOME_UNKNOWN', 'TOPUP_PROCESSING'].includes(errorCode(error) ?? '')) {
+      unresolved.current = true
+      setUnknownId(id)
+      setActionErrorText('Chưa xác định được kết quả lệnh nạp. Kiểm tra trạng thái lệnh cũ trước khi thao tác tiếp.')
+    } else setActionErrorText(actionError(error))
+  }
+  const checkOutcome = async () => {
+    if (!unknownId || inFlight.current) return
+    inFlight.current = true
+    setChecking(true)
+    try {
+      const result = await outcome.refetch({ throwOnError: true })
+      const current = result.data?.find(item => item.id === unknownId)
+      if (!current || !['APPROVED', 'REJECTED', 'FAILED', 'EXPIRED'].includes(current.status)) {
+        setActionErrorText('Lệnh nạp chưa có kết quả cuối cùng. Tiếp tục kiểm tra, không gửi lại duyệt/từ chối.')
+        return
+      }
+      await topups.refetch({ throwOnError: true })
+      unresolved.current = false
+      setUnknownId(null)
+      setSelected(current)
+      setRejectMode(false)
+      setActionErrorText('Đã đối chiếu kết quả lệnh nạp từ máy chủ.')
+    } catch (error) {
+      setActionErrorText(actionError(error))
+    } finally {
+      inFlight.current = false
+      setChecking(false)
+    }
+  }
   const handleApprove = async (item: AdminTopup) => {
+    if (inFlight.current || unresolved.current || item.status !== 'PENDING') return
+    inFlight.current = true
     setActionErrorText('')
     try {
       await approve.mutateAsync(item.id)
-      toast.success('Đã gửi yêu cầu duyệt lệnh nạp tiền.')
-      closeDialog()
+      toast.success('Đã duyệt lệnh nạp tiền.')
+      setSelected(null)
+      setRejectMode(false)
+      setReason('')
     } catch (error) {
-      setActionErrorText(actionError(error))
-    }
+      handleFailure(error, item.id)
+    } finally { inFlight.current = false }
   }
-
   const handleReject = async (item: AdminTopup) => {
+    if (inFlight.current || unresolved.current || item.status !== 'PENDING') return
     const parsed = topupRejectSchema.safeParse({ reason })
     if (!parsed.success) {
       setActionErrorText(parsed.error.issues[0]?.message ?? 'Dữ liệu chưa hợp lệ.')
       return
     }
+    inFlight.current = true
     setActionErrorText('')
     try {
       await reject.mutateAsync({ id: item.id, reason: parsed.data.reason })
-      toast.success('Đã gửi yêu cầu từ chối lệnh nạp tiền.')
-      closeDialog()
+      toast.success('Đã từ chối lệnh nạp tiền.')
+      setSelected(null)
+      setRejectMode(false)
+      setReason('')
     } catch (error) {
-      setActionErrorText(actionError(error))
-    }
+      handleFailure(error, item.id)
+    } finally { inFlight.current = false }
   }
 
   return (
@@ -365,6 +410,7 @@ export function AdminTopupManager() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
+                                  if (inFlight.current || unresolved.current) return
                                   setSelected(item)
                                   setRejectMode(false)
                                   setReason('')
@@ -448,6 +494,11 @@ export function AdminTopupManager() {
                 )}
               </div>
 
+              {unknownId && (
+                <Button type="button" variant="outline" disabled={checking} onClick={() => void checkOutcome()}>
+                  {checking ? 'Đang kiểm tra...' : 'Kiểm tra trạng thái lệnh nạp'}
+                </Button>
+              )}
               {actionErrorText && (
                 <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-destructive">
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -482,7 +533,7 @@ export function AdminTopupManager() {
                       disabled={submitting}
                       className="text-xs font-semibold"
                     >
-                      {submitting ? 'Đang gửi…' : 'Xác nhận từ chối'}
+                      {approve.isPending || reject.isPending ? 'Đang gửi…' : 'Xác nhận từ chối'}
                     </Button>
                     <Button
                       type="button"
@@ -505,11 +556,12 @@ export function AdminTopupManager() {
                     type="button"
                     variant="outline"
                     onClick={closeDialog}
+                    disabled={submitting}
                     className="h-10 flex-1 text-xs font-semibold"
                   >
                     Đóng
                   </Button>
-                  {(selected.status === 'PENDING' || selected.status === 'PROCESSING') && (
+                  {selected.status === 'PENDING' && (
                     <>
                       <Button
                         type="button"
@@ -531,7 +583,7 @@ export function AdminTopupManager() {
                         className="h-10 flex-1 gap-1.5 text-xs font-bold"
                       >
                         <CheckCircle2 className="size-4" />
-                        {submitting ? 'Đang gửi…' : 'Duyệt lệnh'}
+                        {approve.isPending || reject.isPending ? 'Đang gửi…' : 'Duyệt lệnh'}
                       </Button>
                     </>
                   )}
